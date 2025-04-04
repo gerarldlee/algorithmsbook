@@ -7,7 +7,7 @@ theme: hextra
 # import hextra as module
 module:
   imports:
-    - path: github.com/imfing/hextra
+    - path: hextra
 
 markup:
   # allow raw html
