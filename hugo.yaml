@@ -2,6 +2,7 @@
 title: Learn Algorithms and Design
 baseURL: "https://algorithmsbook.fociilabs.com/"
 languageCode: "en-us"
+theme: hextra
 
 # import hextra as module
 module:
