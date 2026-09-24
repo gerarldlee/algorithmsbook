@@ -207,7 +207,8 @@ inside the body — the shortcode markdownifies its inner content itself.
 ```
 
 Introduce shortcodes sparingly: no chapter uses one today, and the plain template is what keeps the
-book skimmable. The one planned exception is the language-selector tabs in §6.
+book skimmable. The header language selector is implemented with a site asset; if language tabs are
+introduced later, keep them synchronized as described in §6.
 
 ## 9. Links and navigation integrity
 

@@ -4,7 +4,8 @@ weight: 6
 ---
 
 
-Memorize this:
+These templates are starting points, not substitutes for proving the invariant and choosing the
+right representation. Adapt the names and stopping conditions to the problem.
 
 1. Binary search
 2. Backtracking
@@ -17,15 +18,18 @@ Memorize this:
 ## Backtracking
 
 ```java
-private static void dfs(state, res) {
+private static void dfs(
+        List<Integer> state,
+        List<List<Integer>> results,
+        List<Integer> choices) {
     if (isSolution(state)) {
-        res.add(state.toString()); // add a copy of the state to the result
+        results.add(new ArrayList<>(state)); // add a copy of the state
         return;
     }
-    for (choice : choices) {
-        state.append(choice);
-        dfs(state, res);
-        state.pop();
+    for (int choice : choices) {
+        state.add(choice);
+        dfs(state, results, choices);
+        state.remove(state.size() - 1);
     }
 }
 ```
@@ -52,18 +56,18 @@ public static int binarySearch(List<Integer> arr, int target) {
 ## BFS on Tree
 
 ```java
-public Node bfs(Node root) {
+public static Node bfs(Node root, int target) {
     ArrayDeque<Node> queue = new ArrayDeque<>();
+    if (root == null) return null;
+    queue.add(root);
     while (queue.size() > 0) {
         Node node = queue.poll();
+        if (node.value == target) return node;
         for (Node child : node.children) {
-            if (OK(child)) {
-                return FOUND(child);
-            }
             queue.add(child);
         }
     }
-    return NOT_FOUND;
+    return null;
 }
 ```
 
@@ -74,14 +78,14 @@ public static Node dfs(Node root, int target) {
     if (root == null) {
       return null;
     }
-    if (root.val == target) {
+        if (root.value == target) {
       return root;
     }
-    Node left = dfs(root.left, target)
+        Node left = dfs(root.left, target);
     if (left != null) {
       return left;
     }
-    return dfs(root.right, target)
+    return dfs(root.right, target);
 }
 ```
 
@@ -109,11 +113,9 @@ public void bfs(Node root) {
 
 ```java
 public void dfs(Node root, Set<Node> visited) {
-    for (Node neighbor : node.neighbors) {
-        if (visited.contains(node)) {
-            continue;
-        }
-        visited.add(neighbor);
+    if (root == null || visited.contains(root)) return;
+    visited.add(root);
+    for (Node neighbor : root.neighbors) {
         dfs(neighbor, visited);
     }
 }
@@ -190,7 +192,7 @@ public static class UnionFind<T> {
 
     public T find(T x) {
         T y = f.getOrDefault(x, x);
-        if (y != x) {
+        if (!y.equals(x)) {
             y = find(y);
             f.put(x, y);
         }

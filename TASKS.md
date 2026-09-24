@@ -3,6 +3,17 @@
 This file turns the book outline and repository authoring rules into an actionable checklist.
 `TOC.md` remains the canonical outline; update both files when the scope changes.
 
+Checked items are verified in the current repository. Chapter topic items remain open until each
+page has been audited against the full chapter and language contracts, even when the page file
+already exists.
+
+## Completed implementation
+
+- [x] Add the preferred-language selector before Docs in the header.
+- [x] Default the selector to Java and persist the selected language.
+- [x] Filter complete six-language algorithm groups to the selected language.
+- [x] Load the selector JavaScript through Hextra's custom head-end hook.
+
 ## Project foundation
 
 - [ ] Keep the Hugo site on extended Hugo `0.159.2`.
@@ -40,7 +51,7 @@ For every algorithm chapter:
 - [ ] Keep type names, operation sets, and algorithms equivalent across languages.
 - [ ] Keep language-specific explanations inside that language's code block as comments.
 - [ ] Keep language order and tab names identical across groups on a page.
-- [ ] Use synchronized tabs and `tabs.sync: true` for pages that group multiple language-tab sets.
+- [ ] If tab shortcodes are introduced, synchronize their language groups with `tabs.sync: true`.
 - [ ] Use Mermaid fences for diagrams and keep diagrams free of hard-coded colors.
 
 ## Part I — Fundamental Data Structures & Core Algorithms

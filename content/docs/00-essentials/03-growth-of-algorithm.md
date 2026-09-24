@@ -3,30 +3,40 @@ title: "Growth of Algorithm"
 weight: 3
 ---
 
+Algorithm growth describes how work and extra memory change as the input size \(n\) increases. The
+goal is to compare growth rates, not to predict an exact runtime on every machine.
 
-We will not deal with the academic definition of big-\(O\), big-\(\Theta\), and big-\(\Omega\).  They are not practical for us.  Instead we will deal with the best case, and worse case runtime of a given *input*.
+## Asymptotic notation
 
-For the sake of completeness, the asymptotic notation are the bounding of a function runtime.
+Asymptotic notation describes bounds while ignoring constant factors and lower-order terms:
 
-- \(O\) means an upper bound.  The usual upper bounds of a given function with N input is \(O(N \cdot log(N))\), \(O(N^2)\), \(O(N^3)\)
-- \(\Omega\) means a lower bound.  The usual lower bounds of a given function with N input is \(\Omega(log(N))\), \(\Omega(1)\)
-- \(\Theta\) means when an upper bound is equal to the lower bound.  The usual equivalence is \(\Theta(N)\)
-- A best case runtime of a given *input* scenario may also have an upper bound, and a lower bound.  The same is true for the worse case input scenario.
+- \(O(f(n))\) is an asymptotic upper bound.
+- \(\Omega(f(n))\) is an asymptotic lower bound.
+- \(\Theta(f(n))\) is a tight bound when both the upper and lower bounds grow as \(f(n)\).
 
-Given a bubble sort algorithm:
+Worst-case analysis asks for the maximum work over inputs of size \(n\); best-case analysis asks for
+the minimum. Average-case analysis requires a stated input distribution, so it should not be
+claimed without that assumption.
+
+## Bubble sort example
+
+Bubble sort repeatedly compares adjacent elements and swaps them when they are out of order:
 
 ```java
 for (int j=0; j<array.length-1; j++) {
-	for (int i=1; i<array.length-j-1; i++) {
-		if (array[i] > array[j]) {
-			int tmp = array[i];
-			array[i] = array[j];
-			array[j] = tmp;
-		}
-	}
+    for (int i = 0; i < array.length - j - 1; i++) {
+        if (array[i] > array[i + 1]) {
+            int tmp = array[i];
+            array[i] = array[i + 1];
+            array[i + 1] = tmp;
+        }
+    }
 }
 ```
 
-The best case is when the input array is already sorted in ascending order.  This means that the algorithm will just go through all elements in the array and will do nothing, until all the array elements has been visited.
+With an early-exit flag, an already sorted array is the best case: the algorithm makes one pass and
+performs no swaps, so it takes \(O(n)\) time. Without that optimization, the best case is still
+\(O(n^2)\) because every pass is performed.
 
-The worse case is when the array is sorted in descending order.
+With or without early exit, a reverse-sorted array is a worst case and takes \(O(n^2)\) time. Bubble
+sort uses \(O(1)\) extra space because it sorts in place.

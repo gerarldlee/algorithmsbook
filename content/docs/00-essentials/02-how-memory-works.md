@@ -4,9 +4,16 @@ weight: 2
 ---
 
 
-Everything that we do in computing (and algorithms), is just manipulations of the computer memory.  The data structure that we learn is a cleaner and human understandable representation of memory manipulation designed to make it easier for us to work through the memory.
+Programs store values in memory and use addresses to find those values. Data structures organize
+those values so common operations require fewer moves, comparisons, or allocations.
 
-Imagine you own a room full of mini storage boxes with label from 0 to 1,000. The room is the representation of a memory chip. The labels are the memory addresses.  Up to how much a memory address can be represented, depends on your CPU architecture 32-bits or 64-bits.  A 32-bit CPU can represent up to 32-bit memory address i.e.  \(2^{32}\) = 4 GB of memory.  A 64-bit can address up to \(2^{64}\) = 18 EB (exabytes) of memory.  Each storage box can store up to some \(x\) bytes, depending on your CPU architecture i.e. 32 bits (4 bytes) or 64 bits (8 bytes).
+An address identifies a location in an address space; it does not guarantee that the same amount of
+physical RAM is installed. A 32-bit address space can represent at most \(2^{32}\) distinct byte
+addresses (4 GiB), while a 64-bit address space can represent far more. Operating systems, hardware,
+permissions, and available physical memory limit what a process can actually use.
+Think of memory as numbered byte locations. An array stores adjacent elements, so the address of an
+element can be calculated from its start address and index. A linked list stores nodes wherever space
+is available and follows references from one node to the next.
 
 | Power of 2 | Size |
 | --- | --- |
@@ -27,28 +34,35 @@ Imagine you own a room full of mini storage boxes with label from 0 to 1,000. Th
 | \(2^{15}\) | 32,768 |
 | \(2^{16}\) | 65,536 |
 
-Each memory space can be represented by a data type.
+Powers of two are useful because binary address calculations and capacity growth naturally use them.
+For example, \(2^{10}=1024\) bytes and \(2^{20}=1,048,576\) bytes.
+
+## Common Java value types
 
 | Data types | Java keyword or wrapper | Memory value | Java value | Explanation |
 | --- | --- | --- | --- | --- |
-| Boolean | boolean or Boolean | 1 bit | true or false | 1 bit can be either 1 or 0, or true or false |
+| Boolean | boolean or Boolean | language-dependent | true or false | `Boolean` is a reference type; object layout is not one bit |
 | Byte (whole number) | byte or Byte | 1 byte (8 bits) | -128 to 127 | 8 bits signed = \(-2^7\) up to \(2^7 - 1\) |
 | Short Integer | short or Short | 2 bytes (16 bits) | -32,768 to 32767 | 16 bits signed = \(-2^{15}\) up to \(2^{15} - 1\) |
-| Character (letter or symbol representation) | char or Character | 2 bytes | single character ascii or Unicode values | 16 bits unsigned character representation |
+| Character (UTF-16 code unit) | char or Character | 2 bytes for `char` | 0 to 65,535 | A Unicode code point may require one or two UTF-16 code units |
 | Integer (whole number) | int or Integer | 4 bytes (32 bits) | -2,147,483,648 to 2,147,483,647 | 32 bits signed = \(-2^{31}\) up to \(2^{31} - 1\) |
-| Floating number | float or Float | 4 bytes | up to 6 to 7 decimal digits | 32 bits signed |
+| Floating number | float or Float | 4 bytes | about 6 to 7 decimal digits | IEEE 754 binary32 approximation |
 | Long (long integer whole number) | long or Long | 8 bytes (64 bits) | -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807 | 64 bits signed = \(-2^{63}\) up to \(2^{63} - 1\) |
-| Double (double precision floating number) | double or Double | 8 bytes  | up to 15 decimal digits | 64 bits signed |
+| Double (double precision floating number) | double or Double | 8 bytes | about 15 to 16 decimal digits | IEEE 754 binary64 approximation |
 
-The key thing to remember here is that whenever we want to store something, we need to request which memory address we want (this is done automatically in Java) and by how many or how much to store (datatypes or in the case of arrays, sizes).
+Primitive sizes describe the value representation, not necessarily the full memory consumed by an
+object. Object headers, references, alignment, and the garbage collector add runtime overhead.
 
-To request for memory storage in Java, we declare:
+## Allocation and access
+
+Java normally manages allocation and reclamation for you. A declaration gives a variable a type, and
+an array allocation reserves space for a fixed number of elements:
 
 ```java
-// declare a variable i to be of integer type i.e. i will contain at most 4 bytes
+// Declare an integer variable.
 int i;
 
-// declare an array to be of integer type with 10 elements
+// Allocate an array with ten integer elements.
 int[] array = new int[10];
 ```
 
@@ -59,3 +73,6 @@ i = 32;
 
 array[9] = 32;
 ```
+
+`array[9]` is the tenth element because Java indexes arrays from zero. Accessing an index outside
+the array bounds raises an exception instead of silently reading unrelated memory.
