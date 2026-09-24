@@ -1,17 +1,22 @@
 # Hugo configuration file
 title: Learn Algorithms and Design
-baseURL: "https://algorithmsbook.fociilabs.com/"
+baseURL: "https://gerarldlee.github.io/algorithmsbook.fociilabs.com/"
 languageCode: "en-us"
-theme: hextra
 
 # import hextra as module
 module:
   imports:
-    - path: hextra
+    - path: github.com/imfing/hextra
 
 markup:
   # allow raw html
   goldmark:
+    extensions:
+      passthrough:
+        delimiters:
+          block: [['\[', '\]'], ["$$", "$$"]]
+          inline: [['\(', '\)']]
+        enable: true
     renderer:
       unsafe: true
 
@@ -27,33 +32,32 @@ menu:
     - name: About
       pageRef: /about
       weight: 2
-    - name: Contact ↗
-      url: "https://github.com/imfing"
-      weight: 3
     - name: Search
-      weight: 4
+      weight: 3
       params:
         type: search
     - name: GitHub
-      weight: 5
-      url: "https://github.com/imfing/hextra-starter-template"
+      weight: 4
+      url: "https://github.com/gerarldlee/algorithmsbook.fociilabs.com"
       params:
         icon: github
-    - name: Twitter
-      weight: 6
-      url: "https://twitter.com/"
-      params:
-        icon: x-twitter
 
 params:
+  description: Intuitively learn algorithms and system design for your interviews and sanity.
+
+  # Site author (used by RSS and meta tags)
+  author:
+    name: Gerarld Lee
+    email: gerarldlee@gmail.com
+
   navbar:
     displayTitle: true
     displayLogo: false
 
   footer:
-    displayCopyright: false
+    displayCopyright: true
     displayPoweredBy: true
 
   editURL:
     enable: true
-    base: "https://github.com/imfing/hextra-starter-template/edit/main/content"
+    base: "https://github.com/gerarldlee/algorithmsbook.fociilabs.com/edit/master/content"
