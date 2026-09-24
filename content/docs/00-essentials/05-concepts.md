@@ -26,3 +26,11 @@ To convert decimal to binary, repeatedly divide by two and read the remainders f
 - **Amortized cost** — the average cost over a sequence of operations, even when individual operations vary.
 - **Stable sort** — a sort that preserves the relative order of equal keys.
 - **Idempotent operation** — an operation that can be applied repeatedly without changing the result after the first application.
+
+## Related chapters
+
+- [Greedy Algorithms](../01-algorithms/03-paradigms/02-greedy.md)
+- [Dynamic Programming](../01-algorithms/03-paradigms/03-dynamic-programming.md)
+- [Backtracking](../01-algorithms/03-paradigms/04-backtracking.md)
+- [Amortized Analysis Techniques](../01-algorithms/03-paradigms/05-amortized-analysis.md)
+- [Divide-and-Conquer & Advanced Sorting](../01-algorithms/03-paradigms/01-divide-and-conquer-sorting.md)

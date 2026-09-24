@@ -3,7 +3,6 @@ title: "References"
 weight: 8
 ---
 
-
 ## Books
 
 | Books | Level | Mission / Goal |

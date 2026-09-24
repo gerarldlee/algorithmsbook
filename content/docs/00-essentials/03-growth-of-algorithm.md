@@ -101,3 +101,9 @@ performs no swaps, so it takes \(O(n)\) time. Without that optimization, the bes
 
 With or without early exit, a reverse-sorted array is a worst case and takes \(O(n^2)\) time. Bubble
 sort uses \(O(1)\) extra space because it sorts in place.
+
+## Related chapters
+
+- [Divide-and-Conquer & Advanced Sorting](../01-algorithms/03-paradigms/01-divide-and-conquer-sorting.md)
+- [Amortized Analysis Techniques](../01-algorithms/03-paradigms/05-amortized-analysis.md)
+- [Computational Complexity Theory](../01-algorithms/04a-computational-theory/01-complexity-theory.md)

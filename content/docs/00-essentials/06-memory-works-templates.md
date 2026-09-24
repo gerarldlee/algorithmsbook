@@ -7,6 +7,15 @@ weight: 6
 These templates are starting points, not substitutes for proving the invariant and choosing the
 right representation. Adapt the names and stopping conditions to the problem.
 
+## Available chapter pages
+
+- [Binary Search Trees and Self-Balancing Trees](../01-algorithms/02-search-trees/01-binary-search-trees.md)
+- [Backtracking](../01-algorithms/03-paradigms/04-backtracking.md)
+- [Graph Traversals: BFS and DFS](../01-algorithms/04-graphs/02-graph-traversals.md)
+- [Topological Sorting and Strongly Connected Components](../01-algorithms/04-graphs/03-topological-sort-scc.md)
+- [Tries, Radix Trees, and Suffix Structures](../01-algorithms/02-search-trees/06-tries-suffix.md)
+- [Disjoint-Set Data Structures (Union-Find)](../01-algorithms/02-search-trees/05-union-find.md)
+
 1. Binary search
 2. Backtracking
 3. BFS (tree and graph)

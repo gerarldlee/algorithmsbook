@@ -31,3 +31,10 @@ the book. Learn the operation and its cost, not just the name.
 - \(1 + 2 + \dots + n = \frac{n(n+1)}{2} = \Theta(n^2)\).
 - \(1 + 2 + 4 + \dots + 2^k = 2^{k+1}-1 = \Theta(2^k)\).
 - \(\gcd(a,b)=\gcd(b,a\bmod b)\), which is the basis of the Euclidean algorithm.
+
+## Related chapters
+
+- [Bitwise Operations and Bloom Filters](../01-algorithms/01-linear-data-structures/05-bitwise-bloom-filters.md)
+- [Divide-and-Conquer & Advanced Sorting](../01-algorithms/03-paradigms/01-divide-and-conquer-sorting.md)
+- [Amortized Analysis Techniques](../01-algorithms/03-paradigms/05-amortized-analysis.md)
+- [Computational Complexity Theory](../01-algorithms/04a-computational-theory/01-complexity-theory.md)

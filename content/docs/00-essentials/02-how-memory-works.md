@@ -9,10 +9,10 @@ those values so common operations require fewer moves, comparisons, or allocatio
 
 An address identifies a location in an address space; it does not guarantee that the same amount of
 physical RAM is installed. A 32-bit address space can represent at most \(2^{32}\) distinct byte
-addresses (4 GiB), while a 64-bit address space can represent far more. Operating systems, hardware,
+addresses (4 GiB), while a 64-bit address space can represent far more. [Operating systems](../05-cloud-devops/03-operating-systems-kernel-mechanics/02-virtual-memory-kernel-traps.md), hardware,
 permissions, and available physical memory limit what a process can actually use.
-Think of memory as numbered byte locations. An array stores adjacent elements, so the address of an
-element can be calculated from its start address and index. A linked list stores nodes wherever space
+Think of memory as numbered byte locations. An [array](../01-algorithms/01-linear-data-structures/01-dynamic-arrays.md) stores adjacent elements, so the address of an
+element can be calculated from its start address and index. A [linked list](../01-algorithms/01-linear-data-structures/02-linked-lists.md) stores nodes wherever space
 is available and follows references from one node to the next.
 
 | Power of 2 | Size |
