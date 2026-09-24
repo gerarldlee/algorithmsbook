@@ -1,5 +1,5 @@
 ---
-title: "Storage Primitives"
+title: "Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems"
 weight: 2
 toc: true
 ---
@@ -8,39 +8,39 @@ toc: true
 Cloud storage primitives are managed data services that persist bytes across three fundamental access models: **block** (raw volumes mounted like a disk), **file** (shared filesystems with a directory hierarchy), and **object** (flat key–value blobs addressed over HTTP). Each model trades latency, sharing, and cost differently, and most platforms also layer **tiers** and **snapshots** on top.
 
 ## How it works
-- **Block storage (EBS)** attaches a virtual disk to a single instance in one availability zone. It is accessed at the sector level over a SAN, giving low-latency random I/O, and supports volume types from cheap magnetic/HDD up to high-IOPS NVMe SSD. Snapshots copy only changed blocks to object storage and are the basis for backup and volume cloning.
-- **File storage (EFS/NFS)** presents a POSIX filesystem mountable by many instances at once. It scales capacity and throughput with usage, keeps strong consistency, and is billed per byte stored — ideal for shared directories, home dirs, and apps that need a filesystem.
-- **Object storage (S3)** stores immutable objects (files + metadata) in a flat namespace of buckets and keys, served over HTTP with 11 nines of durability via erasure coding and replication. Reads/writes are per-object (no random byte edits), and access tiers trade retrieval cost for storage price.
+- **Block storage (EBS)** attaches a virtual disk to a compute instance in one availability zone. It provides low-latency random I/O at the block-device level and supports volume types from magnetic storage to high-IOPS NVMe SSD. Snapshots can capture changed blocks for backup and volume cloning.
+- **File storage (EFS/NFS)** presents a shared filesystem that many instances can mount at once. It scales capacity and throughput with usage, provides strong consistency, and is billed for the storage and throughput consumed by the service. It fits shared directories, home directories, and applications that expect a filesystem.
+- **Object storage (S3)** stores objects and their metadata in a flat namespace of buckets and keys, served over HTTP. Objects are replicated and protected with erasure coding, with S3 designed for 99.999999999% durability. A `PUT` creates or replaces a complete object, and multipart uploads assemble ordered parts into that object; it does not provide in-place byte edits. A `GET` can retrieve a complete object or a byte range, so read granularity is finer than write granularity. Access tiers trade retrieval cost for storage price.
 
 ```yaml
-# The three storage models side by side
-block:  # EBS — raw virtual disk, one AZ, one instance
+block:
   type: gp3 | io2 | st1 | sc1
-  io: low-latency random read/write, sector level
-  sharing: single instance in one AZ
-  persistence: detached from instance lifecycle; snapshots to object store
+  io: low-latency random read/write
+  sharing: a compute instance in one availability zone
+  persistence: independent of the instance lifecycle; snapshots provide copies
 
-file:   # EFS — shared POSIX filesystem
+file:
   protocol: NFSv4
-  sharing: thousands of concurrent instances across AZs
-  scaling: capacity and throughput grow automatically with usage
-  cost: billed per GB stored (no provisioning)
+  sharing: many instances across availability zones
+  scaling: capacity and throughput grow with usage
+  cost: billed for storage and throughput
 
-object: # S3 — flat key-value blobs over HTTP
+object:
   namespace: bucket / key
-  durability: 99.999999999% (11 nines) via erasure coding
-  access: whole-object GET/PUT/LIST, no random byte edits
-  tiers: standard -> infrequent access -> archive (glacier)
+  durability: 99.999999999% design target via replication and erasure coding
+  write_model: whole-object PUT; multipart uploads assemble ordered parts
+  read_model: whole-object or byte-range GET
+  tiers: standard, infrequent access, archive
 ```
 
 Object storage **lifecycle tiers** move data automatically: *Standard* (frequent access, highest cost), *Infrequent Access* (cheaper storage, per-GB retrieval fee), *Archive/Glacier* (deeply cheap storage, minutes-to-hours retrieval), plus *Intelligent Tiering* that auto-migrates based on access patterns. Most services add **versioning**, **server-side encryption**, and **replication** across regions as first-class features.
 
 ## Tradeoffs
-- **Latency vs. sharing**: block gives the lowest latency and highest IOPS but is bound to one instance/AZ; file and object are shareable across many consumers but add network and protocol overhead.
-- **Access granularity**: block and file support random byte-level edits (databases, apps), while object only reads/writes whole objects — fine for media and archives, awkward for hot databases.
-- **Durability vs. cost**: object storage is the most durable and cheapest per GB but has per-object access latency and eventual (or configurable) consistency; block is fast but you manage replication yourself for durability.
-- **Capacity scaling**: block volumes are fixed-size and must be resized manually; file/object grow elastically but bill continuously for what you store.
-- **Consistency**: modern object stores offer strong read-after-write for new objects, but cross-region replication is eventually consistent; block and file are strongly consistent locally.
+- **Latency vs. sharing**: block gives the lowest latency and highest IOPS but is normally attached to one instance/AZ; EBS Multi-Attach is an exception that supports eligible io1/io2 volumes across compatible Nitro instances in one AZ. File and object are shareable across many consumers but add network and protocol overhead.
+- **Access granularity**: block and file support random byte-level edits (databases, apps). Object stores read byte ranges but replace or assemble whole objects on writes, which is effective for media and archives but awkward for hot databases.
+- **Durability vs. cost**: object storage is optimized for durable, inexpensive bulk retention, but its access model is less convenient for a hot database; block storage offers low-latency I/O, while durability depends on the volume service and the replication design around it.
+- **Capacity scaling**: block volumes have a defined size that you can resize; file and object services grow elastically but bill for the storage, requests, and retrieval they provide.
+- **Consistency**: S3 provides strong consistency for object operations, while cross-region replication is asynchronous; block and file services also provide strong consistency for supported operations.
 
 ## When to use
 - **Block (EBS)**: boot volumes, databases, and any hot workload needing low-latency random I/O on a single instance.
@@ -55,6 +55,5 @@ Object storage **lifecycle tiers** move data automatically: *Standard* (frequent
 ## Related
 - [Compute](01-compute.md)
 - [Cloud Networking](03-cloud-networking.md)
-- [Infrastructure as Code](05-infrastructure-as-code.md)
 - [Storage Engines](../../04-distributed-systems/02-databases/03-storage-engines.md)
 - [Container Internals](../02-containers-cicd/01-container-internals.md)

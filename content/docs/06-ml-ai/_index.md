@@ -7,4 +7,4 @@ Machine learning systems and scalable AI infrastructure: ML/DL foundations, MLOp
 
 - [Chapter 13: Machine Learning & Deep Learning Foundations](01-ml-foundations/)
 - [Chapter 14: MLOps & Production Machine Learning Systems](02-mlops/)
-- [Chapter 15: Generative AI Infrastructure & Large Scale LLM Orchestration](03-genai/)
+- [Chapter 15: Generative AI Infrastructure & Large-Scale LLM Orchestration](03-genai/)

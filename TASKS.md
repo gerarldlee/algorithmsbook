@@ -146,41 +146,41 @@ For every algorithm chapter:
 
 ### Chapter 11 — Cloud Primitives & Serverless Architectures
 
-- [ ] 11.1 Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors
-- [ ] 11.2 Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems
-- [ ] 11.3 Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, and Transit Gateways
-- [ ] 11.4 Serverless & Edge Computing (AWS Lambda, Cloudflare Workers, Event-Driven Triggers)
-- [ ] 11.5 Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu
+- [x] 11.1 Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors
+- [x] 11.2 Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems
+- [x] 11.3 Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, and Transit Gateways
+- [x] 11.4 Serverless & Edge Computing (AWS Lambda, Cloudflare Workers, Event-Driven Triggers)
+- [x] 11.5 Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu
 
 ### Chapter 12 — Containerization, Orchestration & CI/CD Pipelines
 
-- [ ] 12.1 Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups
-- [ ] 12.2 Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)
-- [ ] 12.3 Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments
-- [ ] 12.4 CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)
-- [ ] 12.5 Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting
+- [x] 12.1 Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups
+- [x] 12.2 Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)
+- [x] 12.3 Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments
+- [x] 12.4 CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)
+- [x] 12.5 Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting
 
 ## Part VI — Machine Learning Systems & Scalable AI Infrastructure
 
 ### Chapter 13 — Machine Learning & Deep Learning Foundations
 
-- [ ] 13.1 Supervised Learning: Linear/Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost)
-- [ ] 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
-- [ ] 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
-- [ ] 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
-- [ ] 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention
+- [x] 13.1 Supervised Learning: Linear/Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost)
+- [x] 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
+- [x] 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
+- [x] 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
+- [x] 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention
 
 ### Chapter 14 — MLOps & Production Machine Learning Systems
 
-- [ ] 14.1 End-to-End ML System Design: Training, Validation, Feature Engineering, and Inference Pipelines
-- [ ] 14.2 Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)
-- [ ] 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
-- [ ] 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
+- [x] 14.1 End-to-End ML System Design: Training, Validation, Feature Engineering, and Inference Pipelines
+- [x] 14.2 Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)
+- [x] 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
+- [x] 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
 
-### Chapter 15 — Generative AI Infrastructure & Large Scale LLM Orchestration
+### Chapter 15 — Generative AI Infrastructure & Large-Scale LLM Orchestration
 
-- [ ] 15.1 Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)
-- [ ] 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking
-- [ ] 15.3 Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)
-- [ ] 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding
-- [ ] 15.5 AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration
+- [x] 15.1 Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)
+- [x] 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking
+- [x] 15.3 Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)
+- [x] 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding
+- [x] 15.5 AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration

@@ -1,28 +1,54 @@
 ---
-title: "CI/CD and GitOps"
+title: "CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)"
 weight: 4
 toc: true
 ---
 
 ## What it is
-CI/CD (Continuous Integration / Continuous Delivery) automates building, testing, and shipping software, while GitOps extends that automation to operations by treating a Git repository as the single source of truth for both application code and cluster state. In GitOps, an agent (Argo CD or Flux) continuously reconciles the live environment against the declared state in Git, and any drift is corrected automatically.
+CI/CD workflows automate the path from a source change to a running application: continuous integration (CI) builds and validates each change, while continuous delivery or deployment (CD) promotes the resulting artifact to an environment. GitOps extends declarative delivery by placing desired environment state in Git and using a reconciliation engine such as Argo CD or Flux to detect and correct drift.
 
 ## How it works
-A CI pipeline builds and validates code on every change: fetch, compile, test, scan, and package a container image. A CD/GitOps layer then promotes that artifact. GitOps comes in two forms: **push** (a pipeline runs `kubectl`/`helm` against the cluster) and **pull** (an in-cluster agent polls Git and applies differences). Pull-based GitOps is the canonical model: the agent watches a config repository, detects drift between Git and the cluster, and converges the cluster back to Git.
+A CI workflow runs when a repository event occurs. It checks out a fixed source revision, restores dependencies, and runs automated checks at increasing scope: formatting and static analysis, unit tests, integration or contract tests, security scans, and an end-to-end suite. A passing build produces an immutable container image identified by content digest rather than a mutable tag alone. The pipeline pushes the artifact to a registry that CD can promote unchanged and signs its digest with Cosign.
 
 ```yaml
-# CI pipeline (GitHub Actions) — build, test, publish image
 name: ci
-on: [push]
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t ghcr.io/example/web:${{ github.sha }} .
-      - run: docker push ghcr.io/example/web:${{ github.sha }}
----
-# GitOps application — Argo CD declares the desired state
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: sigstore/cosign-installer@v3
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: ./gradlew test integrationTest
+      - run: ./gradlew build
+      - uses: docker/build-push-action@v6
+        id: image
+        with:
+          push: ${{ github.event_name == 'push' }}
+          tags: ghcr.io/example/web:${{ github.sha }}
+      - if: github.event_name == 'push'
+        run: cosign sign --yes ghcr.io/example/web@${{ steps.image.outputs.digest }}
+```
+
+CD then selects the tested image digest for a target environment. Deployment can be a push-based pipeline or a GitOps engine. Push-based delivery runs commands such as `kubectl apply` or `helm upgrade`, so its credentials can perform cluster writes. Pull-based GitOps gives an in-cluster controller read access to Git; the controller renders manifests, compares them with live resources, and applies missing changes. Argo CD represents this relationship with an `Application`, while Flux uses `GitRepository`, `Kustomization`, and related custom resources.
+
+```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -31,39 +57,61 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/example/infra.git
-    path: apps/web
+    repoURL: https://github.com/example/platform.git
+    path: environments/production/apps/web
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
     namespace: production
   syncPolicy:
     automated:
-      prune: true      # delete resources removed from Git
-      selfHeal: true   # revert out-of-band cluster changes
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: web
+  namespace: flux-system
+spec:
+  interval: 1m
+  path: ./environments/production/apps/web
+  prune: true
+  selfHeal: true
+  sourceRef:
+    kind: GitRepository
+    name: platform
+  wait: true
 ```
 
-GitOps enforces a strong invariant: the only supported way to change the cluster is a Git commit/merge, which produces an audit trail, enables review via PRs, and makes rollback a `git revert`. Secrets are stored separately (e.g., SOPS, External Secrets) rather than committed in plaintext.
+Argo CD and Flux render the selected Git revision and compare the resulting desired manifests with live state, so their sync status can expose conflict and drift. Git history provides audit context; it is not a second reconciliation input. A reviewed commit to a `main` environment repository can therefore both change a deployment and later revert that change. Secret values should not enter those commits; External Secrets, SOPS, or a cloud secret manager can deliver references or encrypted values separately.
 
 ## Tradeoffs
-- **Auditability**: every change is a reviewed, immutable Git commit with full history, but teams must discipline themselves to make all changes through Git, not `kubectl apply` by hand.
-- **Convergence**: the agent continuously enforces desired state and self-heals drift, but rapid-fire changes or misconfig can trigger reconcile loops and require rate limits.
-- **Security**: pull-based agents need no cluster write credentials exposed to CI, but the Git repo and its credentials become a critical attack surface.
-- **Complexity**: GitOps standardizes delivery and rollback, but adds an agent, a config-repo layout, and tooling that small teams may find heavy.
-- **Push vs pull**: push pipelines are familiar and flexible, but expose cluster credentials and don't self-heal; pull agents self-heal but constrain how changes flow.
+- **Immutable artifacts** — a content digest makes promotion and rollback unambiguous, but the pipeline and every environment must preserve and select the same digest.
+- **Pull-based GitOps** — the cluster retrieves desired state and can self-heal drift without exposing broad write credentials to CI, but repository access and the in-cluster controller become critical control points.
+- **Push-based CD** — a pipeline can call many deployment APIs directly, but its credentials are exposed to the job runner and the pipeline does not continuously correct later drift.
+- **Automated synchronization** — convergence removes manual cluster edits, but an incorrect merge can propagate rapidly unless approvals, policy checks, and environment separation are in place.
+- **Test depth** — broader tests catch more regressions before release, but they consume compute and can delay feedback when poorly isolated or ordered.
+- **Operational model** — a declarative repository records intent and history, but teams also need identity management, secrets, policy, recovery, and rules for who may change production.
 
 ## When to use
-- Teams managing many services and environments that need reproducible, reviewable, auditable deployments.
-- Environments requiring disaster recovery and rollback as simple `git revert` operations.
-- Organizations that want continuous drift detection and automatic convergence to declared state.
+- You need every proposed change to pass repeatable automated checks before a release artifact is published.
+- You need the same tested image digest promoted through several environments without rebuilding it.
+- You need reviewable environment state and a straightforward `git revert` for a failed production change.
+- You need a controller to detect and correct unauthorized or accidental cluster drift.
+- You can protect production repositories and separately manage secret delivery.
 
 ## Alternatives
-- **Imperative scripting (kubectl/Ansible)**: flexible ad-hoc control, but no audit trail, no self-healing, and risk of config drift.
-- **Terraform/CloudFormation (infra provisioning)**: excellent for provisioning cloud resources, but not designed to continuously reconcile running application workloads.
-- **Traditional CD servers (Jenkins pipelines pushing)** : mature and widely understood, but weaker drift detection and more exposed credentials than a pull-based GitOps agent.
+- **Jenkins or another imperative CD server** — a direct push pipeline fits established build estates and custom steps, but it requires its own credential hardening and separate drift management.
+- **Argo Rollouts or Flagger** — a progressive delivery controller is a focused choice when canary analysis and traffic promotion are the main problem, rather than full GitOps reconciliation.
+- **Terraform or OpenTofu** — infrastructure as code is appropriate for cloud and cluster resources, but application rollout analysis and continuous runtime reconciliation usually require other controllers.
+- **Manual deployment procedures** — a small stable service can use a short runbook, at the cost of inconsistent execution, limited auditability, and slower recovery.
 
 ## Related
-- [Kubernetes](02-kubernetes.md)
-- [Deployment Strategies](03-deployment-strategies.md)
-- [Infrastructure as Code](../01-cloud-primitives/05-infrastructure-as-code.md)
-- [Observability](05-observability.md)
+- [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
+- [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
+- [Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu](../01-cloud-primitives/05-infrastructure-as-code.md)
+- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)

@@ -1,15 +1,14 @@
-
 # Algorithmic Foundations, Distributed Systems & AI Architecture
 
 ## Part I: Fundamental Data Structures & Core Algorithms
 
 ### Chapter 1: Linear Data Structures & Memory Models
 
-* 1.1 Dynamic Arrays, Memory Allocation, and Amortized Analysis
+* 1.1 Dynamic Arrays, Memory Allocation, Custom Allocators, Cache Locality, and Amortized Analysis
 * 1.2 Linked Lists (Singly, Doubly, Skip Lists)
-* 1.3 Stacks, Queues, Deques, and Ring/Circular Buffers
-* 1.4 Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing
-* 1.5 Bitwise Algorithms, Bitsets, and Bloom Filters
+* 1.3 Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)
+* 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
+* 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
 
 ### Chapter 2: Hierarchical Data Structures & Search Trees
 
@@ -18,15 +17,16 @@
 * 2.3 Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)
 * 2.4 Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees
 * 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
-* 2.6 Tries, Radix Trees, and Suffix Trees/Arrays
+* 2.6 Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)
 
-### Chapter 3: Core Algorithmic Paradigms
+### Chapter 3: Core Algorithmic Paradigms & Parallel Computing
 
 * 3.1 Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)
 * 3.2 Greedy Choice Paradigms & Interval Scheduling
-* 3.3 Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)
+* 3.3 Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)
 * 3.4 Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems
 * 3.5 Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)
+* 3.6 Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization
 
 ### Chapter 4: Graph Theory & Network Algorithms
 
@@ -34,26 +34,27 @@
 * 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
 * 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
 * 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
-* 4.5 Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)
+* 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall, Johnson’s)
 * 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
 
 ---
 
 ## Part II: System Design Foundations & High-Scale Architecture
 
-### Chapter 5: System Design Fundamentals
+### Chapter 5: System Design Fundamentals & Infrastructure Security
 
 * 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
 * 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets
 * 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
 * 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
 * 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
+* 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
 
 ### Chapter 6: Caching Strategies & Edge Acceleration
 
-* 6.1 In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)
+* 6.1 In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams), & Eviction Policies (LRU, LFU, ARC)
 * 6.2 Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind
-* 6.3 Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration
+* 6.3 Content Delivery Networks (CDNs), Edge Computing, Edge Runtimes (Wasm at Edge, eBPF), and Static/Dynamic Content Acceleration
 * 6.4 Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter
 
 ---
@@ -78,12 +79,13 @@
 
 ## Part IV: Distributed Systems & Database Architecture
 
-### Chapter 9: Distributed Systems Principles & Consensus
+### Chapter 9: Distributed Systems Principles, Consensus & Decentralized Ledger Technology
 
 * 9.1 The CAP Theorem, PACELC, and Architectural Trade-offs
 * 9.2 Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)
 * 9.3 Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks
 * 9.4 Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern
+* 9.5 Decentralized Systems, Web3 & Blockchain: Merkle-Patricia Tries, PoW/PoS Consensus, EVM Runtimes, P2P Mesh Networks (Libp2p, Kademlia DHT), and DeFi Protocols (AMMs, Oracles)
 
 ### Chapter 10: Database Engineering, Replication & Scaling
 
@@ -134,7 +136,7 @@
 * 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
 * 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
 
-### Chapter 15: Generative AI Infrastructure & Large Scale LLM Orchestration
+### Chapter 15: Generative AI Infrastructure & Large-Scale LLM Orchestration
 
 * 15.1 Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)
 * 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking

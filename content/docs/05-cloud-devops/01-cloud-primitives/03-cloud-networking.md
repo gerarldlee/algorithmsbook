@@ -1,5 +1,5 @@
 ---
-title: "Cloud Networking"
+title: "Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, and Transit Gateways"
 weight: 3
 toc: true
 ---
@@ -8,36 +8,88 @@ toc: true
 Cloud networking is the set of managed primitives that give you isolated, programmable network topology in the cloud: a virtual private cloud (VPC) with subnets, routing, security groups, NAT, peering, load balancers, and DNS. It lets you carve a private address space and control exactly how traffic enters, leaves, and flows between resources.
 
 ## How it works
-A **VPC** is a logically isolated network inside a region with a CIDR block you choose (e.g. `10.0.0.0/16`). You split it into **subnets**, each bound to one availability zone: *public subnets* have a route to an internet gateway, *private subnets* do not and reach the internet only through a **NAT gateway**. **Route tables** decide the next hop for each destination; **security groups** are stateful per-instance firewalls (allow rules only, applied at the ENI), while **network ACLs** are stateless subnet-level allow/deny rules. **VPC peering** or **transit gateways** connect VPCs, and endpoints (PrivateLink) reach services without traversing the public internet.
+A **VPC** is a logically isolated network inside a region with a CIDR block you choose (e.g. `10.0.0.0/16`). You split it into **subnets**, each bound to one availability zone. A public subnet has a route to an internet gateway; a private subnet normally reaches the internet through a **NAT gateway**. A VPC endpoint provides private access to supported AWS service endpoints, while a VPN provides private connectivity to an external network. **Route tables** decide the next hop for each destination. **Security groups** are stateful firewalls attached to elastic network interfaces, while **network ACLs** are stateless subnet-level allow/deny rules. **VPC peering** or **Transit Gateway** connect VPCs, and interface endpoints such as PrivateLink reach supported services without traversing the public internet.
 
 ```yaml
-# A minimal VPC: two subnets, an internet gateway, and a NAT gateway
-Vpc:
-  Type: AWS::EC2::VPC
-  Properties:
-    CidrBlock: 10.0.0.0/16
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
 
-PublicSubnet:
-  Type: AWS::EC2::Subnet
-  Properties:
-    VpcId: !Ref Vpc
-    CidrBlock: 10.0.1.0/24
-    AvailabilityZone: us-east-1a
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: us-east-1a
 
-PrivateSubnet:
-  Type: AWS::EC2::Subnet
-  Properties:
-    VpcId: !Ref Vpc
-    CidrBlock: 10.0.2.0/24
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: us-east-1b
 
-InternetGateway:
-  Type: AWS::EC2::InternetGateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      VpcId: !Ref Vpc
 
-NatGateway:
-  Type: AWS::EC2::NatGateway
-  Properties:
-    SubnetId: !Ref PublicSubnet
-    AllocationId: !GetAtt ElasticIP.AllocationId
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !Ref ElasticIp
+      SubnetId: !Ref PublicSubnet
+    DependsOn: InternetGatewayAttachment
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet
 ```
 
 Above the raw network sit **load balancers** and **DNS**. Application load balancers (ALB) route HTTP(S) at L7 by host/path to target groups; network load balancers (NLB) forward TCP/UDP at L4 with static IPs and very low latency; classic/Gateway LBs cover legacy and appliance traffic. Managed **DNS** (Route 53) resolves names with global anycast, health checks, and routing policies (latency, geo, weighted, failover) so clients land on a healthy endpoint in the nearest region.
@@ -63,6 +115,4 @@ Above the raw network sit **load balancers** and **DNS**. Application load balan
 - [Compute](01-compute.md)
 - [Storage Primitives](02-storage-primitives.md)
 - [Serverless](04-serverless.md)
-- [Network Protocols](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
-- [Load Balancing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
-- [Container Internals](../02-containers-cicd/01-container-internals.md)
+- [Infrastructure as Code](05-infrastructure-as-code.md)

@@ -66,5 +66,4 @@ Here, `n` is the number of entries in a B-tree, `m` is the number of SSTables se
 - [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
 - [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
 - [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
-- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)
-- [Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)](../../01-algorithms/02-search-trees/03-storage-engine-trees.md)
+- [Storage Primitives](../../05-cloud-devops/01-cloud-primitives/02-storage-primitives.md)

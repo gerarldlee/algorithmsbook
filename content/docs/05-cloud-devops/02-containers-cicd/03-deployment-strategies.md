@@ -1,75 +1,143 @@
 ---
-title: "Deployment Strategies"
+title: "Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments"
 weight: 3
 toc: true
 ---
 
 ## What it is
-Deployment strategies are controlled techniques for releasing a new version of a service into production, trading off risk, downtime, and resource cost. The main patterns — recreate, rolling, blue-green, canary, and feature flags — differ in how much of the traffic, infrastructure, and time is shifted to the new version at once.
+A deployment strategy defines how production traffic and capacity move from one application version to another. Rolling updates, blue-green releases, canary releases, and shadow deployments differ in how much capacity they run at once, which users receive the new version, and how quickly an operator can reverse a release.
 
 ## How it works
-Each strategy changes the rate and reversibility of the cutover:
+A **rolling update** gradually adds new instances and removes old instances while the service remains available. Kubernetes Deployments perform this replacement through their ReplicaSets. It requires temporary capacity for mixed versions and compatible behavior during the transition.
 
-- **Recreate**: terminate the old version entirely, then start the new one; simple but causes downtime.
-- **Rolling**: incrementally replace old instances with new ones, keeping the service available while a mix of versions briefly serves traffic.
-- **Blue-green**: run two full environments (old "blue" and new "green"), then switch all traffic at once via a load balancer; instant rollback by switching back.
-- **Canary**: route a small, controlled percentage of traffic to the new version, observe it, and gradually ramp up.
-- **Feature flags**: keep one deployed binary and toggle behavior at runtime per user/cohort, decoupling deploy from release.
+A **blue-green release** runs stable and candidate versions at the same time, then changes the routing target after the candidate passes its release checks. Rollback restores the previous routing target, although the old environment must remain available. With Kubernetes, separate deployments can use different version labels and a Service selector can be changed to switch the active set.
+
+A **canary release** sends a controlled fraction of requests to a candidate and increases that fraction as its health and business metrics remain acceptable. A service mesh or gateway can perform weighted routing without requiring the application to understand release traffic. **Shadow deployment** also sends a copy of live requests to a candidate, but it does not return the candidate's response to the user. A shadowed request can still cause side effects, so the candidate must isolate writes or use test data.
+
+The following manifest implements one 90/10 canary release: both Deployments back the same Service, the DestinationRule names their version subsets, and the single VirtualService selects both subsets for the host.
 
 ```yaml
-# Canary rollout driven by a service mesh / ingress (Istio example)
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: web
+  name: web-stable
+  namespace: production
 spec:
-  hosts: ["web"]
-  http:
-    - route:
-        - destination:
-            host: web
-            subset: stable
-          weight: 90
-        - destination:
-            host: web
-            subset: canary
-          weight: 10
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: web
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: web
+        version: stable
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/example/web:1.4.0
 ---
-# Blue-green: two Deployments, one Service selector switch
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-active
+  name: web
+  namespace: production
 spec:
-  selector: { app: web, version: green }   # flip to "blue" to roll back
+  selector:
+    app: web
   ports:
     - port: 80
       targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-canary
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: web
+        version: canary
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/example/web:1.5.0
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: web
+  namespace: production
+spec:
+  host: web.production.svc.cluster.local
+  subsets:
+    - name: stable
+      labels:
+        version: stable
+    - name: canary
+      labels:
+        version: canary
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: web-canary
+  namespace: production
+spec:
+  hosts:
+    - web.production.svc.cluster.local
+  http:
+    - route:
+        - destination:
+            host: web.production.svc.cluster.local
+            subset: stable
+          weight: 90
+        - destination:
+            host: web.production.svc.cluster.local
+            subset: canary
+          weight: 10
 ```
 
-Kubernetes implements rolling updates natively via Deployment `strategy: RollingUpdate` (`maxSurge`/`maxUnavailable`). Canary and blue-green are layered on top using duplicate Deployments plus a Service/Ingress selector switch or a service mesh. Feature flags are implemented in application code and controlled by a flag service, entirely independent of the infrastructure release.
+A blue-green cutover would use one routing rule that selects either `version: blue` or `version: green`; it would not also use the weighted canary rule. A shadow deployment would mirror traffic to the candidate while keeping stable as the only response destination, and it would replace rather than combine with the weighted rule. Tools such as Argo Rollouts or Flagger can automate canary analysis, traffic weighting, and promotion from deployment controller configuration.
+
+Feature flags provide a related but separate control. They keep deployment separate from the decision to expose behavior, so an operator can enable a feature for selected users without moving container traffic.
 
 ## Tradeoffs
-- **Recreate**: zero resource overhead and no version coexistence, but full downtime and no partial rollback.
-- **Rolling**: no downtime and native to Kubernetes, but rollback is slow (re-reverse the rollout) and both versions must be backward-compatible during the transition.
-- **Blue-green**: instant atomic switch and rollback, but doubles infrastructure cost and risks a big-bang failure on the whole fleet.
-- **Canary**: smallest blast radius and real-world validation, but requires traffic routing, good metrics, and careful ramping discipline.
-- **Feature flags**: decouples deploy from release and enables per-user rollout, but adds code complexity, flag drift, and a runtime dependency on the flag service.
+- **Rolling update** — reuses existing rollout machinery and limits temporary capacity, but mixes versions and makes a broad rollback slower.
+- **Blue-green** — changes the active version atomically and restores the prior route quickly, but keeps two complete environments ready and validates the candidate before a single cutover.
+- **Canary** — limits the initial user impact and produces production evidence, but depends on weighted routing, representative traffic, and reliable release metrics.
+- **Shadow** — exercises the candidate on live request shapes without returning its response, but duplicates traffic and can repeat side effects unless the environment is isolated.
+- **Recreate** — avoids temporary version coexistence, but stops the old version before the new one starts and therefore introduces downtime.
+- **Feature flags** — decouples deployment from exposure and supports gradual adoption, but temporary flags and their targeting rules require ownership and cleanup.
 
 ## When to use
-- Recreate for non-critical batch jobs or internal tools where downtime is acceptable.
-- Rolling as the default for standard stateless web services needing zero downtime.
-- Blue-green when instant, atomic rollback matters more than doubled cost (e.g., regulated releases).
-- Canary for high-traffic services where you want to validate a release on real users before full exposure.
-- Feature flags for long-running, gradual feature rollout and experimentation decoupled from deploys.
+- You need an uncomplicated default rollout for a stateless service that can run both versions briefly.
+- You need an atomic route switch and retained rollback target for a release that passes validation before receiving production responses.
+- You need a small production cohort to expose a release to real load before broad promotion.
+- You need to test a candidate against representative requests without using its response or production writes.
+- You need to release selected behavior over time independently from infrastructure rollout.
 
 ## Alternatives
-- **Shadow deployment**: mirror real traffic to the new version without affecting users — excellent pre-release validation, but doubles traffic handling and yields no user-facing signal.
-- **A/B testing**: route by cohort for experiment measurement rather than safety, trading operational simplicity for statistically meaningful comparison.
-- **In-place updates (immutable VMs)**: bake a new image and swap instances, giving full-stack reproducibility at the cost of slower, heavier cutover than containers.
+- **Recreate deployment** — a brief maintenance window is acceptable and the service has no meaningful uptime requirement.
+- **A/B testing** — you need a persistent experiment with control and treatment cohorts, not a temporary infrastructure rollout.
+- **Feature flags** — you need application-level targeting or entitlement logic, but you do not need to compare two complete runtime versions.
+- **In-place host updates** — the platform is VM-based and a host or virtual machine swap is simpler than maintaining parallel application environments.
 
 ## Related
-- [Container Internals](01-container-internals.md)
-- [Kubernetes](02-kubernetes.md)
-- [CI/CD and GitOps](04-cicd-gitops.md)
-- [Observability](05-observability.md)
+- [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](01-container-internals.md)
+- [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
+- [CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)](04-cicd-gitops.md)
+- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)

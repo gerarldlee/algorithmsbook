@@ -1,40 +1,67 @@
 ---
-title: "Unsupervised Learning"
+title: "Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)"
 weight: 2
 toc: true
 ---
 
 ## What it is
-Unsupervised learning finds structure — clusters, densities, or lower-dimensional representations — in unlabeled data. It has no target labels; the algorithm discovers patterns directly from the input distribution.
+Unsupervised learning is the branch of machine learning that discovers structure in data without target labels. It groups related examples, identifies density, or finds lower-dimensional representations that preserve useful properties of the input distribution.
 
 ## How it works
-- **k-means** alternates between assigning each point to the nearest centroid and recomputing centroids as cluster means, minimizing within-cluster sum of squares. It requires choosing `k` in advance.
-- **Hierarchical clustering** builds a dendrogram by agglomerative (bottom-up) or divisive (top-down) merging/splitting of clusters, using a linkage criterion (single, complete, average).
-- **DBSCAN** groups points that are densely connected via ε-neighborhoods, marking sparse points as noise; it discovers arbitrary-shape clusters and requires no `k`.
-- **PCA** projects data onto the principal components — the eigenvectors of the covariance matrix with the largest eigenvalues — maximizing retained variance for dimensionality reduction.
+An unsupervised pipeline chooses whether the output is a partition, a hierarchy, or a transformed representation, then applies an objective appropriate to that output. The result still requires evaluation: a visually plausible cluster is not evidence of useful structure. Scikit-learn provides standard implementations of these methods, FAISS provides optimized large-scale clustering and nearest-neighbor search, and PyTorch provides tensor primitives for custom implementations. Domain labels and downstream tasks provide external validation when available.
 
-Clustering quality is assessed with internal metrics such as the silhouette score (cohesion vs. separation) or the Davies–Bouldin index, and, when labels exist, external metrics like adjusted Rand index.
+```yaml
+pipeline:
+  input:
+    features: "numeric feature matrix"
+    preprocessing: ["impute missing values", "scale sensitive features"]
+  representations:
+    k_means:
+      parameters: {k: 8, initialization: "k-means++", restarts: 10}
+      objective: "within-cluster sum of squares"
+    hierarchical:
+      parameters: {linkage: "ward", criterion: "increase in within-cluster sum of squares"}
+      output: "dendrogram"
+    pca:
+      parameters: {components: 2, standardization: true}
+      objective: "maximum retained variance"
+  evaluation:
+    internal: ["silhouette score", "Davies-Bouldin index"]
+    external: ["adjusted Rand index", "normalized mutual information"]
+    downstream: "cluster quality on a held-out task"
+```
 
-## Tradeoffs
+**K-means** alternates between assigning each point to its nearest centroid and replacing each centroid with the mean of its assigned points. K-means++ initialization reduces the chance of starting with distant centroids, and multiple restarts reduce sensitivity to the initial assignment. The method requires `k` and favors compact, similarly sized clusters.
 
-| Method | Strengths | Weaknesses |
+**Hierarchical clustering** produces a tree of merges or splits. Agglomerative clustering starts with one cluster per observation and merges clusters according to a **linkage** rule such as single, complete, average, or Ward linkage. Ward is a linkage criterion rather than a standalone vector-distance metric: it chooses the merge that minimizes the increase in the within-cluster sum of squared Euclidean deviations. Divisive clustering starts with one cluster and splits it using a chosen criterion. A dendrogram can be cut at different levels to obtain different cluster counts without rerunning the fit.
+
+**Principal component analysis (PCA)** centers the data and finds directions of maximum variance. The first principal component is the leading eigenvector of the covariance matrix; later components are orthogonal directions with smaller eigenvalues. PCA can rotate the data into a lower-dimensional coordinate system, or project it onto a chosen number of components while retaining as much variance as the linear model permits. **DBSCAN** is a density-based alternative that groups points connected through epsilon neighborhoods; points with insufficient neighbors are noise unless they are density-reachable border points of a core cluster.
+
+## Complexity
+Let `n` be the number of examples, `d` the number of features, `k` the number of clusters, and `I` the number of K-means iterations.
+
+| Operation | Representative time | Additional space |
 | --- | --- | --- |
-| k-means | Fast, simple, scales well | Needs `k`; assumes spherical clusters; sensitive to outliers |
-| Hierarchical | Dendrogram, any `k` after fit | O(n³) or O(n² log n); no global objective |
-| DBSCAN | Arbitrary shapes, noise detection | Sensitive to ε/minPts; poor on varying densities |
-| PCA | Linear, deterministic, fast | Only linear structure; components hard to interpret |
+| K-means iteration | O(nkd) | O(n + kd) for assignments and centroid values |
+| K-means fit | O(Inkd) | O(n + kd) for assignments and centroid values, excluding the O(nd) stored input |
+| Naive agglomerative hierarchy | O(n^3 d) when pairwise distances are recomputed after merges | O(n^2) if pairwise distances are cached |
+| PCA with a dense covariance matrix | O(nd^2 + d^3) | O(d^2) for the covariance matrix and eigenvectors, excluding the input |
+| PCA projection to `q` components | O(ndq) | O(nq) for materialized projected values or O(1) per row when streamed |
+| DBSCAN with a fixed-dimensional spatial tree | O(n log n + R) expected under bounded-dimension query assumptions, where `R` is the number of returned neighbor pairs; dense neighborhoods can reach O(n²) | O(n + R) for labels, returned neighbors, and queue state |
 
 ## When to use
-- Customer/market segmentation where a fixed number of groups is known (k-means).
-- Exploratory analysis requiring a full cluster hierarchy (hierarchical clustering).
-- Geographic or spatial data with noise and irregular shapes (DBSCAN).
-- Dimensionality reduction or feature de-correlation before visualization/modeling (PCA).
+- You need to segment customers or observations and a fixed number of compact groups is an acceptable assumption.
+- You need a hierarchy so you can inspect cluster merges and choose a level after fitting.
+- You need to detect irregular clusters and noise in spatial or density-based data.
+- You need deterministic, linear dimensionality reduction for visualization or downstream modeling.
+- You have no labels but can validate the representation with a downstream task or domain expert review.
 
 ## Alternatives
-- **Gaussian Mixture Models (GMM)** — soft, probabilistic clusters with covariance, but needs EM iterations and a chosen component count.
-- **t-SNE / UMAP** — superior non-linear visualization, but stochastic and not suited for downstream reconstruction.
+- **Gaussian mixture models** — provide soft cluster probabilities and elliptical cluster shapes, but require an EM procedure and a component-count choice.
+- **t-SNE and UMAP** — reveal local non-linear neighborhoods in visualizations, but neighborhood parameters and random initialization affect the display and they are not reconstruction models.
+- **Autoencoders** — learn non-linear compressed representations, but need architecture design, training, and a reconstruction or downstream objective.
 
 ## Related
 - [Supervised Learning](01-supervised-learning.md)
-- [Neural Networks](03-neural-networks.md)
-- [Deep Learning Architectures](04-deep-learning-architectures.md)
+- [ML System Design](../02-mlops/01-ml-system-design.md)
+- [Vector Databases](../03-genai/01-vector-databases.md)

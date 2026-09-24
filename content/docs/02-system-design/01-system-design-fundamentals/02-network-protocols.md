@@ -75,4 +75,4 @@ Choose a protocol by matching its guarantees to the operation rather than by tra
 - [Fundamentals of System Design](01-fundamentals.md)
 - [Load Balancing Strategies](03-load-balancing.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](05-api-paradigms.md)
+- [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)

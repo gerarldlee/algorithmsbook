@@ -5,8 +5,8 @@ weight: 2
 
 Shipping software: container internals, Kubernetes, deployment strategies, CI/CD and GitOps, and observability.
 
-- [Container Internals](01-container-internals.md)
-- [Kubernetes](02-kubernetes.md)
-- [Deployment Strategies](03-deployment-strategies.md)
-- [CI/CD and GitOps](04-cicd-gitops.md)
-- [Observability](05-observability.md)
+- [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](01-container-internals.md)
+- [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
+- [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
+- [CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)](04-cicd-gitops.md)
+- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)
