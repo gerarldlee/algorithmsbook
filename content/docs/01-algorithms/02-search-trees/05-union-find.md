@@ -1,102 +1,143 @@
 ---
-title: "Union-Find (Disjoint Set Union)"
+title: "Disjoint-Set Data Structures (Union-Find with Path Compression)"
 weight: 5
 toc: true
 ---
 
 ## What it is
-Union-find (disjoint-set union) maintains a collection of disjoint sets supporting two operations: `find(x)` returns the representative of the set containing `x`, and `union(x, y)` merges the two sets containing `x` and `y`. With union by rank/size and path compression, both operations run in nearly-constant amortized time.
+Union-find, also called disjoint-set union, maintains a partition of elements into disjoint sets. `find(x)` returns the representative of `x`, `union(x, y)` merges the sets containing `x` and `y`, and `connected(x, y)` reports whether both elements share a representative. Union by rank or size plus path compression makes these operations O(α(n)) amortized time.
 
 ## How it works
-Each element points to a parent, with a root node whose parent is itself acting as the set representative. `find` follows parent pointers to the root and, via path compression, re-links every visited node directly to the root. `union` attaches the root of the smaller (by rank or size) set under the root of the larger one, keeping trees shallow. Together these yield an amortized time of O(α(n)), where α is the inverse Ackermann function — effectively constant for any practical n.
+Every element stores a parent index. A root is its own parent and represents one set. `find` follows parent pointers to a root, then points each visited node directly to that root with **path compression**. `union` finds both roots and attaches the lower-rank or smaller tree below the higher-rank or larger one with **union by rank** or **union by size**. The root choice bounds tree height, while compression shortens future traversals.
+
+The implementations below expose the same `find`, `union`, and `connected` operations in all six languages. Applications use them for connected components, Kruskal's minimum spanning tree algorithm, image region grouping, and equivalence relations.
 
 ```java
 public class UnionFind {
     private final int[] parent;
     private final int[] rank;
 
-    public UnionFind(int n) {
-        parent = new int[n];
-        rank = new int[n];
-        for (int i = 0; i < n; i++) parent[i] = i;
+    public UnionFind(int size) {
+        parent = new int[size];
+        rank = new int[size];
+        for (int index = 0; index < size; index++) parent[index] = index;
     }
 
-    public int find(int x) {
-        if (parent[x] != x) parent[x] = find(parent[x]); // path compression
-        return parent[x];
+    public int find(int element) {
+        int root = element;
+        while (parent[root] != root) root = parent[root];
+        while (parent[element] != element) {
+            int next = parent[element];
+            parent[element] = root;
+            element = next;
+        }
+        return root;
     }
 
-    public boolean union(int x, int y) {
-        int rx = find(x), ry = find(y);
-        if (rx == ry) return false;
-        if (rank[rx] < rank[ry]) { int t = rx; rx = ry; ry = t; }
-        parent[ry] = rx;
-        if (rank[rx] == rank[ry]) rank[rx]++;
+    public boolean union(int left, int right) {
+        int leftRoot = find(left);
+        int rightRoot = find(right);
+        if (leftRoot == rightRoot) return false;
+        if (rank[leftRoot] < rank[rightRoot]) {
+            int swap = leftRoot;
+            leftRoot = rightRoot;
+            rightRoot = swap;
+        }
+        parent[rightRoot] = leftRoot;
+        if (rank[leftRoot] == rank[rightRoot]) rank[leftRoot]++;
         return true;
     }
 
-    public boolean connected(int x, int y) {
-        return find(x) == find(y);
+    public boolean connected(int left, int right) {
+        return find(left) == find(right);
     }
 }
 ```
 
 ```c
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct {
     int *parent;
     int *rank;
-    int n;
+    int size;
 } UnionFind;
 
-void uf_init(UnionFind *uf, int n) {
-    uf->n = n;
-    uf->parent = malloc(n * sizeof(int));
-    uf->rank = calloc(n, sizeof(int));
-    for (int i = 0; i < n; i++) uf->parent[i] = i;
+void union_find_init(UnionFind *union_find, int size) {
+    union_find->parent = malloc((size_t)size * sizeof(int));
+    union_find->rank = calloc((size_t)size, sizeof(int));
+    union_find->size = size;
+    for (int index = 0; index < size; index++) union_find->parent[index] = index;
 }
 
-int uf_find(UnionFind *uf, int x) {
-    if (uf->parent[x] != x)
-        uf->parent[x] = uf_find(uf, uf->parent[x]); /* path compression */
-    return uf->parent[x];
+void union_find_destroy(UnionFind *union_find) {
+    free(union_find->parent);
+    free(union_find->rank);
 }
 
-bool uf_union(UnionFind *uf, int x, int y) {
-    int rx = uf_find(uf, x), ry = uf_find(uf, y);
-    if (rx == ry) return false;
-    if (uf->rank[rx] < uf->rank[ry]) { int t = rx; rx = ry; ry = t; }
-    uf->parent[ry] = rx;
-    if (uf->rank[rx] == uf->rank[ry]) uf->rank[rx]++;
+int union_find_find(UnionFind *union_find, int element) {
+    int root = element;
+    while (union_find->parent[root] != root) root = union_find->parent[root];
+    while (union_find->parent[element] != element) {
+        int next = union_find->parent[element];
+        union_find->parent[element] = root;
+        element = next;
+    }
+    return root;
+}
+
+bool union_find_union(UnionFind *union_find, int left, int right) {
+    int left_root = union_find_find(union_find, left);
+    int right_root = union_find_find(union_find, right);
+    if (left_root == right_root) return false;
+    if (union_find->rank[left_root] < union_find->rank[right_root]) {
+        int swap = left_root;
+        left_root = right_root;
+        right_root = swap;
+    }
+    union_find->parent[right_root] = left_root;
+    if (union_find->rank[left_root] == union_find->rank[right_root]) {
+        union_find->rank[left_root]++;
+    }
     return true;
+}
+
+bool union_find_connected(UnionFind *union_find, int left, int right) {
+    return union_find_find(union_find, left) == union_find_find(union_find, right);
 }
 ```
 
 ```python
 class UnionFind:
-    def __init__(self, n):
-        self.parent = list(range(n))
-        self.rank = [0] * n
+    def __init__(self, size):
+        self.parent = list(range(size))
+        self.rank = [0] * size
 
-    def find(self, x):
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])  # path compression
-        return self.parent[x]
+    def find(self, element):
+        root = element
+        while self.parent[root] != root:
+            root = self.parent[root]
+        while self.parent[element] != element:
+            next_element = self.parent[element]
+            self.parent[element] = root
+            element = next_element
+        return root
 
-    def union(self, x, y):
-        rx, ry = self.find(x), self.find(y)
-        if rx == ry:
+    def union(self, left, right):
+        left_root = self.find(left)
+        right_root = self.find(right)
+        if left_root == right_root:
             return False
-        if self.rank[rx] < self.rank[ry]:
-            rx, ry = ry, rx
-        self.parent[ry] = rx
-        if self.rank[rx] == self.rank[ry]:
-            self.rank[rx] += 1
+        if self.rank[left_root] < self.rank[right_root]:
+            left_root, right_root = right_root, left_root
+        self.parent[right_root] = left_root
+        if self.rank[left_root] == self.rank[right_root]:
+            self.rank[left_root] += 1
         return True
 
-    def connected(self, x, y):
-        return self.find(x) == self.find(y)
+    def connected(self, left, right):
+        return self.find(left) == self.find(right)
 ```
 
 ```rust
@@ -106,35 +147,45 @@ pub struct UnionFind {
 }
 
 impl UnionFind {
-    pub fn new(n: usize) -> Self {
+    pub fn new(size: usize) -> Self {
         UnionFind {
-            parent: (0..n).collect(),
-            rank: vec![0; n],
+            parent: (0..size).collect(),
+            rank: vec![0; size],
         }
     }
 
-    pub fn find(&mut self, x: usize) -> usize {
-        if self.parent[x] != x {
-            let root = self.find(self.parent[x]);
-            self.parent[x] = root; // path compression
+    pub fn find(&mut self, element: usize) -> usize {
+        let mut root = element;
+        while self.parent[root] != root {
+            root = self.parent[root];
         }
-        self.parent[x]
+        let mut current = element;
+        while self.parent[current] != current {
+            let next = self.parent[current];
+            self.parent[current] = root;
+            current = next;
+        }
+        root
     }
 
-    pub fn union(&mut self, x: usize, y: usize) -> bool {
-        let mut rx = self.find(x);
-        let mut ry = self.find(y);
-        if rx == ry {
+    pub fn union(&mut self, left: usize, right: usize) -> bool {
+        let mut left_root = self.find(left);
+        let mut right_root = self.find(right);
+        if left_root == right_root {
             return false;
         }
-        if self.rank[rx] < self.rank[ry] {
-            std::mem::swap(&mut rx, &mut ry);
+        if self.rank[left_root] < self.rank[right_root] {
+            std::mem::swap(&mut left_root, &mut right_root);
         }
-        self.parent[ry] = rx;
-        if self.rank[rx] == self.rank[ry] {
-            self.rank[rx] += 1;
+        self.parent[right_root] = left_root;
+        if self.rank[left_root] == self.rank[right_root] {
+            self.rank[left_root] += 1;
         }
         true
+    }
+
+    pub fn connected(&mut self, left: usize, right: usize) -> bool {
+        self.find(left) == self.find(right)
     }
 }
 ```
@@ -144,25 +195,35 @@ export class UnionFind {
     private parent: number[];
     private rank: number[];
 
-    constructor(n: number) {
-        this.parent = Array.from({ length: n }, (_, i) => i);
-        this.rank = new Array(n).fill(0);
+    constructor(size: number) {
+        this.parent = Array.from({ length: size }, (_, index) => index);
+        this.rank = new Array<number>(size).fill(0);
     }
 
-    find(x: number): number {
-        if (this.parent[x] !== x) {
-            this.parent[x] = this.find(this.parent[x]); // path compression
+    find(element: number): number {
+        let root = element;
+        while (this.parent[root] !== root) root = this.parent[root];
+        let current = element;
+        while (this.parent[current] !== current) {
+            const next = this.parent[current];
+            this.parent[current] = root;
+            current = next;
         }
-        return this.parent[x];
+        return root;
     }
 
-    union(x: number, y: number): boolean {
-        let rx = this.find(x), ry = this.find(y);
-        if (rx === ry) return false;
-        if (this.rank[rx] < this.rank[ry]) [rx, ry] = [ry, rx];
-        this.parent[ry] = rx;
-        if (this.rank[rx] === this.rank[ry]) this.rank[rx]++;
+    union(left: number, right: number): boolean {
+        let leftRoot = this.find(left);
+        let rightRoot = this.find(right);
+        if (leftRoot === rightRoot) return false;
+        if (this.rank[leftRoot] < this.rank[rightRoot]) [leftRoot, rightRoot] = [rightRoot, leftRoot];
+        this.parent[rightRoot] = leftRoot;
+        if (this.rank[leftRoot] === this.rank[rightRoot]) this.rank[leftRoot]++;
         return true;
+    }
+
+    connected(left: number, right: number): boolean {
+        return this.find(left) === this.find(right);
     }
 }
 ```
@@ -175,56 +236,72 @@ type UnionFind struct {
 	rank   []int
 }
 
-func New(n int) *UnionFind {
-	parent := make([]int, n)
-	for i := range parent {
-		parent[i] = i
+func New(size int) *UnionFind {
+	parent := make([]int, size)
+	for index := range parent {
+		parent[index] = index
 	}
-	return &UnionFind{parent: parent, rank: make([]int, n)}
+	return &UnionFind{parent: parent, rank: make([]int, size)}
 }
 
-func (uf *UnionFind) Find(x int) int {
-	if uf.parent[x] != x {
-		uf.parent[x] = uf.Find(uf.parent[x]) // path compression
+func (unionFind *UnionFind) Find(element int) int {
+	root := element
+	for unionFind.parent[root] != root {
+		root = unionFind.parent[root]
 	}
-	return uf.parent[x]
+	current := element
+	for unionFind.parent[current] != current {
+		next := unionFind.parent[current]
+		unionFind.parent[current] = root
+		current = next
+	}
+	return root
 }
 
-func (uf *UnionFind) Union(x, y int) bool {
-	rx, ry := uf.Find(x), uf.Find(y)
-	if rx == ry {
+func (unionFind *UnionFind) Union(left, right int) bool {
+	leftRoot := unionFind.Find(left)
+	rightRoot := unionFind.Find(right)
+	if leftRoot == rightRoot {
 		return false
 	}
-	if uf.rank[rx] < uf.rank[ry] {
-		rx, ry = ry, rx
+	if unionFind.rank[leftRoot] < unionFind.rank[rightRoot] {
+		leftRoot, rightRoot = rightRoot, leftRoot
 	}
-	uf.parent[ry] = rx
-	if uf.rank[rx] == uf.rank[ry] {
-		uf.rank[rx]++
+	unionFind.parent[rightRoot] = leftRoot
+	if unionFind.rank[leftRoot] == unionFind.rank[rightRoot] {
+		unionFind.rank[leftRoot]++
 	}
 	return true
+}
+
+func (unionFind *UnionFind) Connected(left, right int) bool {
+	return unionFind.Find(left) == unionFind.Find(right)
 }
 ```
 
 ## Complexity
-| Operation | Time (amortized) | Space |
-| --- | --- | --- |
-| find (with path compression) | O(α(n)) | O(n) |
-| union (with union by rank/size) | O(α(n)) | O(n) |
-| connected | O(α(n)) | O(n) |
+| Operation | Time | Extra space | Stored state |
+| --- | --- | --- | --- |
+| `find` | O(α(n)) amortized | O(1) | O(n) total |
+| `union` | O(α(n)) amortized | O(1) | O(n) total |
+| `connected` | O(α(n)) amortized | O(1) | O(n) total |
 
-α(n) is the inverse Ackermann function, which grows so slowly it is below 5 for any n representable in the universe. Without both optimizations, find can degrade to O(n) and union to O(n) per operation in the worst case.
+α(n) is the inverse Ackermann function and remains below 5 for practical input sizes. Union by rank keeps individual tree height O(log n) even without compression. Path compression alone can still follow a chain of n elements, while combining both techniques makes the full operation sequence nearly constant amortized time.
 
 ## When to use
-- Detecting connected components in an undirected graph (e.g. Kruskal's MST algorithm).
-- Tracking connectivity in dynamic graph problems and percolation simulations.
-- Grouping elements into equivalence classes, such as accounts that share an email or network hosts that share a connection.
+- You process graph edges and only need to merge components without deleting connections.
+- You build a minimum spanning tree with Kruskal's algorithm and reject cycle-forming edges.
+- You repeatedly merge named or numeric objects into equivalence classes.
+- The operations dominate, while inspecting all edges or running a fresh graph traversal would be wasteful.
 
 ## Alternatives
-- DFS/BFS per query — O(V + E) to answer connectivity but recomputed from scratch each time; better when the graph is static and queried once.
-- Adjacency matrix with transitive closure — O(1) queries after O(V³) preprocessing, only viable for tiny static graphs.
-- Linked-list representation of sets — simpler union but O(n) find.
+- **DFS or BFS** — gives O(V + E) component discovery, which wins for a small number of static-graph queries.
+- **Transitive closure** — gives O(1) constant-time membership after O(V³) preprocessing with matrix methods, which is costly for large graphs.
+- **Linked-list sets** — makes merging simple but can require O(n) time to find a representative.
+- **Dynamic connectivity algorithms** — handle vertex or edge deletions, but need more structure than a basic union-find.
 
 ## Related
 - [Range Query Trees (Segment Trees and Fenwick Trees)](04-range-query-trees.md)
-- [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)
+- [Minimum Spanning Trees](../04-graphs/04-minimum-spanning-trees.md)
+- [Shortest Paths](../04-graphs/05-shortest-paths.md)
+- [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](../03-paradigms/05-amortized-analysis.md)

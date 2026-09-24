@@ -1,50 +1,53 @@
 ---
-title: "Tries and Suffix Trees"
+title: "Tries, Radix Trees, and Suffix Trees/Arrays"
 weight: 6
 toc: true
 ---
 
 ## What it is
-A trie (prefix tree) is a tree in which each node represents a prefix of one or more keys, with edges labeled by characters and a flag marking complete keys. A suffix tree compresses all suffixes of a string (and, with a sentinel, all substrings) into a compact tree enabling fast substring and pattern queries.
+A trie, or prefix tree, stores strings so that nodes represent prefixes. A radix tree compresses chains of single-child trie nodes into labeled edges. A suffix tree is a compact trie of all suffixes of one text, while a suffix array stores the starting positions of those suffixes in lexicographic order.
 
 ## How it works
-A trie stores each key by following one edge per character from the root, creating nodes on demand, and marking the final node as a terminal. Lookup, insertion, and prefix search each take O(L) time where L is the key length, independent of the number of stored keys. Suffix trees extend this idea to all suffixes of a single string, giving O(m) substring search for a pattern of length m.
+A trie follows one character per edge from the root, creates missing nodes during insertion, and marks the final node as a key endpoint. Exact search also requires that endpoint flag; prefix search succeeds at the node reached by the prefix. A radix tree stores a string on each edge, splitting an edge when a later key diverges inside it. Both structures make each operation linear in the inspected key length, although radix trees use fewer nodes and more edge-label bookkeeping.
 
-A string is an array of characters.  It can also be represented as a Trie — a tree data structure that's composed of nodes that are prefixes of each character of the string leading to the full string.
+A suffix tree builds a compact trie of the text's suffixes. A unique sentinel ensures that every suffix reaches a leaf, and suffix links connect suffixes that omit their first character. The compact edge labels let one comparison consume many characters, and suffix links support efficient repeated-substring and longest-common-substring algorithms. A suffix array instead sorts suffix positions. Substring search can binary-search the array and compare candidates; a longest-common-prefix array lets the implementation skip portions of matching text.
+
+The implementations below expose the same string-based `insert`, `search`, and `startsWith` operations in all six languages. Production trie indexes replace fixed branches with maps, arrays, or compressed transitions according to key size and lookup patterns.
 
 ```java
 import java.util.HashMap;
 import java.util.Map;
 
 public class Trie {
-    static class Node {
-        Map<Character, Node> children = new HashMap<>();
-        boolean isEnd = false;
+    static class TrieNode {
+        Map<Character, TrieNode> children = new HashMap<>();
+        boolean isEnd;
     }
 
-    private final Node root = new Node();
+    private final TrieNode root = new TrieNode();
 
     public void insert(String word) {
-        Node cur = root;
-        for (char c : word.toCharArray())
-            cur = cur.children.computeIfAbsent(c, k -> new Node());
-        cur.isEnd = true;
+        TrieNode current = root;
+        for (char character : word.toCharArray()) {
+            current = current.children.computeIfAbsent(character, key -> new TrieNode());
+        }
+        current.isEnd = true;
     }
 
     public boolean search(String word) {
-        Node cur = root;
-        for (char c : word.toCharArray()) {
-            cur = cur.children.get(c);
-            if (cur == null) return false;
+        TrieNode current = root;
+        for (char character : word.toCharArray()) {
+            current = current.children.get(character);
+            if (current == null) return false;
         }
-        return cur.isEnd;
+        return current.isEnd;
     }
 
     public boolean startsWith(String prefix) {
-        Node cur = root;
-        for (char c : prefix.toCharArray()) {
-            cur = cur.children.get(c);
-            if (cur == null) return false;
+        TrieNode current = root;
+        for (char character : prefix.toCharArray()) {
+            current = current.children.get(character);
+            if (current == null) return false;
         }
         return true;
     }
@@ -55,42 +58,79 @@ public class Trie {
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef struct TrieNode {
-    struct TrieNode *children[26];
+typedef struct TrieNode TrieNode;
+
+typedef struct TrieEdge {
+    unsigned char value;
+    TrieNode *child;
+    struct TrieEdge *next;
+} TrieEdge;
+
+struct TrieNode {
+    TrieEdge *children;
     bool is_end;
-} TrieNode;
+};
+
+typedef struct {
+    TrieNode *root;
+} Trie;
 
 TrieNode *trie_node_new(void) {
-    TrieNode *n = calloc(1, sizeof(TrieNode));
-    return n;
+    TrieNode *node = calloc(1, sizeof(TrieNode));
+    return node;
 }
 
-void trie_insert(TrieNode *root, const char *word) {
-    TrieNode *cur = root;
-    for (const char *p = word; *p; p++) {
-        int idx = *p - 'a';
-        if (!cur->children[idx]) cur->children[idx] = trie_node_new();
-        cur = cur->children[idx];
+void trie_node_destroy(TrieNode *node) {
+    TrieEdge *edge = node->children;
+    while (edge) {
+        TrieEdge *next = edge->next;
+        trie_node_destroy(edge->child);
+        free(edge);
+        edge = next;
     }
-    cur->is_end = true;
+    free(node);
 }
 
-bool trie_search(TrieNode *root, const char *word) {
-    TrieNode *cur = root;
-    for (const char *p = word; *p; p++) {
-        cur = cur->children[*p - 'a'];
-        if (!cur) return false;
-    }
-    return cur->is_end;
+Trie *trie_new(void) {
+    Trie *trie = malloc(sizeof(Trie));
+    trie->root = trie_node_new();
+    return trie;
 }
 
-bool trie_starts_with(TrieNode *root, const char *prefix) {
-    TrieNode *cur = root;
-    for (const char *p = prefix; *p; p++) {
-        cur = cur->children[*p - 'a'];
-        if (!cur) return false;
+void trie_destroy(Trie *trie) {
+    trie_node_destroy(trie->root);
+    free(trie);
+}
+
+TrieNode *trie_walk(TrieNode *root, const char *value, bool create) {
+    TrieNode *current = root;
+    for (const unsigned char *cursor = (const unsigned char *)value; *cursor; cursor++) {
+        TrieEdge *edge = current->children;
+        while (edge && edge->value != *cursor) edge = edge->next;
+        if (!edge) {
+            if (!create) return NULL;
+            edge = malloc(sizeof(TrieEdge));
+            edge->value = *cursor;
+            edge->child = trie_node_new();
+            edge->next = current->children;
+            current->children = edge;
+        }
+        current = edge->child;
     }
-    return true;
+    return current;
+}
+
+void trie_insert(Trie *trie, const char *word) {
+    trie_walk(trie->root, word, true)->is_end = true;
+}
+
+bool trie_search(Trie *trie, const char *word) {
+    TrieNode *node = trie_walk(trie->root, word, false);
+    return node && node->is_end;
+}
+
+bool trie_starts_with(Trie *trie, const char *prefix) {
+    return trie_walk(trie->root, prefix, false) != NULL;
 }
 ```
 
@@ -106,24 +146,24 @@ class Trie:
         self.root = TrieNode()
 
     def insert(self, word):
-        cur = self.root
-        for ch in word:
-            cur = cur.children.setdefault(ch, TrieNode())
-        cur.is_end = True
+        current = self.root
+        for character in word:
+            current = current.children.setdefault(character, TrieNode())
+        current.is_end = True
 
     def search(self, word):
-        cur = self.root
-        for ch in word:
-            cur = cur.children.get(ch)
-            if cur is None:
+        current = self.root
+        for character in word:
+            current = current.children.get(character)
+            if current is None:
                 return False
-        return cur.is_end
+        return current.is_end
 
     def starts_with(self, prefix):
-        cur = self.root
-        for ch in prefix:
-            cur = cur.children.get(ch)
-            if cur is None:
+        current = self.root
+        for character in prefix:
+            current = current.children.get(character)
+            if current is None:
                 return False
         return True
 ```
@@ -132,41 +172,44 @@ class Trie:
 use std::collections::HashMap;
 
 #[derive(Default)]
-pub struct TrieNode {
+struct TrieNode {
     children: HashMap<char, TrieNode>,
     is_end: bool,
 }
 
-#[derive(Default)]
 pub struct Trie {
     root: TrieNode,
 }
 
 impl Trie {
+    pub fn new() -> Self {
+        Trie { root: TrieNode::default() }
+    }
+
     pub fn insert(&mut self, word: &str) {
-        let mut cur = &mut self.root;
-        for c in word.chars() {
-            cur = cur.children.entry(c).or_default();
+        let mut current = &mut self.root;
+        for character in word.chars() {
+            current = current.children.entry(character).or_default();
         }
-        cur.is_end = true;
+        current.is_end = true;
     }
 
     pub fn search(&self, word: &str) -> bool {
-        let mut cur = &self.root;
-        for c in word.chars() {
-            match cur.children.get(&c) {
-                Some(n) => cur = n,
+        let mut current = &self.root;
+        for character in word.chars() {
+            match current.children.get(&character) {
+                Some(node) => current = node,
                 None => return false,
             }
         }
-        cur.is_end
+        current.is_end
     }
 
     pub fn starts_with(&self, prefix: &str) -> bool {
-        let mut cur = &self.root;
-        for c in prefix.chars() {
-            match cur.children.get(&c) {
-                Some(n) => cur = n,
+        let mut current = &self.root;
+        for character in prefix.chars() {
+            match current.children.get(&character) {
+                Some(node) => current = node,
                 None => return false,
             }
         }
@@ -176,12 +219,8 @@ impl Trie {
 ```
 
 ```typescript
-interface TrieChildren {
-    [key: string]: TrieNode;
-}
-
 class TrieNode {
-    children: TrieChildren = {};
+    children: Record<string, TrieNode> = {};
     isEnd = false;
 }
 
@@ -189,28 +228,33 @@ export class Trie {
     private root = new TrieNode();
 
     insert(word: string): void {
-        let cur = this.root;
-        for (const c of word) {
-            if (!cur.children[c]) cur.children[c] = new TrieNode();
-            cur = cur.children[c];
+        let current = this.root;
+        for (const character of word) {
+            const next = current.children[character];
+            if (next) current = next;
+            else {
+                const node = new TrieNode();
+                current.children[character] = node;
+                current = node;
+            }
         }
-        cur.isEnd = true;
+        current.isEnd = true;
     }
 
     search(word: string): boolean {
-        let cur = this.root;
-        for (const c of word) {
-            cur = cur.children[c];
-            if (!cur) return false;
+        let current: TrieNode | null = this.root;
+        for (const character of word) {
+            current = current.children[character];
+            if (!current) return false;
         }
-        return cur.isEnd;
+        return current.isEnd;
     }
 
     startsWith(prefix: string): boolean {
-        let cur = this.root;
-        for (const c of prefix) {
-            cur = cur.children[c];
-            if (!cur) return false;
+        let current: TrieNode | null = this.root;
+        for (const character of prefix) {
+            current = current.children[character];
+            if (!current) return false;
         }
         return true;
     }
@@ -225,45 +269,43 @@ type TrieNode struct {
 	isEnd    bool
 }
 
-func newTrieNode() *TrieNode {
-	return &TrieNode{children: make(map[rune]*TrieNode)}
-}
-
 type Trie struct {
 	root *TrieNode
 }
 
 func New() *Trie {
-	return &Trie{root: newTrieNode()}
+	return &Trie{root: &TrieNode{children: make(map[rune]*TrieNode)}}
 }
 
-func (t *Trie) Insert(word string) {
-	cur := t.root
-	for _, c := range word {
-		if cur.children[c] == nil {
-			cur.children[c] = newTrieNode()
+func (trie *Trie) Insert(word string) {
+	current := trie.root
+	for _, character := range word {
+		next := current.children[character]
+		if next == nil {
+			next = &TrieNode{children: make(map[rune]*TrieNode)}
+			current.children[character] = next
 		}
-		cur = cur.children[c]
+		current = next
 	}
-	cur.isEnd = true
+	current.isEnd = true
 }
 
-func (t *Trie) Search(word string) bool {
-	cur := t.root
-	for _, c := range word {
-		cur = cur.children[c]
-		if cur == nil {
+func (trie *Trie) Search(word string) bool {
+	current := trie.root
+	for _, character := range word {
+		current = current.children[character]
+		if current == nil {
 			return false
 		}
 	}
-	return cur.isEnd
+	return current.isEnd
 }
 
-func (t *Trie) StartsWith(prefix string) bool {
-	cur := t.root
-	for _, c := range prefix {
-		cur = cur.children[c]
-		if cur == nil {
+func (trie *Trie) StartsWith(prefix string) bool {
+	current := trie.root
+	for _, character := range prefix {
+		current = current.children[character]
+		if current == nil {
 			return false
 		}
 	}
@@ -272,27 +314,31 @@ func (t *Trie) StartsWith(prefix string) bool {
 ```
 
 ## Complexity
-| Operation | Time | Space |
+| Structure and operation | Time | Space or output |
 | --- | --- | --- |
-| Trie insert | O(L) | O(L) per key |
-| Trie search | O(L) | O(1) |
-| Trie prefix search (startsWith) | O(L) | O(1) |
-| Suffix tree build | O(n) | O(n) |
-| Suffix tree substring search | O(m) | O(1) |
+| Trie insert, exact search, or prefix search | O(L) | O(L) nodes per inserted key in the worst case |
+| Radix-tree insert, exact search, or prefix search | O(L) | O(L) stored key bytes in the worst case |
+| Suffix-tree construction | O(n) | O(n) |
+| Suffix-tree substring search | O(m) | O(1) auxiliary space |
+| Suffix-array construction with prefix doubling | O(n log n) | O(n) |
+| Suffix-array substring search with LCP support | O(m + log n) | O(n) for the array and LCP data |
 
-Here L is the length of the key and m the length of the pattern, independent of the total number of stored keys. A suffix tree over a string of length n can be built in O(n) time (Ukkonen's algorithm).
+Here `L` is the inspected key length, `m` is the pattern length, and `n` is the fixed text length. Ukkonen's suffix-tree construction and linear-time suffix-array construction can reduce the corresponding O(n log n) build bound, at the cost of more involved algorithms.
 
 ## When to use
-- Autocomplete, spell-checking, and predictive text, where prefix lookups are the dominant query.
-- IP routing (longest-prefix match) and dictionary implementations.
-- Storing large sets of strings with shared prefixes to save memory over separate entries.
-- Suffix tree: fast repeated substring, longest repeated substring, and longest common substring queries over a fixed text.
+- You need exact-key or prefix lookup for a large set of strings.
+- Shared prefixes dominate and ordered string traversal is not required.
+- You need fixed-text substring, repeated-substring, or longest-common-substring queries.
+- You need longest-prefix matching over router prefixes or another hierarchical address set.
 
 ## Alternatives
-- Hash table of strings — O(L) average lookup with less pointer overhead, but no prefix or ordered traversal.
-- Balanced BST of strings — O(L log n) lookups with ordered iteration but slower and more memory.
-- Ternary search tree — combines trie prefix behavior with BST memory efficiency at the cost of O(L log n)-ish average time.
+- **Hash table of strings** — gives expected O(L) exact lookup with simpler storage, but no direct prefix or ordered traversal.
+- **Balanced search tree of strings** — gives O(L log n) worst-case comparison time and ordered iteration, with larger constants.
+- **Ternary search tree** — can reduce node count with skewed string distributions, but lookup is O(L) only under balance conditions and is commonly O(L log n).
+- **Suffix array** — has compact array storage and efficient binary search, but substring queries need LCP data or repeated comparisons.
+- **Aho-Corasick automaton** — wins for matching many patterns in one pass, but costs more memory than independent tries.
 
 ## Related
 - [Binary Search Trees](01-binary-search-trees.md)
-- [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)
+- [Divide and Conquer Sorting](../03-paradigms/01-divide-and-conquer-sorting.md)
+- [Amortized Analysis](../03-paradigms/05-amortized-analysis.md)

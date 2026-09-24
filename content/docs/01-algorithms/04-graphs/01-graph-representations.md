@@ -1,52 +1,70 @@
 ---
-title: "Graph Representations"
+title: "Graph Representations (Adjacency Matrix, Adjacency List, Edge List)"
 weight: 1
 toc: true
 ---
 
 ## What it is
-A graph is a set of vertices (nodes) connected by edges. It can be directed or undirected, weighted or unweighted, and is the foundation for modeling networks, dependencies, and relationships.
+A **graph representation** stores the same vertices and edges in a form optimized for different operations: an adjacency matrix for constant-time edge tests, an adjacency list for efficient neighbor iteration, and an edge list for compact edge processing.
 
 ## How it works
-A graph is a data structure that's composed of edges (lines connecting one vertex to another) and vertices (nodes).  We could say that an array and a linked list is a graph.
-
-The two canonical representations are the **adjacency matrix** (a V×V grid where cell `[u][v]` holds the edge weight or a boolean) and the **adjacency list** (an array of lists, one per vertex, holding its neighbors). Matrix lookups are O(1) but consume O(V²) space regardless of sparsity; lists use O(V+E) space and iterate neighbors fast, making them the default choice for sparse graphs.
+A graph has a fixed vertex count and either directed or undirected edges. `addEdge` records the edge in all three representations. `hasEdge` uses the adjacency list, `neighbors` returns the vertices that adjacency-list traversal visits, and `edges` exposes the edge-list view.
 
 ```java
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class GraphRepr {
-    // Adjacency list
-    List<List<Integer>> adj;
-    int V;
+public class Graph {
+    public record Edge(int from, int to, int weight) {}
 
-    public GraphRepr(int v) {
-        this.V = v;
-        this.adj = new ArrayList<>();
-        for (int i = 0; i < v; i++) adj.add(new ArrayList<>());
+    private final int vertexCount;
+    private final boolean directed;
+    private final List<List<Integer>> adjacency;
+    private final List<Edge> edges;
+    private final int[][] matrix;
+
+    public Graph(int vertexCount, boolean directed) {
+        this.vertexCount = vertexCount;
+        this.directed = directed;
+        this.adjacency = new ArrayList<>();
+        this.edges = new ArrayList<>();
+        this.matrix = new int[vertexCount][vertexCount];
+        for (int i = 0; i < vertexCount; i++) adjacency.add(new ArrayList<>());
     }
 
-    public void addEdge(int u, int v, boolean undirected) {
-        adj.get(u).add(v);
-        if (undirected) adj.get(v).add(u);
+    public void addEdge(int from, int to, int weight) {
+        adjacency.get(from).add(to);
+        matrix[from][to] = weight;
+        edges.add(new Edge(from, to, weight));
+        if (!directed) {
+            adjacency.get(to).add(from);
+            matrix[to][from] = weight;
+        }
     }
 
-    // Adjacency matrix
-    int[][] matrix;
-
-    public void buildMatrix(int v) {
-        matrix = new int[v][v];
+    public boolean hasEdge(int from, int to) {
+        return adjacency.get(from).contains(to);
     }
 
-    public void addMatrixEdge(int u, int v, int w) {
-        matrix[u][v] = w;
+    public List<Integer> neighbors(int vertex) {
+        return List.copyOf(adjacency.get(vertex));
+    }
+
+    public List<Edge> edges() {
+        return List.copyOf(edges);
     }
 }
 ```
 
 ```c
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
+
+typedef struct {
+    int from;
+    int to;
+    int weight;
+} Edge;
 
 typedef struct Node {
     int vertex;
@@ -54,171 +72,283 @@ typedef struct Node {
 } Node;
 
 typedef struct {
-    int V;
-    Node** adj; // adjacency list
-    int** matrix; // adjacency matrix
+    int vertex_count;
+    bool directed;
+    Node** adjacency;
+    int** matrix;
+    Edge* edges;
+    int edge_count;
+    int edge_capacity;
 } Graph;
 
-Graph* createGraph(int V) {
-    Graph* g = malloc(sizeof(Graph));
-    g->V = V;
-    g->adj = calloc(V, sizeof(Node*));
-    g->matrix = calloc(V, sizeof(int*));
-    for (int i = 0; i < V; i++) g->matrix[i] = calloc(V, sizeof(int));
-    return g;
-}
-
-void addEdgeList(Graph* g, int u, int v) {
-    Node* n = malloc(sizeof(Node));
-    n->vertex = v;
-    n->next = g->adj[u];
-    g->adj[u] = n;
-}
-
-void addEdgeMatrix(Graph* g, int u, int v, int w) {
-    g->matrix[u][v] = w;
-}
-
-void freeGraph(Graph* g) {
-    for (int i = 0; i < g->V; i++) {
-        Node* cur = g->adj[i];
-        while (cur) { Node* t = cur; cur = cur->next; free(t); }
-        free(g->matrix[i]);
+Graph* graph_create(int vertex_count, bool directed) {
+    Graph* graph = calloc(1, sizeof(Graph));
+    graph->vertex_count = vertex_count;
+    graph->directed = directed;
+    graph->adjacency = calloc(vertex_count, sizeof(Node*));
+    graph->matrix = calloc(vertex_count, sizeof(int*));
+    for (int i = 0; i < vertex_count; i++) {
+        graph->matrix[i] = calloc(vertex_count, sizeof(int));
     }
-    free(g->adj);
-    free(g->matrix);
-    free(g);
+    return graph;
+}
+
+void graph_add_edge(Graph* graph, int from, int to, int weight) {
+    Node* node = malloc(sizeof(Node));
+    node->vertex = to;
+    node->next = graph->adjacency[from];
+    graph->adjacency[from] = node;
+    graph->matrix[from][to] = weight;
+    if (graph->edge_count == graph->edge_capacity) {
+        graph->edge_capacity = graph->edge_capacity == 0 ? 4 : graph->edge_capacity * 2;
+        graph->edges = realloc(graph->edges, graph->edge_capacity * sizeof(Edge));
+    }
+    graph->edges[graph->edge_count++] = (Edge){from, to, weight};
+    if (!graph->directed) {
+        node = malloc(sizeof(Node));
+        node->vertex = from;
+        node->next = graph->adjacency[to];
+        graph->adjacency[to] = node;
+        graph->matrix[to][from] = weight;
+    }
+}
+
+bool graph_has_edge(const Graph* graph, int from, int to) {
+    for (Node* node = graph->adjacency[from]; node; node = node->next) {
+        if (node->vertex == to) return true;
+    }
+    return false;
+}
+
+int graph_neighbors(const Graph* graph, int vertex, int* output) {
+    int count = 0;
+    for (Node* node = graph->adjacency[vertex]; node; node = node->next) {
+        output[count++] = node->vertex;
+    }
+    return count;
+}
+
+Edge* graph_edges(const Graph* graph, int* count) {
+    *count = graph->edge_count;
+    return graph->edges;
 }
 ```
 
 ```python
-from collections import defaultdict
+from dataclasses import dataclass
 
 
-class GraphRepr:
-    def __init__(self, v: int):
-        self.v = v
-        # adjacency list
-        self.adj = defaultdict(list)
-        # adjacency matrix
-        self.matrix = [[0] * v for _ in range(v)]
+@dataclass(frozen=True)
+class Edge:
+    from_vertex: int
+    to_vertex: int
+    weight: int
 
-    def add_edge_list(self, u: int, v: int, undirected: bool = False) -> None:
-        self.adj[u].append(v)
-        if undirected:
-            self.adj[v].append(u)
 
-    def add_edge_matrix(self, u: int, v: int, w: int = 1) -> None:
-        self.matrix[u][v] = w
+class Graph:
+    def __init__(self, vertex_count: int, directed: bool) -> None:
+        self.vertex_count = vertex_count
+        self.directed = directed
+        self.adjacency: list[list[int]] = [[] for _ in range(vertex_count)]
+        self.matrix = [[0] * vertex_count for _ in range(vertex_count)]
+        self._edges: list[Edge] = []
+
+    def add_edge(self, from_vertex: int, to_vertex: int, weight: int) -> None:
+        self.adjacency[from_vertex].append(to_vertex)
+        self.matrix[from_vertex][to_vertex] = weight
+        self._edges.append(Edge(from_vertex, to_vertex, weight))
+        if not self.directed:
+            self.adjacency[to_vertex].append(from_vertex)
+            self.matrix[to_vertex][from_vertex] = weight
+
+    def has_edge(self, from_vertex: int, to_vertex: int) -> bool:
+        return to_vertex in self.adjacency[from_vertex]
+
+    def neighbors(self, vertex: int) -> list[int]:
+        return self.adjacency[vertex].copy()
+
+    def edges(self) -> list[Edge]:
+        return self._edges.copy()
 ```
 
 ```rust
-use std::collections::HashMap;
-
-#[derive(Default)]
-pub struct GraphRepr {
-    pub v: usize,
-    pub adj: HashMap<usize, Vec<usize>>,
-    pub matrix: Vec<Vec<i32>>,
+#[derive(Clone, Copy)]
+pub struct Edge {
+    pub from_vertex: usize,
+    pub to_vertex: usize,
+    pub weight: i32,
 }
 
-impl GraphRepr {
-    pub fn new(v: usize) -> Self {
-        GraphRepr {
-            v,
-            adj: HashMap::new(),
-            matrix: vec![vec![0; v]; v],
+pub struct Graph {
+    vertex_count: usize,
+    directed: bool,
+    adjacency: Vec<Vec<usize>>,
+    matrix: Vec<Vec<i32>>,
+    edges: Vec<Edge>,
+}
+
+impl Graph {
+    pub fn new(vertex_count: usize, directed: bool) -> Self {
+        Self {
+            vertex_count,
+            directed,
+            adjacency: vec![Vec::new(); vertex_count],
+            matrix: vec![vec![0; vertex_count]; vertex_count],
+            edges: Vec::new(),
         }
     }
 
-    pub fn add_edge_list(&mut self, u: usize, v: usize, undirected: bool) {
-        self.adj.entry(u).or_default().push(v);
-        if undirected {
-            self.adj.entry(v).or_default().push(u);
+    pub fn add_edge(&mut self, from_vertex: usize, to_vertex: usize, weight: i32) {
+        self.adjacency[from_vertex].push(to_vertex);
+        self.matrix[from_vertex][to_vertex] = weight;
+        self.edges.push(Edge { from_vertex, to_vertex, weight });
+        if !self.directed {
+            self.adjacency[to_vertex].push(from_vertex);
+            self.matrix[to_vertex][from_vertex] = weight;
         }
     }
 
-    pub fn add_edge_matrix(&mut self, u: usize, v: usize, w: i32) {
-        self.matrix[u][v] = w;
+    pub fn has_edge(&self, from_vertex: usize, to_vertex: usize) -> bool {
+        self.adjacency[from_vertex].contains(&to_vertex)
+    }
+
+    pub fn neighbors(&self, vertex: usize) -> &[usize] {
+        &self.adjacency[vertex]
+    }
+
+    pub fn edges(&self) -> &[Edge] {
+        &self.edges
     }
 }
 ```
 
 ```typescript
-export class GraphRepr {
-  readonly v: number;
-  adj: number[][];
-  matrix: number[][];
+export interface Edge {
+  fromVertex: number;
+  toVertex: number;
+  weight: number;
+}
 
-  constructor(v: number) {
-    this.v = v;
-    this.adj = Array.from({ length: v }, () => []);
-    this.matrix = Array.from({ length: v }, () => Array(v).fill(0));
+export class Graph {
+  readonly vertexCount: number;
+  readonly directed: boolean;
+  private readonly adjacency: number[][];
+  private readonly matrix: number[][];
+  private readonly edgeList: Edge[];
+
+  constructor(vertexCount: number, directed: boolean) {
+    this.vertexCount = vertexCount;
+    this.directed = directed;
+    this.adjacency = Array.from({ length: vertexCount }, () => []);
+    this.matrix = Array.from({ length: vertexCount }, () => Array(vertexCount).fill(0));
+    this.edgeList = [];
   }
 
-  addEdgeList(u: number, v: number, undirected = false): void {
-    this.adj[u].push(v);
-    if (undirected) this.adj[v].push(u);
+  addEdge(fromVertex: number, toVertex: number, weight: number): void {
+    this.adjacency[fromVertex].push(toVertex);
+    this.matrix[fromVertex][toVertex] = weight;
+    this.edgeList.push({ fromVertex, toVertex, weight });
+    if (!this.directed) {
+      this.adjacency[toVertex].push(fromVertex);
+      this.matrix[toVertex][fromVertex] = weight;
+    }
   }
 
-  addEdgeMatrix(u: number, v: number, w = 1): void {
-    this.matrix[u][v] = w;
+  hasEdge(fromVertex: number, toVertex: number): boolean {
+    return this.adjacency[fromVertex].includes(toVertex);
+  }
+
+  neighbors(vertex: number): number[] {
+    return this.adjacency[vertex].slice();
+  }
+
+  edges(): Edge[] {
+    return this.edgeList.map((edge) => ({ ...edge }));
   }
 }
 ```
 
 ```go
-package main
+package graph
 
-type GraphRepr struct {
-	V      int
-	Adj    [][]int
-	Matrix [][]int
+type Edge struct {
+	FromVertex int
+	ToVertex   int
+	Weight     int
 }
 
-func NewGraphRepr(v int) *GraphRepr {
-	adj := make([][]int, v)
-	matrix := make([][]int, v)
-	for i := 0; i < v; i++ {
-		adj[i] = []int{}
-		matrix[i] = make([]int, v)
+type Graph struct {
+	VertexCount int
+	Directed    bool
+	Adjacency   [][]int
+	Matrix      [][]int
+	Edges       []Edge
+}
+
+func NewGraph(vertexCount int, directed bool) *Graph {
+	adjacency := make([][]int, vertexCount)
+	matrix := make([][]int, vertexCount)
+	for i := 0; i < vertexCount; i++ {
+		adjacency[i] = []int{}
+		matrix[i] = make([]int, vertexCount)
 	}
-	return &GraphRepr{V: v, Adj: adj, Matrix: matrix}
+	return &Graph{VertexCount: vertexCount, Directed: directed, Adjacency: adjacency, Matrix: matrix}
 }
 
-func (g *GraphRepr) AddEdgeList(u, v int, undirected bool) {
-	g.Adj[u] = append(g.Adj[u], v)
-	if undirected {
-		g.Adj[v] = append(g.Adj[v], u)
+func (g *Graph) AddEdge(fromVertex, toVertex, weight int) {
+	g.Adjacency[fromVertex] = append(g.Adjacency[fromVertex], toVertex)
+	g.Matrix[fromVertex][toVertex] = weight
+	g.Edges = append(g.Edges, Edge{FromVertex: fromVertex, ToVertex: toVertex, Weight: weight})
+	if !g.Directed {
+		g.Adjacency[toVertex] = append(g.Adjacency[toVertex], fromVertex)
+		g.Matrix[toVertex][fromVertex] = weight
 	}
 }
 
-func (g *GraphRepr) AddEdgeMatrix(u, v, w int) {
-	g.Matrix[u][v] = w
+func (g *Graph) HasEdge(fromVertex, toVertex int) bool {
+	for _, vertex := range g.Adjacency[fromVertex] {
+		if vertex == toVertex {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Graph) Neighbors(vertex int) []int {
+	return append([]int(nil), g.Adjacency[vertex]...)
+}
+
+func (g *Graph) EdgesSnapshot() []Edge {
+	return append([]Edge(nil), g.Edges...)
 }
 ```
 
 ## Complexity
-| Representation | Operation | Time | Space |
-| --- | --- | --- | --- |
-| Adjacency list | add edge | O(1) | O(V+E) |
-| Adjacency list | check edge (u,v) | O(deg(u)) | O(V+E) |
-| Adjacency list | iterate neighbors | O(deg(u)) | O(V+E) |
-| Adjacency matrix | add edge | O(1) | O(V²) |
-| Adjacency matrix | check edge (u,v) | O(1) | O(V²) |
-| Adjacency matrix | iterate neighbors | O(V) | O(V²) |
+For \(V\) vertices, \(E\) edges, and maximum degree \(\Delta\), the storage includes one operation per representation.
+
+| Representation | Add edge | Test edge | Iterate neighbors | Space |
+| --- | --- | --- | --- | --- |
+| Adjacency matrix | O(1) | O(1) | O(V) | O(V²) |
+| Adjacency list | O(1) amortized | O(deg(u)) | O(deg(u)) | O(V+E) |
+| Edge list | O(1) amortized | O(E) | O(E) | O(E) |
+| Linked adjacency list | O(1) | O(deg(u)) | O(deg(u)) | O(V+E) |
+
+`O(deg(u))` is at most `O(Δ)`. Head insertion in a linked-list implementation costs `O(1)` because the example stores each new edge at the head.
 
 ## When to use
-- Use an adjacency list for sparse graphs (most real-world graphs) to save space and iterate neighbors efficiently.
-- Use an adjacency matrix for dense graphs or when constant-time edge-existence checks are needed (e.g., Floyd–Warshall).
-- Model relationships like social networks, road maps, dependency graphs, or state machines.
+- You need frequent neighbor iteration and the graph is sparse.
+- You need constant-time edge tests and the \(V^2\) matrix cost is acceptable.
+- You need compact storage for sorting or processing edges once.
+- You need static, cache-friendly adjacency for repeated read-heavy traversal.
 
 ## Alternatives
-- Edge list (array of `(u, v, w)` tuples) — most compact, ideal input for Kruskal's algorithm, but slow for neighbor iteration.
-- Incidence matrix — generalizes to hypergraphs and multigraphs, but wastes space with mostly-zero cells.
-- Compressed sparse row (CSR) — cache-friendly read-only adjacency for static graphs, but expensive to mutate.
+- **Compressed sparse row (CSR)** — packs adjacency into contiguous arrays for fast reads, but updates require shifting or rebuilding data.
+- **Hash adjacency map** — supports arbitrary vertex labels and expected constant-time edge tests, but iteration and locality are less predictable.
+- **Implicit graph** — generates neighbors on demand and avoids storage when the full edge set is never materialized.
 
 ## Related
-- [Graph Traversals (BFS and DFS)](02-graph-traversals.md)
-- [Topological Sort and Strongly Connected Components](03-topological-sort-scc.md)
-- [Minimum Spanning Trees](04-minimum-spanning-trees.md)
+- [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
+- [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)
+- [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)
+- [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
+- [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)

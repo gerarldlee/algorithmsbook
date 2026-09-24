@@ -1,123 +1,404 @@
 ---
-title: "Linked Lists and Node-Based Structures"
+title: "Linked Lists (Singly, Doubly, Skip Lists)"
 weight: 2
 toc: true
 ---
 
 ## What it is
 
-A linked list is a sequential collection of nodes, each holding a value and a pointer to the next (and, in a doubly linked list, the previous) node. Unlike an array, nodes need not be contiguous in memory, so the list can grow without relocating existing elements. The trade-off is O(n) access by index, since you must follow pointers from the head.
+A linked list is a sequential collection of nodes, each holding a value and a reference to the next node. Nodes do not need to occupy contiguous memory, so insertion and removal can avoid relocating the rest of the collection. The cost is that access by index requires following references from the head and therefore takes O(n) time.
 
 ## How it works
 
-A linked list is an array, or list, or collection of elements, represented contiguously, and does not impose a size limitation.  It can grow indefinitely.
+A singly linked list stores each value in a node with one forward reference. A doubly linked list adds a backward reference, which makes traversal in both directions and removal of a known node easier. A skip list adds multiple ordered levels so search can skip large ranges of nodes, at the cost of additional pointers and update work.
 
-- Represented contiguously means that it does not have to be contiguous in memory like an array; but from the developers perspective, it is represented contiguous.  A node that has a value, is linked to another node that has value, forming a list of nodes.
-- Does not have a size limitation means that we can create new nodes that holds new values and link it to the already existing list.
-
-Note that even though we can create the linked list data structure with a node, we can also create the linked list with an array implementation, which is more efficient with regards to space requirements, too.
-
-Java's `ArrayList` is a linked list too, and a linked list is not to be confused with the Java's `LinkedList`.  In fact, a stack and a queue is a form of linked list, too.  We will derive it as we go along.
+The implementation below demonstrates a singly linked list. Every language provides the same logical operations: push a value at the head, remove the first matching value, test membership, convert the list to an array, and report its size. A production implementation would also define ownership and memory-release rules for its language.
 
 ```java
-// a node that has a value, and a next that pointers to the next node
-class Node<T> {
-	T value;
-	Node next;
-	public Node(T value) {
-		this.value = value;
-	}
+class Node {
+    int value;
+    Node next;
 
-	// for a doubly linked list, we might use the prev pointer to point to the previous node
-	Node prev;
+    Node(int value) {
+        this.value = value;
+    }
+}
+
+class LinkedList {
+    private Node head;
+    private int size;
+
+    void pushFront(int value) {
+        Node node = new Node(value);
+        node.next = head;
+        head = node;
+        size++;
+    }
+
+    boolean remove(int value) {
+        if (head == null) return false;
+        if (head.value == value) {
+            head = head.next;
+            size--;
+            return true;
+        }
+        Node current = head;
+        while (current.next != null && current.next.value != value) {
+            current = current.next;
+        }
+        if (current.next == null) return false;
+        current.next = current.next.next;
+        size--;
+        return true;
+    }
+
+    boolean contains(int value) {
+        Node current = head;
+        while (current != null) {
+            if (current.value == value) return true;
+            current = current.next;
+        }
+        return false;
+    }
+
+    int[] toArray() {
+        int[] values = new int[size];
+        int index = 0;
+        Node current = head;
+        while (current != null) {
+            values[index++] = current.value;
+            current = current.next;
+        }
+        return values;
+    }
+
+    int length() {
+        return size;
+    }
 }
 ```
 
-Linked list Node representations:
-
-- Singly Linked Node - is represented by a Node with a value, and a single pointer that points to the next Node
-- Doubly Linked Node - is represented by a Node with a value, just like the singly linked list, but adds another pointer that points to the previous Node.  Like the Two-Pointers approach in the Arrays, we can also use a second pointer in a Singly Linked list to form a Doubly Linked list.  It will make it more convenient for us to track back the previous Node, when we are iterating from the middle, or from the tail.
-
-The same node representation maps one-to-one into the other five languages:
-
 ```c
+#include <stdbool.h>
 #include <stdlib.h>
 
-// a node that has a value, and a next that points to the next node
 typedef struct Node {
-	int value;
-	struct Node *next;
-	// for a doubly linked list, we might use the prev pointer to point to the previous node
-	struct Node *prev;
+    int value;
+    struct Node *next;
 } Node;
 
-Node *node_create(int value) {
-	Node *n = malloc(sizeof(Node));
-	n->value = value;
-	n->next = NULL;
-	n->prev = NULL;
-	return n;
+typedef struct {
+    Node *head;
+    int size;
+} LinkedList;
+
+void ll_init(LinkedList *list) {
+    list->head = NULL;
+    list->size = 0;
+}
+
+void ll_push_front(LinkedList *list, int value) {
+    Node *node = malloc(sizeof(Node));
+    if (node == NULL) abort();
+    node->value = value;
+    node->next = list->head;
+    list->head = node;
+    list->size++;
+}
+
+bool ll_remove(LinkedList *list, int value) {
+    Node **link = &list->head;
+    while (*link != NULL) {
+        if ((*link)->value == value) {
+            Node *removed = *link;
+            *link = removed->next;
+            free(removed);
+            list->size--;
+            return true;
+        }
+        link = &(*link)->next;
+    }
+    return false;
+}
+
+bool ll_contains(const LinkedList *list, int value) {
+    for (Node *current = list->head; current != NULL; current = current->next) {
+        if (current->value == value) return true;
+    }
+    return false;
+}
+
+int ll_to_array(const LinkedList *list, int *values) {
+    int index = 0;
+    for (Node *current = list->head; current != NULL; current = current->next) {
+        values[index++] = current->value;
+    }
+    return index;
+}
+
+int ll_length(const LinkedList *list) {
+    return list->size;
+}
+
+void ll_free(LinkedList *list) {
+    Node *current = list->head;
+    while (current != NULL) {
+        Node *next = current->next;
+        free(current);
+        current = next;
+    }
+    list->head = NULL;
+    list->size = 0;
 }
 ```
 
 ```python
 class Node:
-    """A node that has a value, and a next that points to the next node."""
     def __init__(self, value):
         self.value = value
         self.next = None
-        # for a doubly linked list, use prev to point to the previous node
-        self.prev = None
+
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+        self.size = 0
+
+    def push_front(self, value):
+        node = Node(value)
+        node.next = self.head
+        self.head = node
+        self.size += 1
+
+    def remove(self, value):
+        if self.head is None:
+            return False
+        if self.head.value == value:
+            self.head = self.head.next
+            self.size -= 1
+            return True
+        current = self.head
+        while current.next is not None and current.next.value != value:
+            current = current.next
+        if current.next is None:
+            return False
+        current.next = current.next.next
+        self.size -= 1
+        return True
+
+    def contains(self, value):
+        current = self.head
+        while current is not None:
+            if current.value == value:
+                return True
+            current = current.next
+        return False
+
+    def to_array(self):
+        values = []
+        current = self.head
+        while current is not None:
+            values.append(current.value)
+            current = current.next
+        return values
+
+    def length(self):
+        return self.size
 ```
 
 ```rust
-use std::rc::Rc;
-use std::cell::RefCell;
-
-// a node that has a value, and a next that points to the next node
-struct Node<T> {
-    value: T,
-    next: Option<Rc<RefCell<Node<T>>>>,
-    // for a doubly linked list, use prev to point to the previous node
-    prev: Option<Rc<RefCell<Node<T>>>>,
+pub struct Node {
+    pub value: i32,
+    pub next: Option<Box<Node>>,
 }
 
-impl<T> Node<T> {
-    fn new(value: T) -> Rc<RefCell<Node<T>>> {
-        Rc::new(RefCell::new(Node { value, next: None, prev: None }))
+pub struct LinkedList {
+    head: Option<Box<Node>>,
+    size: usize,
+}
+
+impl LinkedList {
+    pub fn new() -> Self {
+        LinkedList { head: None, size: 0 }
+    }
+
+    pub fn push_front(&mut self, value: i32) {
+        self.head = Some(Box::new(Node { value, next: self.head.take() }));
+        self.size += 1;
+    }
+
+    pub fn remove(&mut self, value: i32) -> bool {
+        if Self::remove_from(&mut self.head, value) {
+            self.size -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn remove_from(link: &mut Option<Box<Node>>, value: i32) -> bool {
+        if let Some(current) = link.as_mut() {
+            if current.value == value {
+                *link = current.next.take();
+                true
+            } else {
+                Self::remove_from(&mut current.next, value)
+            }
+        } else {
+            false
+        }
+    }
+
+    pub fn contains(&self, value: i32) -> bool {
+        let mut current = self.head.as_ref();
+        while let Some(node) = current {
+            if node.value == value {
+                return true;
+            }
+            current = node.next.as_ref();
+        }
+        false
+    }
+
+    pub fn to_array(&self) -> Vec<i32> {
+        let mut values = Vec::with_capacity(self.size);
+        let mut current = self.head.as_ref();
+        while let Some(node) = current {
+            values.push(node.value);
+            current = node.next.as_ref();
+        }
+        values
+    }
+
+    pub fn length(&self) -> usize {
+        self.size
     }
 }
 ```
 
 ```typescript
-// a node that has a value, and a next that points to the next node
-class Node<T> {
-    value: T;
-    next: Node<T> | null;
-    // for a doubly linked list, use prev to point to the previous node
-    prev: Node<T> | null;
+class Node {
+  value: number;
+  next: Node | null;
 
-    constructor(value: T) {
-        this.value = value;
-        this.next = null;
-        this.prev = null;
+  constructor(value: number) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+class LinkedList {
+  private head: Node | null = null;
+  private size = 0;
+
+  pushFront(value: number): void {
+    const node = new Node(value);
+    node.next = this.head;
+    this.head = node;
+    this.size++;
+  }
+
+  remove(value: number): boolean {
+    if (this.head === null) return false;
+    if (this.head.value === value) {
+      this.head = this.head.next;
+      this.size--;
+      return true;
     }
+    let current = this.head;
+    while (current.next !== null && current.next.value !== value) {
+      current = current.next;
+    }
+    if (current.next === null) return false;
+    current.next = current.next.next;
+    this.size--;
+    return true;
+  }
+
+  contains(value: number): boolean {
+    let current = this.head;
+    while (current !== null) {
+      if (current.value === value) return true;
+      current = current.next;
+    }
+    return false;
+  }
+
+  toArray(): number[] {
+    const values: number[] = [];
+    let current = this.head;
+    while (current !== null) {
+      values.push(current.value);
+      current = current.next;
+    }
+    return values;
+  }
+
+  length(): number {
+    return this.size;
+  }
 }
 ```
 
 ```go
-// a node that has a value, and a next that points to the next node
 type Node struct {
-	value int
-	next  *Node
-	// for a doubly linked list, use prev to point to the previous node
-	prev *Node
+	Value int
+	Next  *Node
 }
 
-func NewNode(value int) *Node {
-	return &Node{value: value}
+type LinkedList struct {
+	Head *Node
+	Size int
+}
+
+func NewLinkedList() *LinkedList {
+	return &LinkedList{}
+}
+
+func (list *LinkedList) PushFront(value int) {
+	list.Head = &Node{Value: value, Next: list.Head}
+	list.Size++
+}
+
+func (list *LinkedList) Remove(value int) bool {
+	link := &list.Head
+	for *link != nil {
+		if (*link).Value == value {
+			removed := *link
+			*link = removed.Next
+			list.Size--
+			return true
+		}
+		link = &(*link).Next
+	}
+	return false
+}
+
+func (list *LinkedList) Contains(value int) bool {
+	for current := list.Head; current != nil; current = current.Next {
+		if current.Value == value {
+			return true
+		}
+	}
+	return false
+}
+
+func (list *LinkedList) ToArray() []int {
+	values := make([]int, 0, list.Size)
+	for current := list.Head; current != nil; current = current.Next {
+		values = append(values, current.Value)
+	}
+	return values
+}
+
+func (list *LinkedList) Length() int {
+	return list.Size
 }
 ```
+
+### Variants
+
+A **singly linked node** has one forward reference and is the smallest representation. A **doubly linked node** also stores a backward reference, which supports reverse traversal and O(1) removal when the node is already known. A **skip list** stores several forward references at increasing levels, so search can skip larger ranges while retaining node-based updates.
 
 ## Complexity
 
@@ -125,25 +406,26 @@ func NewNode(value int) *Node {
 | --- | --- | --- |
 | Access by index | O(n) | O(1) |
 | Search | O(n) | O(1) |
-| Insert / delete at head | O(1) | O(1) |
-| Insert / delete at tail (with tail pointer) | O(1) | O(1) |
-| Insert / delete in middle (given the node) | O(1) | O(1) |
-| Insert / delete in middle (by index) | O(n) | O(1) |
+| Push at head | O(1) | O(1) |
+| Remove first matching value | O(n) | O(1) |
+| Convert to an array | O(n) | O(n) output |
+| Report size | O(1) | O(1) |
+
+Doubly linked lists add a backward reference per node. Skip lists add multiple levels of references, trading extra space and update work for O(log n) expected search.
 
 ## When to use
 
-- You need frequent O(1) insert/delete at the head, tail, or a known node position.
-- The size is unknown up front or changes unpredictably, and you want to avoid reallocations.
-- You only traverse sequentially and rarely need random access by index.
+- You need O(1) insertion or removal at the head and do not need random access by index.
+- Nodes must be allocated independently, or ownership is shared across components.
+- The collection is primarily traversed sequentially and changes size frequently.
 
 ## Alternatives
 
-- **Dynamic array** — O(1) random access and better cache locality, but O(n) insert/delete in the middle.
-- **Unrolled linked list** — stores several elements per node for better locality, but more complex node management.
-- **Skip list** — O(log n) expected search while staying node-based, but uses more memory and random pointers.
+- **Dynamic array** — O(1) random access and better cache locality, but O(n) insertion and removal in the middle.
+- **Unrolled linked list** — stores several values per node for better locality, at the cost of more complex node management.
+- **Skip list** — O(log n) expected search while staying node-based, but uses more memory and update work.
 
 ## Related
 
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](01-dynamic-arrays.md)
-- [Stacks, Queues, and Deques](03-stacks-queues-deques.md)
-- [Heaps and Priority Queues](../02-search-trees/02-heaps-priority-queues.md)
+- [Stacks, Queues, Deques, and Ring/Circular Buffers](03-stacks-queues-deques.md)

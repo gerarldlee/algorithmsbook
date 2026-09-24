@@ -451,3 +451,4 @@ func (c *LRUCache) Put(key, value int) {
 - [CDNs and Edge Computing](03-cdns-edge.md)
 - [Rate Limiting](04-rate-limiting.md)
 - [System Design Fundamentals](../01-system-design-fundamentals/01-fundamentals.md)
+- [Bitwise Algorithms, Bitsets, and Bloom Filters](../../01-algorithms/01-linear-data-structures/05-bitwise-bloom-filters.md)

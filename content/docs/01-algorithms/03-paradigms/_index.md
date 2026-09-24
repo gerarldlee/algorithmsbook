@@ -5,8 +5,8 @@ weight: 3
 
 The recurring strategies behind efficient algorithms: divide and conquer, greedy, dynamic programming, backtracking, and amortized analysis.
 
-- [Divide and Conquer Sorting](01-divide-and-conquer-sorting.md)
-- [Greedy Algorithms](02-greedy.md)
-- [Dynamic Programming](03-dynamic-programming.md)
-- [Backtracking](04-backtracking.md)
-- [Amortized Analysis](05-amortized-analysis.md)
+- [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
+- [Greedy Choice Paradigms & Interval Scheduling](02-greedy.md)
+- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](03-dynamic-programming.md)
+- [Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems](04-backtracking.md)
+- [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](05-amortized-analysis.md)

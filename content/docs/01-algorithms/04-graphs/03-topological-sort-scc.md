@@ -1,464 +1,827 @@
 ---
-title: "Topological Sort and Strongly Connected Components"
+title: "Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)"
 weight: 3
 toc: true
 ---
 
 ## What it is
-Topological sort orders the vertices of a directed acyclic graph (DAG) so that every edge points from an earlier to a later vertex. Strongly connected components (SCCs) are maximal subgraphs in which every vertex is reachable from every other vertex, computable via Tarjan's or Kosaraju's algorithm.
+**Topological sorting** orders a directed acyclic graph so every edge points from an earlier vertex to a later one, while **strongly connected components (SCCs)** partition a directed graph into maximal groups whose vertices can all reach one another.
 
 ## How it works
-Topological sort runs DFS and pushes each vertex onto a stack after all its descendants are finished; popping the stack yields a valid order (or Kahn's algorithm peels off vertices with in-degree zero). SCCs use DFS finishing times (Kosaraju) or a low-link value maintained during a single DFS (Tarjan) to group mutually reachable vertices. Both run in O(V+E).
+Kahn's algorithm repeatedly removes vertices with in-degree zero, and a short result reveals a cycle. Tarjan's DFS maintains discovery indices and low-link values, popping vertices from an active stack when a root is found. Kosaraju's algorithm records DFS finish order, traverses the transposed graph in reverse finish order, and assigns one SCC to each traversal. The examples implement all three operations with adjacency lists.
 
 ```java
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
 
-public class TopoSCC {
-    // Kahn's algorithm for topological sort
-    public static List<Integer> topoSort(List<List<Integer>> adj) {
-        int n = adj.size();
-        int[] indegree = new int[n];
-        for (List<Integer> edges : adj)
-            for (int v : edges) indegree[v]++;
+public final class TopologicalSCC {
+    private TopologicalSCC() {}
+
+    public static List<Integer> topologicalSort(List<List<Integer>> adjacency) {
+        int vertexCount = adjacency.size();
+        int[] inDegree = new int[vertexCount];
+        for (List<Integer> neighbors : adjacency) {
+            for (int neighbor : neighbors) inDegree[neighbor]++;
+        }
         Deque<Integer> queue = new ArrayDeque<>();
-        for (int i = 0; i < n; i++)
-            if (indegree[i] == 0) queue.add(i);
+        for (int vertex = 0; vertex < vertexCount; vertex++) {
+            if (inDegree[vertex] == 0) queue.add(vertex);
+        }
         List<Integer> order = new ArrayList<>();
         while (!queue.isEmpty()) {
-            int u = queue.poll();
-            order.add(u);
-            for (int v : adj.get(u))
-                if (--indegree[v] == 0) queue.add(v);
-        }
-        return order.size() == n ? order : Collections.emptyList(); // cycle if shorter
-    }
-
-    // Tarjan's SCC
-    static int index = 0;
-    static int[] disc, low;
-    static boolean[] onStack;
-    static Deque<Integer> stack;
-    static List<List<Integer>> sccs;
-
-    public static List<List<Integer>> tarjan(List<List<Integer>> adj) {
-        int n = adj.size();
-        disc = new int[n]; low = new int[n];
-        Arrays.fill(disc, -1);
-        onStack = new boolean[n];
-        stack = new ArrayDeque<>();
-        sccs = new ArrayList<>();
-        index = 0;
-        for (int i = 0; i < n; i++)
-            if (disc[i] == -1) strongConnect(adj, i);
-        return sccs;
-    }
-
-    private static void strongConnect(List<List<Integer>> adj, int u) {
-        disc[u] = low[u] = index++;
-        stack.push(u);
-        onStack[u] = true;
-        for (int v : adj.get(u)) {
-            if (disc[v] == -1) {
-                strongConnect(adj, v);
-                low[u] = Math.min(low[u], low[v]);
-            } else if (onStack[v]) {
-                low[u] = Math.min(low[u], disc[v]);
+            int vertex = queue.removeFirst();
+            order.add(vertex);
+            for (int neighbor : adjacency.get(vertex)) {
+                if (--inDegree[neighbor] == 0) queue.add(neighbor);
             }
         }
-        if (low[u] == disc[u]) {
-            List<Integer> comp = new ArrayList<>();
-            int w;
+        return order.size() == vertexCount ? order : List.of();
+    }
+
+    public static List<List<Integer>> tarjan(List<List<Integer>> adjacency) {
+        int vertexCount = adjacency.size();
+        int[] discovery = new int[vertexCount];
+        int[] low = new int[vertexCount];
+        Arrays.fill(discovery, -1);
+        boolean[] onStack = new boolean[vertexCount];
+        Deque<Integer> stack = new ArrayDeque<>();
+        List<List<Integer>> components = new ArrayList<>();
+        int[] nextIndex = {0};
+        for (int vertex = 0; vertex < vertexCount; vertex++) {
+            if (discovery[vertex] == -1) strongConnect(adjacency, vertex, discovery, low, onStack, stack, components, nextIndex);
+        }
+        return components;
+    }
+
+    private static void strongConnect(List<List<Integer>> adjacency, int vertex, int[] discovery, int[] low, boolean[] onStack, Deque<Integer> stack, List<List<Integer>> components, int[] nextIndex) {
+        discovery[vertex] = low[vertex] = nextIndex[0]++;
+        stack.push(vertex);
+        onStack[vertex] = true;
+        for (int neighbor : adjacency.get(vertex)) {
+            if (discovery[neighbor] == -1) {
+                strongConnect(adjacency, neighbor, discovery, low, onStack, stack, components, nextIndex);
+                low[vertex] = Math.min(low[vertex], low[neighbor]);
+            } else if (onStack[neighbor]) {
+                low[vertex] = Math.min(low[vertex], discovery[neighbor]);
+            }
+        }
+        if (low[vertex] == discovery[vertex]) {
+            List<Integer> component = new ArrayList<>();
+            int current;
             do {
-                w = stack.pop();
-                onStack[w] = false;
-                comp.add(w);
-            } while (w != u);
-            sccs.add(comp);
+                current = stack.pop();
+                onStack[current] = false;
+                component.add(current);
+            } while (current != vertex);
+            components.add(component);
+        }
+    }
+
+    public static List<List<Integer>> kosaraju(List<List<Integer>> adjacency) {
+        int vertexCount = adjacency.size();
+        boolean[] visited = new boolean[vertexCount];
+        List<Integer> finishOrder = new ArrayList<>();
+        for (int vertex = 0; vertex < vertexCount; vertex++) {
+            if (!visited[vertex]) finish(adjacency, vertex, visited, finishOrder);
+        }
+        List<List<Integer>> transposed = transpose(adjacency);
+        Arrays.fill(visited, false);
+        List<List<Integer>> components = new ArrayList<>();
+        for (int index = vertexCount - 1; index >= 0; index--) {
+            int vertex = finishOrder.get(index);
+            if (!visited[vertex]) {
+                List<Integer> component = new ArrayList<>();
+                collect(transposed, vertex, visited, component);
+                components.add(component);
+            }
+        }
+        return components;
+    }
+
+    private static void finish(List<List<Integer>> adjacency, int vertex, boolean[] visited, List<Integer> order) {
+        visited[vertex] = true;
+        for (int neighbor : adjacency.get(vertex)) {
+            if (!visited[neighbor]) finish(adjacency, neighbor, visited, order);
+        }
+        order.add(vertex);
+    }
+
+    private static List<List<Integer>> transpose(List<List<Integer>> adjacency) {
+        List<List<Integer>> transposed = new ArrayList<>();
+        for (int vertex = 0; vertex < adjacency.size(); vertex++) transposed.add(new ArrayList<>());
+        for (int vertex = 0; vertex < adjacency.size(); vertex++) {
+            for (int neighbor : adjacency.get(vertex)) transposed.get(neighbor).add(vertex);
+        }
+        return transposed;
+    }
+
+    private static void collect(List<List<Integer>> transposed, int vertex, boolean[] visited, List<Integer> component) {
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.push(vertex);
+        visited[vertex] = true;
+        while (!stack.isEmpty()) {
+            int current = stack.pop();
+            component.add(current);
+            for (int neighbor : transposed.get(current)) {
+                if (!visited[neighbor]) {
+                    visited[neighbor] = true;
+                    stack.push(neighbor);
+                }
+            }
         }
     }
 }
 ```
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
-typedef struct Node { int vertex; struct Node* next; } Node;
+typedef struct Node {
+    int vertex;
+    struct Node* next;
+} Node;
 
-void addEdge(Node** adj, int u, int v) {
-    Node* n = malloc(sizeof(Node));
-    n->vertex = v; n->next = adj[u]; adj[u] = n;
+typedef struct {
+    int size;
+    int capacity;
+    int* values;
+} IntSlice;
+
+typedef struct {
+    int size;
+    IntSlice* values;
+} SliceList;
+
+static void slice_append(IntSlice* slice, int value) {
+    if (slice->size == slice->capacity) {
+        slice->capacity = slice->capacity == 0 ? 4 : slice->capacity * 2;
+        slice->values = realloc(slice->values, slice->capacity * sizeof(int));
+    }
+    slice->values[slice->size++] = value;
 }
 
-// Kahn's algorithm for topological sort
-int topoSort(Node** adj, int n, int* order) {
-    int* indegree = calloc(n, sizeof(int));
-    for (int u = 0; u < n; u++)
-        for (Node* cur = adj[u]; cur; cur = cur->next) indegree[cur->vertex]++;
-    int* queue = malloc(n * sizeof(int));
-    int head = 0, tail = 0, count = 0;
-    for (int i = 0; i < n; i++)
-        if (indegree[i] == 0) queue[tail++] = i;
+static void list_append(SliceList* list, IntSlice value) {
+    list->values = realloc(list->values, (list->size + 1) * sizeof(IntSlice));
+    list->values[list->size++] = value;
+}
+
+int topological_scc_topological_sort(Node** adjacency, int vertex_count, IntSlice* order) {
+    int* in_degree = calloc(vertex_count, sizeof(int));
+    int* queue = malloc(vertex_count * sizeof(int));
+    int head = 0;
+    int tail = 0;
+    order->size = 0;
+    order->capacity = vertex_count;
+    order->values = malloc(vertex_count * sizeof(int));
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        for (Node* node = adjacency[vertex]; node; node = node->next) in_degree[node->vertex]++;
+    }
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        if (in_degree[vertex] == 0) queue[tail++] = vertex;
+    }
     while (head < tail) {
-        int u = queue[head++];
-        order[count++] = u;
-        for (Node* cur = adj[u]; cur; cur = cur->next)
-            if (--indegree[cur->vertex] == 0) queue[tail++] = cur->vertex;
-    }
-    free(indegree); free(queue);
-    return count == n; // 0 means cycle
-}
-
-// Tarjan's SCC
-static int idx;
-static int* disc; static int* low; static bool* onStack;
-static int* stack; static int top;
-static int* compOf;
-
-static void strongConnect(Node** adj, int u) {
-    disc[u] = low[u] = idx++;
-    stack[top++] = u; onStack[u] = true;
-    for (Node* cur = adj[u]; cur; cur = cur->next) {
-        int v = cur->vertex;
-        if (disc[v] == -1) {
-            strongConnect(adj, v);
-            if (low[v] < low[u]) low[u] = low[v];
-        } else if (onStack[v] && disc[v] < low[u]) {
-            low[u] = disc[v];
+        int vertex = queue[head++];
+        order->values[order->size++] = vertex;
+        for (Node* node = adjacency[vertex]; node; node = node->next) {
+            if (--in_degree[node->vertex] == 0) queue[tail++] = node->vertex;
         }
     }
-    if (low[u] == disc[u]) {
-        while (1) {
-            int w = stack[--top];
-            onStack[w] = false;
-            compOf[w] = u;
-            if (w == u) break;
+    free(in_degree);
+    free(queue);
+    if (order->size != vertex_count) {
+        free(order->values);
+        order->values = NULL;
+        order->size = 0;
+    }
+    return order->size == vertex_count;
+}
+
+typedef struct {
+    Node** adjacency;
+    int vertex_count;
+    int next_index;
+    int* discovery;
+    int* low;
+    bool* on_stack;
+    int* stack;
+    int stack_size;
+    SliceList* components;
+} TarjanState;
+
+static void tarjan_connect(TarjanState* state, int vertex) {
+    state->discovery[vertex] = state->low[vertex] = state->next_index++;
+    state->stack[state->stack_size++] = vertex;
+    state->on_stack[vertex] = true;
+    for (Node* node = state->adjacency[vertex]; node; node = node->next) {
+        int neighbor = node->vertex;
+        if (state->discovery[neighbor] == -1) {
+            tarjan_connect(state, neighbor);
+            if (state->low[neighbor] < state->low[vertex]) state->low[vertex] = state->low[neighbor];
+        } else if (state->on_stack[neighbor] && state->discovery[neighbor] < state->low[vertex]) {
+            state->low[vertex] = state->discovery[neighbor];
         }
+    }
+    if (state->low[vertex] == state->discovery[vertex]) {
+        IntSlice component = {0, 0, NULL};
+        while (state->stack_size > 0) {
+            int current = state->stack[--state->stack_size];
+            state->on_stack[current] = false;
+            slice_append(&component, current);
+            if (current == vertex) break;
+        }
+        list_append(state->components, component);
     }
 }
 
-int tarjan(Node** adj, int n, int* comp) {
-    idx = 0;
-    disc = calloc(n, sizeof(int));
-    low = calloc(n, sizeof(int));
-    onStack = calloc(n, sizeof(bool));
-    stack = malloc(n * sizeof(int));
-    compOf = comp;
-    top = 0;
-    for (int i = 0; i < n; i++) disc[i] = -1;
-    for (int i = 0; i < n; i++)
-        if (disc[i] == -1) strongConnect(adj, i);
-    free(disc); free(low); free(onStack); free(stack);
-    return idx;
+int topological_scc_tarjan(Node** adjacency, int vertex_count, SliceList* components) {
+    TarjanState state = {adjacency, vertex_count, 0};
+    state.discovery = malloc(vertex_count * sizeof(int));
+    state.low = malloc(vertex_count * sizeof(int));
+    state.on_stack = calloc(vertex_count, sizeof(bool));
+    state.stack = malloc(vertex_count * sizeof(int));
+    state.components = components;
+    components->size = 0;
+    components->values = NULL;
+    for (int vertex = 0; vertex < vertex_count; vertex++) state.discovery[vertex] = -1;
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        if (state.discovery[vertex] == -1) tarjan_connect(&state, vertex);
+    }
+    free(state.discovery);
+    free(state.low);
+    free(state.on_stack);
+    free(state.stack);
+    return 1;
+}
+
+static void kosaraju_finish(Node** adjacency, int vertex, bool* visited, int* finish_order, int* count) {
+    visited[vertex] = true;
+    for (Node* node = adjacency[vertex]; node; node = node->next) {
+        if (!visited[node->vertex]) kosaraju_finish(adjacency, node->vertex, visited, finish_order, count);
+    }
+    finish_order[(*count)++] = vertex;
+}
+
+static void kosaraju_collect(Node** transposed, int vertex, bool* visited, IntSlice* component) {
+    int* stack = NULL;
+    int size = 0;
+    int capacity = 0;
+    visited[vertex] = true;
+    capacity = 1;
+    stack = malloc(capacity * sizeof(int));
+    stack[size++] = vertex;
+    while (size > 0) {
+        int current = stack[--size];
+        slice_append(component, current);
+        for (Node* node = transposed[current]; node; node = node->next) {
+            if (!visited[node->vertex]) {
+                visited[node->vertex] = true;
+                if (size == capacity) {
+                    capacity *= 2;
+                    stack = realloc(stack, capacity * sizeof(int));
+                }
+                stack[size++] = node->vertex;
+            }
+        }
+    }
+    free(stack);
+}
+
+int topological_scc_kosaraju(Node** adjacency, int vertex_count, SliceList* components) {
+    bool* visited = calloc(vertex_count, sizeof(bool));
+    int* finish_order = malloc(vertex_count * sizeof(int));
+    int count = 0;
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        if (!visited[vertex]) kosaraju_finish(adjacency, vertex, visited, finish_order, &count);
+    }
+    Node** transposed = calloc(vertex_count, sizeof(Node*));
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        for (Node* node = adjacency[vertex]; node; node = node->next) {
+            Node* reverse = malloc(sizeof(Node));
+            reverse->vertex = vertex;
+            reverse->next = transposed[node->vertex];
+            transposed[node->vertex] = reverse;
+        }
+    }
+    for (int vertex = 0; vertex < vertex_count; vertex++) visited[vertex] = false;
+    components->size = 0;
+    components->values = NULL;
+    for (int index = vertex_count - 1; index >= 0; index--) {
+        int vertex = finish_order[index];
+        if (!visited[vertex]) {
+            IntSlice component = {0, 0, NULL};
+            kosaraju_collect(transposed, vertex, visited, &component);
+            list_append(components, component);
+        }
+    }
+    for (int vertex = 0; vertex < vertex_count; vertex++) {
+        Node* node = transposed[vertex];
+        while (node) {
+            Node* next = node->next;
+            free(node);
+            node = next;
+        }
+    }
+    free(transposed);
+    free(visited);
+    free(finish_order);
+    return 1;
 }
 ```
 
 ```python
-from collections import deque
-from typing import List
+class TopologicalSCC:
+    @staticmethod
+    def topological_sort(adjacency: list[list[int]]) -> list[int]:
+        vertex_count = len(adjacency)
+        in_degree = [0] * vertex_count
+        for neighbors in adjacency:
+            for neighbor in neighbors:
+                in_degree[neighbor] += 1
+        queue = [vertex for vertex in range(vertex_count) if in_degree[vertex] == 0]
+        order: list[int] = []
+        while queue:
+            vertex = queue.pop(0)
+            order.append(vertex)
+            for neighbor in adjacency[vertex]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+        return order if len(order) == vertex_count else []
 
+    @staticmethod
+    def tarjan(adjacency: list[list[int]]) -> list[list[int]]:
+        vertex_count = len(adjacency)
+        discovery = [-1] * vertex_count
+        low = [0] * vertex_count
+        on_stack = [False] * vertex_count
+        stack: list[int] = []
+        components: list[list[int]] = []
+        next_index = 0
 
-def topo_sort(adj: List[List[int]]) -> List[int]:
-    n = len(adj)
-    indegree = [0] * n
-    for edges in adj:
-        for v in edges:
-            indegree[v] += 1
-    queue: deque[int] = deque(i for i in range(n) if indegree[i] == 0)
-    order: List[int] = []
-    while queue:
-        u = queue.popleft()
-        order.append(u)
-        for v in adj[u]:
-            indegree[v] -= 1
-            if indegree[v] == 0:
-                queue.append(v)
-    return order if len(order) == n else []
+        def strong_connect(vertex: int) -> None:
+            nonlocal next_index
+            discovery[vertex] = low[vertex] = next_index
+            next_index += 1
+            stack.append(vertex)
+            on_stack[vertex] = True
+            for neighbor in adjacency[vertex]:
+                if discovery[neighbor] == -1:
+                    strong_connect(neighbor)
+                    low[vertex] = min(low[vertex], low[neighbor])
+                elif on_stack[neighbor]:
+                    low[vertex] = min(low[vertex], discovery[neighbor])
+            if low[vertex] == discovery[vertex]:
+                component: list[int] = []
+                while True:
+                    current = stack.pop()
+                    on_stack[current] = False
+                    component.append(current)
+                    if current == vertex:
+                        break
+                components.append(component)
 
+        for vertex in range(vertex_count):
+            if discovery[vertex] == -1:
+                strong_connect(vertex)
+        return components
 
-def tarjan(adj: List[List[int]]) -> List[List[int]]:
-    n = len(adj)
-    disc = [-1] * n
-    low = [0] * n
-    on_stack = [False] * n
-    stack: List[int] = []
-    sccs: List[List[int]] = []
-    idx = 0
+    @staticmethod
+    def kosaraju(adjacency: list[list[int]]) -> list[list[int]]:
+        vertex_count = len(adjacency)
+        visited = [False] * vertex_count
+        finish_order: list[int] = []
 
-    def strong_connect(u: int) -> None:
-        nonlocal idx
-        disc[u] = low[u] = idx
-        idx += 1
-        stack.append(u)
-        on_stack[u] = True
-        for v in adj[u]:
-            if disc[v] == -1:
-                strong_connect(v)
-                low[u] = min(low[u], low[v])
-            elif on_stack[v]:
-                low[u] = min(low[u], disc[v])
-        if low[u] == disc[u]:
-            comp: List[int] = []
-            while True:
-                w = stack.pop()
-                on_stack[w] = False
-                comp.append(w)
-                if w == u:
-                    break
-            sccs.append(comp)
+        def finish(vertex: int) -> None:
+            visited[vertex] = True
+            for neighbor in adjacency[vertex]:
+                if not visited[neighbor]:
+                    finish(neighbor)
+            finish_order.append(vertex)
 
-    for i in range(n):
-        if disc[i] == -1:
-            strong_connect(i)
-    return sccs
+        for vertex in range(vertex_count):
+            if not visited[vertex]:
+                finish(vertex)
+        transposed = [[] for _ in range(vertex_count)]
+        for vertex in range(vertex_count):
+            for neighbor in adjacency[vertex]:
+                transposed[neighbor].append(vertex)
+        for vertex in range(vertex_count):
+            visited[vertex] = False
+        components: list[list[int]] = []
+        for vertex in reversed(finish_order):
+            if not visited[vertex]:
+                visited[vertex] = True
+                component = [vertex]
+                stack = [vertex]
+                while stack:
+                    current = stack.pop()
+                    for neighbor in transposed[current]:
+                        if not visited[neighbor]:
+                            visited[neighbor] = True
+                            component.append(neighbor)
+                            stack.append(neighbor)
+                components.append(component)
+        return components
 ```
 
 ```rust
-use std::collections::VecDeque;
+pub struct TopologicalSCC;
 
-pub fn topo_sort(adj: &[Vec<usize>]) -> Vec<usize> {
-    let n = adj.len();
-    let mut indegree = vec![0usize; n];
-    for edges in adj {
-        for &v in edges {
-            indegree[v] += 1;
-        }
-    }
-    let mut queue: VecDeque<usize> = (0..n).filter(|&i| indegree[i] == 0).collect();
-    let mut order = Vec::new();
-    while let Some(u) = queue.pop_front() {
-        order.push(u);
-        for &v in &adj[u] {
-            indegree[v] -= 1;
-            if indegree[v] == 0 {
-                queue.push_back(v);
+impl TopologicalSCC {
+    pub fn topological_sort(adjacency: &[Vec<usize>]) -> Vec<usize> {
+        let vertex_count = adjacency.len();
+        let mut in_degree = vec![0usize; vertex_count];
+        for neighbors in adjacency {
+            for &neighbor in neighbors {
+                in_degree[neighbor] += 1;
             }
         }
+        let mut queue: std::collections::VecDeque<usize> =
+            (0..vertex_count).filter(|&vertex| in_degree[vertex] == 0).collect();
+        let mut order = Vec::new();
+        while let Some(vertex) = queue.pop_front() {
+            order.push(vertex);
+            for &neighbor in &adjacency[vertex] {
+                in_degree[neighbor] -= 1;
+                if in_degree[neighbor] == 0 {
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+        if order.len() == vertex_count { order } else { Vec::new() }
     }
-    if order.len() == n {
-        order
-    } else {
-        Vec::new()
-    }
-}
 
-pub fn tarjan(adj: &[Vec<usize>]) -> Vec<Vec<usize>> {
-    let n = adj.len();
-    let mut disc = vec![-1i32; n];
-    let mut low = vec![0i32; n];
-    let mut on_stack = vec![false; n];
-    let mut stack = Vec::new();
-    let mut sccs = Vec::new();
-    let mut idx = 0i32;
+    pub fn tarjan(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
+        let vertex_count = adjacency.len();
+        let mut discovery = vec![-1i64; vertex_count];
+        let mut low = vec![0i64; vertex_count];
+        let mut on_stack = vec![false; vertex_count];
+        let mut stack = Vec::new();
+        let mut components = Vec::new();
+        let mut next_index = 0i64;
+        for vertex in 0..vertex_count {
+            if discovery[vertex] == -1 {
+                Self::strong_connect(vertex, adjacency, &mut discovery, &mut low, &mut on_stack, &mut stack, &mut components, &mut next_index);
+            }
+        }
+        components
+    }
 
     fn strong_connect(
-        u: usize, adj: &[Vec<usize>], disc: &mut Vec<i32>, low: &mut Vec<i32>,
-        on_stack: &mut Vec<bool>, stack: &mut Vec<usize>, sccs: &mut Vec<Vec<usize>>, idx: &mut i32,
+        vertex: usize,
+        adjacency: &[Vec<usize>],
+        discovery: &mut [i64],
+        low: &mut [i64],
+        on_stack: &mut [bool],
+        stack: &mut Vec<usize>,
+        components: &mut Vec<Vec<usize>>,
+        next_index: &mut i64,
     ) {
-        disc[u] = *idx;
-        low[u] = *idx;
-        *idx += 1;
-        stack.push(u);
-        on_stack[u] = true;
-        for &v in &adj[u] {
-            if disc[v] == -1 {
-                strong_connect(v, adj, disc, low, on_stack, stack, sccs, idx);
-                low[u] = low[u].min(low[v]);
-            } else if on_stack[v] {
-                low[u] = low[u].min(disc[v]);
+        discovery[vertex] = *next_index;
+        low[vertex] = *next_index;
+        *next_index += 1;
+        stack.push(vertex);
+        on_stack[vertex] = true;
+        for &neighbor in &adjacency[vertex] {
+            if discovery[neighbor] == -1 {
+                Self::strong_connect(neighbor, adjacency, discovery, low, on_stack, stack, components, next_index);
+                low[vertex] = low[vertex].min(low[neighbor]);
+            } else if on_stack[neighbor] {
+                low[vertex] = low[vertex].min(discovery[neighbor]);
             }
         }
-        if low[u] == disc[u] {
-            let mut comp = Vec::new();
+        if low[vertex] == discovery[vertex] {
+            let mut component = Vec::new();
             loop {
-                let w = stack.pop().unwrap();
-                on_stack[w] = false;
-                comp.push(w);
-                if w == u {
+                let current = stack.pop().unwrap();
+                on_stack[current] = false;
+                component.push(current);
+                if current == vertex {
                     break;
                 }
             }
-            sccs.push(comp);
+            components.push(component);
         }
     }
 
-    for i in 0..n {
-        if disc[i] == -1 {
-            strong_connect(i, adj, &mut disc, &mut low, &mut on_stack, &mut stack, &mut sccs, &mut idx);
+    pub fn kosaraju(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
+        let vertex_count = adjacency.len();
+        let mut visited = vec![false; vertex_count];
+        let mut finish_order = Vec::new();
+        for vertex in 0..vertex_count {
+            if !visited[vertex] {
+                Self::finish(vertex, adjacency, &mut visited, &mut finish_order);
+            }
         }
+        let mut transposed = vec![Vec::new(); vertex_count];
+        for (vertex, neighbors) in adjacency.iter().enumerate() {
+            for &neighbor in neighbors {
+                transposed[neighbor].push(vertex);
+            }
+        }
+        visited.fill(false);
+        let mut components = Vec::new();
+        for &vertex in finish_order.iter().rev() {
+            if visited[vertex] {
+                continue;
+            }
+            let mut component = Vec::new();
+            let mut stack = vec![vertex];
+            visited[vertex] = true;
+            while let Some(current) = stack.pop() {
+                component.push(current);
+                for &neighbor in &transposed[current] {
+                    if !visited[neighbor] {
+                        visited[neighbor] = true;
+                        stack.push(neighbor);
+                    }
+                }
+            }
+            components.push(component);
+        }
+        components
     }
-    sccs
+
+    fn finish(vertex: usize, adjacency: &[Vec<usize>], visited: &mut [bool], order: &mut Vec<usize>) {
+        visited[vertex] = true;
+        for &neighbor in &adjacency[vertex] {
+            if !visited[neighbor] {
+                Self::finish(neighbor, adjacency, visited, order);
+            }
+        }
+        order.push(vertex);
+    }
 }
 ```
 
 ```typescript
-export function topoSort(adj: number[][]): number[] {
-  const n = adj.length;
-  const indegree = new Array(n).fill(0);
-  for (const edges of adj) {
-    for (const v of edges) indegree[v]++;
-  }
-  const queue: number[] = [];
-  for (let i = 0; i < n; i++) if (indegree[i] === 0) queue.push(i);
-  const order: number[] = [];
-  while (queue.length > 0) {
-    const u = queue.shift()!;
-    order.push(u);
-    for (const v of adj[u]) {
-      if (--indegree[v] === 0) queue.push(v);
+export class TopologicalSCC {
+  static topologicalSort(adjacency: number[][]): number[] {
+    const vertexCount = adjacency.length;
+    const inDegree = new Array<number>(vertexCount).fill(0);
+    for (const neighbors of adjacency) {
+      for (const neighbor of neighbors) inDegree[neighbor]++;
     }
-  }
-  return order.length === n ? order : [];
-}
-
-export function tarjan(adj: number[][]): number[][] {
-  const n = adj.length;
-  const disc = new Array(n).fill(-1);
-  const low = new Array(n).fill(0);
-  const onStack = new Array(n).fill(false);
-  const stack: number[] = [];
-  const sccs: number[][] = [];
-  let idx = 0;
-
-  const strongConnect = (u: number): void => {
-    disc[u] = low[u] = idx++;
-    stack.push(u);
-    onStack[u] = true;
-    for (const v of adj[u]) {
-      if (disc[v] === -1) {
-        strongConnect(v);
-        low[u] = Math.min(low[u], low[v]);
-      } else if (onStack[v]) {
-        low[u] = Math.min(low[u], disc[v]);
+    const queue: number[] = [];
+    for (let vertex = 0; vertex < vertexCount; vertex++) {
+      if (inDegree[vertex] === 0) queue.push(vertex);
+    }
+    const order: number[] = [];
+    while (queue.length > 0) {
+      const vertex = queue.shift()!;
+      order.push(vertex);
+      for (const neighbor of adjacency[vertex]) {
+        if (--inDegree[neighbor] === 0) queue.push(neighbor);
       }
     }
-    if (low[u] === disc[u]) {
-      const comp: number[] = [];
-      while (true) {
-        const w = stack.pop()!;
-        onStack[w] = false;
-        comp.push(w);
-        if (w === u) break;
-      }
-      sccs.push(comp);
-    }
-  };
-
-  for (let i = 0; i < n; i++) {
-    if (disc[i] === -1) strongConnect(i);
+    return order.length === vertexCount ? order : [];
   }
-  return sccs;
+
+  static tarjan(adjacency: number[][]): number[][] {
+    const discovery = new Array<number>(adjacency.length).fill(-1);
+    const low = new Array<number>(adjacency.length).fill(0);
+    const onStack = new Array<boolean>(adjacency.length).fill(false);
+    const stack: number[] = [];
+    const components: number[][] = [];
+    let nextIndex = 0;
+    const strongConnect = (vertex: number): void => {
+      discovery[vertex] = low[vertex] = nextIndex++;
+      stack.push(vertex);
+      onStack[vertex] = true;
+      for (const neighbor of adjacency[vertex]) {
+        if (discovery[neighbor] === -1) {
+          strongConnect(neighbor);
+          low[vertex] = Math.min(low[vertex], low[neighbor]);
+        } else if (onStack[neighbor]) {
+          low[vertex] = Math.min(low[vertex], discovery[neighbor]);
+        }
+      }
+      if (low[vertex] === discovery[vertex]) {
+        const component: number[] = [];
+        while (true) {
+          const current = stack.pop()!;
+          onStack[current] = false;
+          component.push(current);
+          if (current === vertex) break;
+        }
+        components.push(component);
+      }
+    };
+    for (let vertex = 0; vertex < adjacency.length; vertex++) {
+      if (discovery[vertex] === -1) strongConnect(vertex);
+    }
+    return components;
+  }
+
+  static kosaraju(adjacency: number[][]): number[][] {
+    const visited = new Array<boolean>(adjacency.length).fill(false);
+    const finishOrder: number[] = [];
+    const finish = (vertex: number): void => {
+      visited[vertex] = true;
+      for (const neighbor of adjacency[vertex]) {
+        if (!visited[neighbor]) finish(neighbor);
+      }
+      finishOrder.push(vertex);
+    };
+    for (let vertex = 0; vertex < adjacency.length; vertex++) {
+      if (!visited[vertex]) finish(vertex);
+    }
+    const transposed: number[][] = Array.from({ length: adjacency.length }, () => []);
+    for (let vertex = 0; vertex < adjacency.length; vertex++) {
+      for (const neighbor of adjacency[vertex]) transposed[neighbor].push(vertex);
+    }
+    visited.fill(false);
+    const components: number[][] = [];
+    for (let index = finishOrder.length - 1; index >= 0; index--) {
+      const start = finishOrder[index];
+      if (visited[start]) continue;
+      const component: number[] = [];
+      const stack = [start];
+      visited[start] = true;
+      while (stack.length > 0) {
+        const vertex = stack.pop()!;
+        component.push(vertex);
+        for (const neighbor of transposed[vertex]) {
+          if (!visited[neighbor]) {
+            visited[neighbor] = true;
+            stack.push(neighbor);
+          }
+        }
+      }
+      components.push(component);
+    }
+    return components;
+  }
 }
 ```
 
 ```go
-package main
+package graph
 
-func TopoSort(adj [][]int) []int {
-	n := len(adj)
-	indegree := make([]int, n)
-	for _, edges := range adj {
-		for _, v := range edges {
-			indegree[v]++
+type TopologicalSCC struct{}
+
+func (TopologicalSCC) TopologicalSort(adjacency [][]int) []int {
+	vertexCount := len(adjacency)
+	inDegree := make([]int, vertexCount)
+	for _, neighbors := range adjacency {
+		for _, neighbor := range neighbors {
+			inDegree[neighbor]++
 		}
 	}
-	var queue []int
-	for i := 0; i < n; i++ {
-		if indegree[i] == 0 {
-			queue = append(queue, i)
+	queue := []int{}
+	for vertex := 0; vertex < vertexCount; vertex++ {
+		if inDegree[vertex] == 0 {
+			queue = append(queue, vertex)
 		}
 	}
-	var order []int
+	order := []int{}
 	for len(queue) > 0 {
-		u := queue[0]
+		vertex := queue[0]
 		queue = queue[1:]
-		order = append(order, u)
-		for _, v := range adj[u] {
-			indegree[v]--
-			if indegree[v] == 0 {
-				queue = append(queue, v)
+		order = append(order, vertex)
+		for _, neighbor := range adjacency[vertex] {
+			inDegree[neighbor]--
+			if inDegree[neighbor] == 0 {
+				queue = append(queue, neighbor)
 			}
 		}
 	}
-	if len(order) == n {
-		return order
+	if len(order) != vertexCount {
+		return nil
 	}
-	return nil
+	return order
 }
 
-func Tarjan(adj [][]int) [][]int {
-	n := len(adj)
-	disc := make([]int, n)
-	low := make([]int, n)
-	onStack := make([]bool, n)
-	for i := range disc {
-		disc[i] = -1
+func (TopologicalSCC) Tarjan(adjacency [][]int) [][]int {
+	discovery := make([]int, len(adjacency))
+	for vertex := range discovery {
+		discovery[vertex] = -1
 	}
-	var stack []int
-	var sccs [][]int
-	idx := 0
-
-	var strongConnect func(u int)
-	strongConnect = func(u int) {
-		disc[u] = idx
-		low[u] = idx
-		idx++
-		stack = append(stack, u)
-		onStack[u] = true
-		for _, v := range adj[u] {
-			if disc[v] == -1 {
-				strongConnect(v)
-				if low[v] < low[u] {
-					low[u] = low[v]
+	low := make([]int, len(adjacency))
+	onStack := make([]bool, len(adjacency))
+	stack := []int{}
+	components := [][]int{}
+	nextIndex := 0
+	var strongConnect func(int)
+	strongConnect = func(vertex int) {
+		discovery[vertex] = nextIndex
+		low[vertex] = nextIndex
+		nextIndex++
+		stack = append(stack, vertex)
+		onStack[vertex] = true
+		for _, neighbor := range adjacency[vertex] {
+			if discovery[neighbor] == -1 {
+				strongConnect(neighbor)
+				if low[neighbor] < low[vertex] {
+					low[vertex] = low[neighbor]
 				}
-			} else if onStack[v] && disc[v] < low[u] {
-				low[u] = disc[v]
+			} else if onStack[neighbor] && discovery[neighbor] < low[vertex] {
+				low[vertex] = discovery[neighbor]
 			}
 		}
-		if low[u] == disc[u] {
-			var comp []int
+		if low[vertex] == discovery[vertex] {
+			component := []int{}
 			for {
-				w := stack[len(stack)-1]
+				current := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
-				onStack[w] = false
-				comp = append(comp, w)
-				if w == u {
+				onStack[current] = false
+				component = append(component, current)
+				if current == vertex {
 					break
 				}
 			}
-			sccs = append(sccs, comp)
+			components = append(components, component)
 		}
 	}
+	for vertex := range adjacency {
+		if discovery[vertex] == -1 {
+			strongConnect(vertex)
+		}
+	}
+	return components
+}
 
-	for i := 0; i < n; i++ {
-		if disc[i] == -1 {
-			strongConnect(i)
+func (TopologicalSCC) Kosaraju(adjacency [][]int) [][]int {
+	visited := make([]bool, len(adjacency))
+	finishOrder := []int{}
+	var finish func(int)
+	finish = func(vertex int) {
+		visited[vertex] = true
+		for _, neighbor := range adjacency[vertex] {
+			if !visited[neighbor] {
+				finish(neighbor)
+			}
+		}
+		finishOrder = append(finishOrder, vertex)
+	}
+	for vertex := range adjacency {
+		if !visited[vertex] {
+			finish(vertex)
 		}
 	}
-	return sccs
+	transposed := make([][]int, len(adjacency))
+	for vertex, neighbors := range adjacency {
+		for _, neighbor := range neighbors {
+			transposed[neighbor] = append(transposed[neighbor], vertex)
+		}
+	}
+	for vertex := range visited {
+		visited[vertex] = false
+	}
+	components := [][]int{}
+	for index := len(finishOrder) - 1; index >= 0; index-- {
+		start := finishOrder[index]
+		if visited[start] {
+			continue
+		}
+		component := []int{}
+		stack := []int{start}
+		visited[start] = true
+		for len(stack) > 0 {
+			vertex := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			component = append(component, vertex)
+			for _, neighbor := range transposed[vertex] {
+				if !visited[neighbor] {
+					visited[neighbor] = true
+					stack = append(stack, neighbor)
+				}
+			}
+		}
+		components = append(components, component)
+	}
+	return components
 }
 ```
 
 ## Complexity
-| Algorithm | Time | Space |
+For \(V\) vertices and \(E\) edges:
+
+| Algorithm | Time | Extra space |
 | --- | --- | --- |
-| Topological sort (Kahn / DFS) | O(V+E) | O(V) |
-| SCC (Tarjan) | O(V+E) | O(V) |
-| SCC (Kosaraju) | O(V+E) | O(V) |
+| Kahn's topological sort | O(V+E) | O(V) |
+| Tarjan's SCC | O(V+E) | O(V) |
+| Kosaraju's SCC | O(V+E) | O(V+E) |
+
+Tarjan discovers each component without storing the transposed graph. Kosaraju explicitly constructs the transpose in the C example, so that representation adds O(V+E) space.
 
 ## When to use
-- Use topological sort to schedule tasks with dependencies, resolve build order, or detect cycles in a DAG (e.g., course prerequisites, package managers).
-- Use SCC to condense a directed graph into a DAG of components, find 2-SAT satisfiability, or analyze mutually reachable groups in a web graph.
-- Use Tarjan when you want SCCs in a single DFS; Kosaraju when simplicity matters more than a second pass.
+- You need a valid build, package, course, or job dependency order.
+- You need to detect a directed cycle in a dependency graph.
+- You need to condense SCCs into a DAG for another algorithm.
+- You need to reason about mutual reachability or apply the 2-SAT implication graph.
 
 ## Alternatives
-- Kosaraju's algorithm — two-pass DFS on the graph and its transpose; simpler to implement than Tarjan but needs the reversed graph.
-- Kahn's algorithm — iterative in-degree-based topological sort that also detects cycles, versus the DFS post-order approach.
-- Condensation graph — compress SCCs into a DAG to run further algorithms, at the cost of an extra condensation pass.
+- **DFS postorder topological sort** — uses one DFS and a finishing stack, but an empty result requires separate cycle reasoning.
+- **Kahn's algorithm** — exposes partial orders and easy in-degree updates, but repeated priority ordering can add a heap factor.
+- **Gabow's SCC algorithm** — finds SCCs without Tarjan's low-link propagation, but is harder to implement and less commonly exposed by libraries.
 
 ## Related
-- [Graph Representations](01-graph-representations.md)
-- [Graph Traversals (BFS and DFS)](02-graph-traversals.md)
-- [Shortest Paths](05-shortest-paths.md)
+- [Graph Representations (Adjacency Matrix, Adjacency List, Edge List)](01-graph-representations.md)
+- [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
+- [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)

@@ -452,6 +452,10 @@ func (a *DynamicArray) Len() int { return a.size }
 
 ## Related
 
-- [Linked Lists and Node-Based Structures](02-linked-lists.md)
-- [Stacks, Queues, and Deques](03-stacks-queues-deques.md)
+- [Linked Lists (Singly, Doubly, Skip Lists)](02-linked-lists.md)
+- [Stacks, Queues, Deques, and Ring/Circular Buffers](03-stacks-queues-deques.md)
 - [Binary Search Trees](../02-search-trees/01-binary-search-trees.md)
+- [Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing](04-hash-tables.md)
+- [Bitwise Algorithms, Bitsets, and Bloom Filters](05-bitwise-bloom-filters.md)
+- [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](../03-paradigms/01-divide-and-conquer-sorting.md)
+- [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](../03-paradigms/05-amortized-analysis.md)

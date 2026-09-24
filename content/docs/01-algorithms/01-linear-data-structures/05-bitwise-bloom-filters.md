@@ -1,48 +1,84 @@
 ---
-title: "Bitwise Operations and Bloom Filters"
+title: "Bitwise Algorithms, Bitsets, and Bloom Filters"
 weight: 5
 toc: true
 ---
 
 ## What it is
 
-Bitwise operations (`AND`, `OR`, `XOR`, `NOT`, and shifts) manipulate the individual bits of an integer and run in a single machine instruction, making them the fastest primitives available for masking, flag packing, and arithmetic tricks. A Bloom filter is a space-efficient probabilistic set built on a bit array and `k` hash functions: it tells you an element is *definitely not* in the set or *possibly* in the set, trading a controllable false-positive rate for dramatic memory savings over a hash set.
+Bitwise algorithms manipulate individual bits, a **bitset** stores a collection of bits in a fixed-size array, and a **Bloom filter** is a probabilistic membership structure built from a bitset and a fixed number of hash functions, written as `k`. A Bloom filter answers that an element is definitely absent or possibly present: it never produces a false negative, but it can produce a false positive. Bitsets and Bloom filters trade exact storage and deletion for compact, cache-friendly membership checks.
 
 ## How it works
 
-A Bloom filter holds an array of `m` bits, initially all 0. To add an element, it runs `k` independent hash functions and sets the resulting `k` bit positions to 1. To query, it hashes the element and checks whether *all* `k` positions are set: if any is 0, the element is definitely absent; if all are 1, it is *possibly* present. False positives happen when unrelated insertions happen to set all `k` bits. Bitwise `AND`/`OR`/`XOR`/`NOT` and shifts map directly to CPU instructions and are O(1); the Bloom filter's `add` and `query` are O(k), independent of the number of stored elements:
+A bitset represents each position with one bit. Setting a bit uses an OR operation, clearing it uses an AND operation with a mask, and reading it uses a shift followed by a mask. The index is divided by eight to locate the byte, and the index modulo eight selects the bit within that byte.
+
+A Bloom filter starts with a bitset containing `m` zero bits. Adding a value computes `k` seeded hashes and sets each resulting bit. A membership query computes the same hashes and returns false when any bit is zero; it returns true only when every bit is set. The implementation below uses a 32-bit FNV-style polynomial hash over the value's UTF-8 bytes. It exposes the same `Bitset` operations and `BloomFilter` operations in all six languages.
+
+The code below uses `k` seeded hashes. A production Bloom filter selects `m` and `k` for its target false-positive rate and uses a hash implementation appropriate for its input distribution. Java's `BitSet`, Python's byte arrays, C byte arrays, Rust byte vectors, TypeScript typed arrays, and Go byte slices can all provide the same bit-level operations.
 
 ```java
-import java.util.BitSet;
+import java.nio.charset.StandardCharsets;
 
-public class BloomFilter {
-    private final BitSet bits;
+class Bitset {
+    private final byte[] bytes;
+    private final int size;
+
+    Bitset(int size) {
+        if (size <= 0) throw new IllegalArgumentException("size must be positive");
+        this.size = size;
+        this.bytes = new byte[(size + 7) / 8];
+    }
+
+    private void checkIndex(int index) {
+        if (index < 0 || index >= size) throw new IndexOutOfBoundsException();
+    }
+
+    void set(int index) {
+        checkIndex(index);
+        bytes[index >>> 3] |= (byte) (1 << (index & 7));
+    }
+
+    void clear(int index) {
+        checkIndex(index);
+        bytes[index >>> 3] &= (byte) ~(1 << (index & 7));
+    }
+
+    boolean get(int index) {
+        checkIndex(index);
+        return ((bytes[index >>> 3] >>> (index & 7)) & 1) != 0;
+    }
+}
+
+class BloomFilter {
+    private final Bitset bits;
     private final int size;
     private final int hashCount;
 
-    public BloomFilter(int size, int hashCount) {
-        this.bits = new BitSet(size);
+    BloomFilter(int size, int hashCount) {
+        if (hashCount <= 0) throw new IllegalArgumentException("hashCount must be positive");
+        this.bits = new Bitset(size);
         this.size = size;
         this.hashCount = hashCount;
     }
 
     private int hash(String value, int seed) {
-        int h = 0;
-        for (int i = 0; i < value.length(); i++) {
-            h = (h * seed) ^ value.charAt(i);
+        int h = 0x811c9dc5 ^ seed;
+        for (byte valueByte : value.getBytes(StandardCharsets.UTF_8)) {
+            h ^= valueByte & 0xff;
+            h *= 0x01000193;
         }
         return Math.floorMod(h, size);
     }
 
-    public void add(String value) {                  // O(k)
-        for (int i = 0; i < hashCount; i++) {
-            bits.set(hash(value, 31 + i));
+    void add(String value) {
+        for (int index = 0; index < hashCount; index++) {
+            bits.set(hash(value, 31 + index));
         }
     }
 
-    public boolean mightContain(String value) {      // O(k), no false negatives
-        for (int i = 0; i < hashCount; i++) {
-            if (!bits.get(hash(value, 31 + i))) return false;
+    boolean mightContain(String value) {
+        for (int index = 0; index < hashCount; index++) {
+            if (!bits.get(hash(value, 31 + index))) return false;
         }
         return true;
     }
@@ -50,143 +86,256 @@ public class BloomFilter {
 ```
 
 ```c
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 typedef struct {
-    unsigned char *bits;  // bit array
-    int size;             // number of bits
+    unsigned char *bytes;
+    int size;
+} Bitset;
+
+void bitset_init(Bitset *bits, int size) {
+    if (size <= 0) abort();
+    bits->bytes = calloc((size_t)((size + 7) / 8), sizeof(bits->bytes[0]));
+    if (bits->bytes == NULL) abort();
+    bits->size = size;
+}
+
+void bitset_set(Bitset *bits, int index) {
+    if (index < 0 || index >= bits->size) abort();
+    bits->bytes[index / 8] |= (unsigned char)(1u << (index % 8));
+}
+
+void bitset_clear(Bitset *bits, int index) {
+    if (index < 0 || index >= bits->size) abort();
+    bits->bytes[index / 8] &= (unsigned char)~(1u << (index % 8));
+}
+
+bool bitset_get(const Bitset *bits, int index) {
+    if (index < 0 || index >= bits->size) abort();
+    return ((bits->bytes[index / 8] >> (index % 8)) & 1u) != 0;
+}
+
+typedef struct {
+    Bitset bits;
     int hash_count;
 } BloomFilter;
 
-void bf_set(BloomFilter *bf, int index) {
-    bf->bits[index / 8] |= (1u << (index % 8));
+void bf_init(BloomFilter *filter, int size, int hash_count) {
+    if (hash_count <= 0) abort();
+    bitset_init(&filter->bits, size);
+    filter->hash_count = hash_count;
 }
 
-int bf_get(BloomFilter *bf, int index) {
-    return (bf->bits[index / 8] >> (index % 8)) & 1u;
+static int bf_hash(const char *value, int seed, int size) {
+    uint32_t h = UINT32_C(2166136261) ^ (uint32_t)seed;
+    for (; *value != '\0'; value++) {
+        h ^= (unsigned char)*value;
+        h *= UINT32_C(16777619);
+    }
+    return (int)(h % (uint32_t)size);
 }
 
-int bf_hash(const char *value, int seed, int size) {
-    unsigned long h = 5381;
-    int c;
-    while ((c = *value++)) h = ((h << 5) + h) ^ (c + seed);
-    return (int)(h % size);
-}
-
-void bf_add(BloomFilter *bf, const char *value) {    // O(k)
-    for (int i = 0; i < bf->hash_count; i++) {
-        bf_set(bf, bf_hash(value, 31 + i, bf->size));
+void bf_add(BloomFilter *filter, const char *value) {
+    for (int index = 0; index < filter->hash_count; index++) {
+        bitset_set(&filter->bits, bf_hash(value, 31 + index, filter->bits.size));
     }
 }
 
-int bf_might_contain(BloomFilter *bf, const char *value) { // O(k)
-    for (int i = 0; i < bf->hash_count; i++) {
-        if (!bf_get(bf, bf_hash(value, 31 + i, bf->size))) return 0;
+bool bf_might_contain(const BloomFilter *filter, const char *value) {
+    for (int index = 0; index < filter->hash_count; index++) {
+        if (!bitset_get(&filter->bits, bf_hash(value, 31 + index, filter->bits.size))) return false;
     }
-    return 1;
+    return true;
 }
 ```
 
 ```python
+class Bitset:
+    def __init__(self, size):
+        if size <= 0:
+            raise ValueError("size must be positive")
+        self.bytes = bytearray((size + 7) // 8)
+        self.size = size
+
+    def _check_index(self, index):
+        if index < 0 or index >= self.size:
+            raise IndexError("bit index out of range")
+
+    def set(self, index):
+        self._check_index(index)
+        self.bytes[index // 8] |= 1 << (index % 8)
+
+    def clear(self, index):
+        self._check_index(index)
+        self.bytes[index // 8] &= ~(1 << (index % 8))
+
+    def get(self, index):
+        self._check_index(index)
+        return bool(self.bytes[index // 8] & (1 << (index % 8)))
+
+
 class BloomFilter:
     def __init__(self, size, hash_count):
-        self.bits = bytearray((size + 7) // 8)
+        if hash_count <= 0:
+            raise ValueError("hash_count must be positive")
+        self.bits = Bitset(size)
         self.size = size
         self.hash_count = hash_count
 
     def _hash(self, value, seed):
-        h = 0
-        for ch in value:
-            h = (h * seed) ^ ord(ch)
+        h = (2166136261 ^ seed) & 0xffffffff
+        for value_byte in value.encode("utf-8"):
+            h = ((h ^ value_byte) * 16777619) & 0xffffffff
         return h % self.size
 
-    def add(self, value):                             # O(k)
-        for i in range(self.hash_count):
-            index = self._hash(value, 31 + i)
-            self.bits[index // 8] |= (1 << (index % 8))
+    def add(self, value):
+        for index in range(self.hash_count):
+            self.bits.set(self._hash(value, 31 + index))
 
-    def might_contain(self, value):                   # O(k), no false negatives
-        for i in range(self.hash_count):
-            index = self._hash(value, 31 + i)
-            if not (self.bits[index // 8] >> (index % 8)) & 1:
+    def might_contain(self, value):
+        for index in range(self.hash_count):
+            if not self.bits.get(self._hash(value, 31 + index)):
                 return False
         return True
 ```
 
 ```rust
-pub struct BloomFilter {
-    bits: Vec<u8>,
+pub struct Bitset {
+    bytes: Vec<u8>,
     size: usize,
+}
+
+impl Bitset {
+    pub fn new(size: usize) -> Self {
+        assert!(size > 0);
+        Bitset {
+            bytes: vec![0; (size + 7) / 8],
+            size,
+        }
+    }
+
+    fn check_index(&self, index: usize) {
+        assert!(index < self.size);
+    }
+
+    pub fn set(&mut self, index: usize) {
+        self.check_index(index);
+        self.bytes[index / 8] |= 1 << (index % 8);
+    }
+
+    pub fn clear(&mut self, index: usize) {
+        self.check_index(index);
+        self.bytes[index / 8] &= !(1 << (index % 8));
+    }
+
+    pub fn get(&self, index: usize) -> bool {
+        self.check_index(index);
+        self.bytes[index / 8] & (1 << (index % 8)) != 0
+    }
+}
+
+pub struct BloomFilter {
+    bits: Bitset,
     hash_count: usize,
 }
 
 impl BloomFilter {
     pub fn new(size: usize, hash_count: usize) -> Self {
+        assert!(hash_count > 0);
         BloomFilter {
-            bits: vec![0; (size + 7) / 8],
-            size,
+            bits: Bitset::new(size),
             hash_count,
         }
     }
 
     fn hash(&self, value: &str, seed: usize) -> usize {
-        let mut h: usize = 0;
-        for c in value.bytes() {
-            h = h.wrapping_mul(seed) ^ (c as usize);
+        let mut hash = 0x811c9dc5_u32 ^ seed as u32;
+        for value_byte in value.as_bytes() {
+            hash ^= *value_byte as u32;
+            hash = hash.wrapping_mul(0x01000193);
         }
-        h % self.size
+        hash as usize % self.bits.size
     }
 
-    pub fn add(&mut self, value: &str) {              // O(k)
-        for i in 0..self.hash_count {
-            let index = self.hash(value, 31 + i);
-            self.bits[index / 8] |= 1 << (index % 8);
+    pub fn add(&mut self, value: &str) {
+        for index in 0..self.hash_count {
+            self.bits.set(self.hash(value, 31 + index));
         }
     }
 
-    pub fn might_contain(&self, value: &str) -> bool { // O(k)
-        for i in 0..self.hash_count {
-            let index = self.hash(value, 31 + i);
-            if (self.bits[index / 8] >> (index % 8)) & 1 == 0 {
-                return false;
-            }
-        }
-        true
+    pub fn might_contain(&self, value: &str) -> bool {
+        (0..self.hash_count)
+            .all(|index| self.bits.get(self.hash(value, 31 + index)))
     }
 }
 ```
 
 ```typescript
+class Bitset {
+    private bytes: Uint8Array;
+    private size: number;
+
+    constructor(size: number) {
+        if (size <= 0) throw new Error("size must be positive");
+        this.size = size;
+        this.bytes = new Uint8Array(Math.ceil(size / 8));
+    }
+
+    private checkIndex(index: number): void {
+        if (!Number.isInteger(index) || index < 0 || index >= this.size) {
+            throw new RangeError("bit index out of range");
+        }
+    }
+
+    set(index: number): void {
+        this.checkIndex(index);
+        this.bytes[index >>> 3] |= 1 << (index & 7);
+    }
+
+    clear(index: number): void {
+        this.checkIndex(index);
+        this.bytes[index >>> 3] &= ~(1 << (index & 7));
+    }
+
+    get(index: number): boolean {
+        this.checkIndex(index);
+        return ((this.bytes[index >>> 3] >>> (index & 7)) & 1) !== 0;
+    }
+}
+
 class BloomFilter {
-    private bits: Uint8Array;
+    private bits: Bitset;
     private size: number;
     private hashCount: number;
+    private encoder: TextEncoder;
 
     constructor(size: number, hashCount: number) {
-        this.bits = new Uint8Array(Math.ceil(size / 8));
+        if (hashCount <= 0) throw new Error("hashCount must be positive");
+        this.bits = new Bitset(size);
         this.size = size;
         this.hashCount = hashCount;
+        this.encoder = new TextEncoder();
     }
 
     private hash(value: string, seed: number): number {
-        let h = 0;
-        for (let i = 0; i < value.length; i++) {
-            h = (h * seed) ^ value.charCodeAt(i);
+        let hash = (0x811c9dc5 ^ seed) >>> 0;
+        for (const valueByte of this.encoder.encode(value)) {
+            hash = Math.imul(hash ^ valueByte, 0x01000193) >>> 0;
         }
-        return ((h % this.size) + this.size) % this.size;
+        return hash % this.size;
     }
 
-    add(value: string): void {                        // O(k)
-        for (let i = 0; i < this.hashCount; i++) {
-            const index = this.hash(value, 31 + i);
-            this.bits[index >> 3] |= (1 << (index & 7));
+    add(value: string): void {
+        for (let index = 0; index < this.hashCount; index++) {
+            this.bits.set(this.hash(value, 31 + index));
         }
     }
 
-    mightContain(value: string): boolean {            // O(k), no false negatives
-        for (let i = 0; i < this.hashCount; i++) {
-            const index = this.hash(value, 31 + i);
-            if (((this.bits[index >> 3] >> (index & 7)) & 1) === 0) return false;
+    mightContain(value: string): boolean {
+        for (let index = 0; index < this.hashCount; index++) {
+            if (!this.bits.get(this.hash(value, 31 + index))) return false;
         }
         return true;
     }
@@ -194,39 +343,68 @@ class BloomFilter {
 ```
 
 ```go
+type Bitset struct {
+	bytes []byte
+	size  int
+}
+
+func NewBitset(size int) *Bitset {
+	if size <= 0 {
+		panic("size must be positive")
+	}
+	return &Bitset{bytes: make([]byte, (size+7)/8), size: size}
+}
+
+func (b *Bitset) Set(index int) {
+	if index < 0 || index >= b.size {
+		panic("bit index out of range")
+	}
+	b.bytes[index>>3] |= byte(1 << uint(index&7))
+}
+
+func (b *Bitset) Clear(index int) {
+	if index < 0 || index >= b.size {
+		panic("bit index out of range")
+	}
+	b.bytes[index>>3] &^= byte(1 << uint(index&7))
+}
+
+func (b *Bitset) Get(index int) bool {
+	if index < 0 || index >= b.size {
+		panic("bit index out of range")
+	}
+	return b.bytes[index>>3]&(byte(1)<<uint(index&7)) != 0
+}
+
 type BloomFilter struct {
-	bits      []byte
-	size      int
+	bits      *Bitset
 	hashCount int
 }
 
 func NewBloomFilter(size, hashCount int) *BloomFilter {
-	return &BloomFilter{
-		bits:      make([]byte, (size+7)/8),
-		size:      size,
-		hashCount: hashCount,
+	if hashCount <= 0 {
+		panic("hashCount must be positive")
 	}
+	return &BloomFilter{bits: NewBitset(size), hashCount: hashCount}
 }
 
 func (f *BloomFilter) hash(value string, seed int) int {
-	h := 0
-	for i := 0; i < len(value); i++ {
-		h = (h * seed) ^ int(value[i])
+	hash := uint32(2166136261) ^ uint32(seed)
+	for index := 0; index < len(value); index++ {
+		hash = (hash ^ uint32(value[index])) * 16777619
 	}
-	return (h%f.size + f.size) % f.size
+	return int(hash % uint32(f.bits.size))
 }
 
-func (f *BloomFilter) Add(value string) {            // O(k)
-	for i := 0; i < f.hashCount; i++ {
-		index := f.hash(value, 31+i)
-		f.bits[index/8] |= 1 << (index % 8)
+func (f *BloomFilter) Add(value string) {
+	for index := 0; index < f.hashCount; index++ {
+		f.bits.Set(f.hash(value, 31+index))
 	}
 }
 
-func (f *BloomFilter) MightContain(value string) bool { // O(k)
-	for i := 0; i < f.hashCount; i++ {
-		index := f.hash(value, 31+i)
-		if (f.bits[index/8]>>(index%8))&1 == 0 {
+func (f *BloomFilter) MightContain(value string) bool {
+	for index := 0; index < f.hashCount; index++ {
+		if !f.bits.Get(f.hash(value, 31+index)) {
 			return false
 		}
 	}
@@ -238,27 +416,31 @@ func (f *BloomFilter) MightContain(value string) bool { // O(k)
 
 | Operation | Time | Space |
 | --- | --- | --- |
-| Bitwise AND / OR / XOR / NOT | O(1) | O(1) |
-| Bit shift (left/right) | O(1) | O(1) |
-| Bloom filter add | O(k) | O(m) bits |
-| Bloom filter query | O(k) | O(1) |
-| False-positive probability | ≈ (1 − e^(−kn/m))^k | — |
+| Bitset set, clear, or get | O(1) | O(1) |
+| Bloom filter add | O(kL) | O(1) additional |
+| Bloom filter query | O(kL) | O(1) additional |
+| Bloom filter initialization | O(m) | O(m) bits |
+| False-positive probability with independent hashes | ≈ \( (1-e^{-kn/m})^k \) | — |
 
-`k` is the number of hash functions, `m` the bit-array size, `n` the number of inserted elements.
+Here, `L` is the length of the value's UTF-8 representation, `k` is the number of hashes, `m` is the number of bits, and `n` is the number of inserted elements. When input length is treated as a bounded constant, add and query are O(k).
 
 ## When to use
 
-- Bitwise ops: flag packing, permissions masks, parity/`x & (x-1)` tricks, fast multiply/divide by powers of two, low-level protocol parsing.
-- Bloom filter: "definitely absent" membership checks before an expensive lookup (e.g. cache/database/disk), spam/URL filtering, spell-check dictionaries where occasional false positives are acceptable.
+- You need a compact approximate-membership test and can tolerate false positives before an exact lookup.
+- You need constant-time flag reads, writes, and clears for a fixed-size set of bits.
+- You want a Bloom filter to avoid most database, disk, or network reads for values that are not present.
+- You need a probabilistic filter that supports only insertion and lookup, not deletion or counting.
+- You need to serialize or transmit a Bloom filter, provided every process uses the same `m`, `k`, and hash algorithm.
 
 ## Alternatives
 
-- **Hash set / hash table** — exact membership with no false positives and stores values, but uses far more memory per element.
-- **Counting Bloom filter** — supports deletes by storing counts per bit, at the cost of more memory.
-- **Cuckoo filter** — supports deletes and better space efficiency for low false-positive rates, but more complex to implement.
+- **Hash set** — wins when membership must be exact and values are small enough to store; costs more memory per element and returns false positives never.
+- **Sorted array or vector** — wins for small, immutable collections that benefit from binary search; costs O(log n) membership and ordered storage.
+- **Counting Bloom filter** — adds deletion by replacing each bit with a counter; costs more memory and requires careful counter overflow handling.
+- **Cuckoo filter** — supports deletion with compact fingerprints and bounded probe sequences; costs more complex construction and membership logic.
 
 ## Related
 
-- [Hash Tables and Hash Sets](04-hash-tables.md)
+- [Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing](04-hash-tables.md)
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](01-dynamic-arrays.md)
 - [In-Memory Caching](../../02-system-design/02-caching/01-in-memory-caching.md)

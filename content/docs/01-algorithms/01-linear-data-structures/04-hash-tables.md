@@ -1,70 +1,95 @@
 ---
-title: "Hash Tables and Hash Sets"
+title: "Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing"
 weight: 4
 toc: true
 ---
 
 ## What it is
 
-A hash table (or hash map) maps keys to values using a hash function that turns a key into an index into an underlying array of buckets. A hash set is the same structure without values — it just answers "is this key present?". With a good hash function and a low load factor, both give O(1) average-case insert, lookup, and delete, degrading to O(n) in the worst case when many keys collide.
+A hash table maps keys to values by applying a **hash function** that selects a bucket in an underlying array. A hash set uses the same structure to answer whether a key is present. With a good hash function and a controlled load factor, put, get, remove, and membership run in O(1) average time; collisions can make an individual operation O(n).
 
 ## How it works
 
-Hash sets and hash tables are data structures built on top of a hash function.
+The hash function spreads keys across buckets. When two keys select the same bucket, the table resolves the collision with **separate chaining** by storing a small collection of entries in that bucket. The implementation below uses the same operation set in all six languages: put, get, remove, contains, and size.
 
-- A **hash set** stores unique elements and answers the question "is this element present?"
-- A **hash table** maps keys to values, giving O(1) average access, insert, and delete.
+A hash function should be deterministic during a table's lifetime, inexpensive to compute, and stable across processes when a hash is persisted. A universal hash family makes the choice of hash function less predictable. For integer keys, a common family is \(h_{a,b}(x) = ((ax+b) \bmod p) \bmod m\), where \(p\) is a prime larger than the key domain and \(m\) is the number of buckets; selecting random \(a\) and \(b\) gives a collision bound in expectation for a fixed pair of keys.
 
-Both rely on a hash function that maps a key to an index in the underlying array.
-
-The hash function spreads keys over the bucket array; collisions (two keys hashing to the same bucket) are resolved by separate chaining (a list per bucket) or open addressing (probing for the next free slot). Keeping the load factor (number of entries / number of buckets) low keeps the per-bucket chain short, preserving the average O(1) behavior:
+Separate chaining keeps entries in a bucket collection. Open addressing is the other common strategy: it stores entries directly in the array and probes another slot after a collision. Chaining makes deletion straightforward; open addressing needs a tombstone or backward-shift policy for deletion. Either strategy requires resizing when the load factor becomes too high.
 
 ```java
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
-// Hash table with separate chaining
-public class HashTable<K, V> {
-    private static class Entry<K, V> {
-        K key; V value;
-        Entry(K key, V value) { this.key = key; this.value = value; }
+class HashTable {
+    private static class Entry {
+        String key;
+        int value;
+
+        Entry(String key, int value) {
+            this.key = key;
+            this.value = value;
+        }
     }
 
-    private final LinkedList<Entry<K, V>>[] buckets;
+    private final List<Entry>[] buckets;
     private int size;
 
-    @SuppressWarnings("unchecked")
-    public HashTable(int capacity) {
-        buckets = new LinkedList[capacity];
-        for (int i = 0; i < capacity; i++) buckets[i] = new LinkedList<>();
+    HashTable(int capacity) {
+        buckets = new List[capacity];
+        for (int index = 0; index < capacity; index++) {
+            buckets[index] = new ArrayList<>();
+        }
     }
 
-    private int hash(K key) {
+    private int hash(String key) {
         return Math.floorMod(key.hashCode(), buckets.length);
     }
 
-    public void put(K key, V value) {              // average O(1)
-        int i = hash(key);
-        for (Entry<K, V> e : buckets[i]) {
-            if (e.key.equals(key)) { e.value = value; return; }
+    void put(String key, int value) {
+        int index = hash(key);
+        for (Entry entry : buckets[index]) {
+            if (entry.key.equals(key)) {
+                entry.value = value;
+                return;
+            }
         }
-        buckets[i].add(new Entry<>(key, value));
+        buckets[index].add(new Entry(key, value));
         size++;
     }
 
-    public V get(K key) {                          // average O(1)
-        int i = hash(key);
-        for (Entry<K, V> e : buckets[i]) {
-            if (e.key.equals(key)) return e.value;
+    Integer get(String key) {
+        int index = hash(key);
+        for (Entry entry : buckets[index]) {
+            if (entry.key.equals(key)) return entry.value;
         }
         return null;
     }
 
-    public boolean contains(K key) { return get(key) != null; }
-    public int size() { return size; }
+    boolean remove(String key) {
+        int index = hash(key);
+        for (int position = 0; position < buckets[index].size(); position++) {
+            Entry entry = buckets[index].get(position);
+            if (entry.key.equals(key)) {
+                buckets[index].remove(position);
+                size--;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean contains(String key) {
+        return get(key) != null;
+    }
+
+    int size() {
+        return size;
+    }
 }
 ```
 
 ```c
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -77,176 +102,325 @@ typedef struct Entry {
 typedef struct {
     Entry **buckets;
     int capacity;
+    int size;
 } HashTable;
 
-unsigned long hash(const char *key, int capacity) {
-    unsigned long h = 5381;
-    int c;
-    while ((c = *key++)) h = ((h << 5) + h) + c;  // djb2 hash
-    return h % capacity;
+void ht_init(HashTable *table, int capacity) {
+    if (capacity <= 0) abort();
+    table->buckets = calloc((size_t)capacity, sizeof(*table->buckets));
+    if (table->buckets == NULL) abort();
+    table->capacity = capacity;
+    table->size = 0;
 }
 
-void ht_put(HashTable *t, const char *key, int value) {  // average O(1)
-    unsigned long i = hash(key, t->capacity);
-    for (Entry *e = t->buckets[i]; e; e = e->next) {
-        if (strcmp(e->key, key) == 0) { e->value = value; return; }
+unsigned long ht_hash(const char *key, int capacity) {
+    unsigned long value = 5381;
+    while (*key) {
+        value = ((value << 5) + value) + (unsigned char)*key++;
     }
-    Entry *n = malloc(sizeof(Entry));
-    n->key = strdup(key);
-    n->value = value;
-    n->next = t->buckets[i];
-    t->buckets[i] = n;
+    return value % (unsigned long)capacity;
 }
 
-int ht_get(HashTable *t, const char *key, int *found) {   // average O(1)
-    unsigned long i = hash(key, t->capacity);
-    for (Entry *e = t->buckets[i]; e; e = e->next) {
-        if (strcmp(e->key, key) == 0) { *found = 1; return e->value; }
+void ht_put(HashTable *table, const char *key, int value) {
+    unsigned long index = ht_hash(key, table->capacity);
+    for (Entry *entry = table->buckets[index]; entry; entry = entry->next) {
+        if (strcmp(entry->key, key) == 0) {
+            entry->value = value;
+            return;
+        }
     }
-    *found = 0;
-    return 0;
+    Entry *entry = malloc(sizeof(Entry));
+    if (entry == NULL) abort();
+    entry->key = strdup(key);
+    if (entry->key == NULL) abort();
+    entry->value = value;
+    entry->next = table->buckets[index];
+    table->buckets[index] = entry;
+    table->size++;
+}
+
+bool ht_get(const HashTable *table, const char *key, int *value) {
+    unsigned long index = ht_hash(key, table->capacity);
+    for (Entry *entry = table->buckets[index]; entry; entry = entry->next) {
+        if (strcmp(entry->key, key) == 0) {
+            *value = entry->value;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ht_remove(HashTable *table, const char *key) {
+    unsigned long index = ht_hash(key, table->capacity);
+    Entry **link = &table->buckets[index];
+    while (*link) {
+        if (strcmp((*link)->key, key) == 0) {
+            Entry *removed = *link;
+            *link = removed->next;
+            free(removed->key);
+            free(removed);
+            table->size--;
+            return true;
+        }
+        link = &(*link)->next;
+    }
+    return false;
+}
+
+bool ht_contains(const HashTable *table, const char *key) {
+    int value;
+    return ht_get(table, key, &value);
+}
+
+int ht_size(const HashTable *table) {
+    return table->size;
+}
+
+void ht_free(HashTable *table) {
+    for (int index = 0; index < table->capacity; index++) {
+        Entry *entry = table->buckets[index];
+        while (entry) {
+            Entry *next = entry->next;
+            free(entry->key);
+            free(entry);
+            entry = next;
+        }
+    }
+    free(table->buckets);
+    table->buckets = NULL;
+    table->capacity = 0;
+    table->size = 0;
 }
 ```
 
 ```python
 class HashTable:
-    """Hash table with separate chaining."""
     def __init__(self, capacity=16):
+        if capacity <= 0:
+            raise ValueError("capacity must be positive")
         self.buckets = [[] for _ in range(capacity)]
+        self.size = 0
 
     def _hash(self, key):
         return hash(key) % len(self.buckets)
 
-    def put(self, key, value):        # average O(1)
-        i = self._hash(key)
-        for pair in self.buckets[i]:
+    def put(self, key, value):
+        bucket = self.buckets[self._hash(key)]
+        for pair in bucket:
             if pair[0] == key:
                 pair[1] = value
                 return
-        self.buckets[i].append([key, value])
+        bucket.append([key, value])
+        self.size += 1
 
-    def get(self, key):               # average O(1)
-        i = self._hash(key)
-        for k, v in self.buckets[i]:
-            if k == key:
-                return v
+    def get(self, key):
+        for stored_key, value in self.buckets[self._hash(key)]:
+            if stored_key == key:
+                return value
         return None
 
+    def remove(self, key):
+        bucket = self.buckets[self._hash(key)]
+        for position, (stored_key, _) in enumerate(bucket):
+            if stored_key == key:
+                del bucket[position]
+                self.size -= 1
+                return True
+        return False
+
     def contains(self, key):
-        return self.get(key) is not None
+        return any(stored_key == key for stored_key, _ in self.buckets[self._hash(key)])
+
+    def size(self):
+        return self.size
 ```
 
 ```rust
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-pub struct HashTable<K, V> {
-    buckets: Vec<Vec<(K, V)>>,
+pub struct HashTable {
+    buckets: Vec<Vec<(String, i32)>>,
+    size: usize,
 }
 
-impl<K: Hash + Eq, V> HashTable<K, V> {
+impl HashTable {
     pub fn new(capacity: usize) -> Self {
-        let mut buckets = Vec::with_capacity(capacity);
-        for _ in 0..capacity { buckets.push(Vec::new()); }
-        HashTable { buckets }
-    }
-
-    fn hash(&self, key: &K) -> usize {
-        let mut hasher = DefaultHasher::new();
-        key.hash(&mut hasher);
-        (hasher.finish() as usize) % self.buckets.len()
-    }
-
-    pub fn insert(&mut self, key: K, value: V) {    // average O(1)
-        let i = self.hash(&key);
-        for pair in self.buckets[i].iter_mut() {
-            if pair.0 == key { pair.1 = value; return; }
+        assert!(capacity > 0);
+        HashTable {
+            buckets: vec![Vec::new(); capacity],
+            size: 0,
         }
-        self.buckets[i].push((key, value));
     }
 
-    pub fn get(&self, key: &K) -> Option<&V> {      // average O(1)
-        let i = self.hash(key);
-        self.buckets[i].iter().find(|(k, _)| k == key).map(|(_, v)| v)
+    fn hash(&self, key: &str) -> usize {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        key.hash(&mut hasher);
+        hasher.finish() as usize % self.buckets.len()
+    }
+
+    pub fn put(&mut self, key: String, value: i32) {
+        let index = self.hash(&key);
+        for pair in &mut self.buckets[index] {
+            if pair.0 == key {
+                pair.1 = value;
+                return;
+            }
+        }
+        self.buckets[index].push((key, value));
+        self.size += 1;
+    }
+
+    pub fn get(&self, key: &str) -> Option<i32> {
+        self.buckets[self.hash(key)]
+            .iter()
+            .find(|(stored_key, _)| stored_key == key)
+            .map(|(_, value)| *value)
+    }
+
+    pub fn remove(&mut self, key: &str) -> bool {
+        let bucket = &mut self.buckets[self.hash(key)];
+        if let Some(position) = bucket.iter().position(|(stored_key, _)| stored_key == key) {
+            bucket.remove(position);
+            self.size -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn contains(&self, key: &str) -> bool {
+        self.get(key).is_some()
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
     }
 }
 ```
 
 ```typescript
-class HashTable<K, V> {
-    private buckets: Array<Array<[K, V]>>;
-    private size: number;
+class HashTable {
+  private buckets: Array<Array<[string, number]>>;
+  private size = 0;
 
-    constructor(capacity: number) {
-        this.buckets = new Array(capacity).fill(null).map(() => []);
-        this.size = 0;
+  constructor(capacity: number) {
+    if (capacity <= 0) throw new Error("capacity must be positive");
+    this.buckets = new Array(capacity).fill(null).map(() => []);
+  }
+
+  private hash(key: string): number {
+    let value = 0;
+    for (let index = 0; index < key.length; index++) {
+      value = (value * 31 + key.charCodeAt(index)) >>> 0;
     }
+    return value % this.buckets.length;
+  }
 
-    private hash(key: K): number {
-        let h = 0;
-        const s = String(key);
-        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-        return h % this.buckets.length;
+  put(key: string, value: number): void {
+    const bucket = this.buckets[this.hash(key)];
+    const pair = bucket.find(([storedKey]) => storedKey === key);
+    if (pair) {
+      pair[1] = value;
+      return;
     }
+    bucket.push([key, value]);
+    this.size++;
+  }
 
-    put(key: K, value: V): void {                    // average O(1)
-        const i = this.hash(key);
-        for (const pair of this.buckets[i]) {
-            if (pair[0] === key) { pair[1] = value; return; }
-        }
-        this.buckets[i].push([key, value]);
-        this.size++;
-    }
+  get(key: string): number | undefined {
+    const pair = this.buckets[this.hash(key)].find(([storedKey]) => storedKey === key);
+    return pair?.[1];
+  }
 
-    get(key: K): V | undefined {                    // average O(1)
-        const i = this.hash(key);
-        for (const [k, v] of this.buckets[i]) {
-            if (k === key) return v;
-        }
-        return undefined;
-    }
+  remove(key: string): boolean {
+    const bucket = this.buckets[this.hash(key)];
+    const position = bucket.findIndex(([storedKey]) => storedKey === key);
+    if (position < 0) return false;
+    bucket.splice(position, 1);
+    this.size--;
+    return true;
+  }
 
-    contains(key: K): boolean { return this.get(key) !== undefined; }
+  contains(key: string): boolean {
+    return this.get(key) !== undefined;
+  }
+
+  size(): number {
+    return this.size;
+  }
 }
 ```
 
 ```go
-type entry struct {
-	key   string
-	value int
+type Entry struct {
+	Key   string
+	Value int
 }
 
 type HashTable struct {
-	buckets [][]entry
+	buckets  [][]Entry
+	capacity int
+	size     int
 }
 
 func NewHashTable(capacity int) *HashTable {
-	buckets := make([][]entry, capacity)
-	return &HashTable{buckets: buckets}
-}
-
-func (t *HashTable) hash(key string) int {
-	h := 0
-	for i := 0; i < len(key); i++ {
-		h = (h*31 + int(key[i])) & 0x7fffffff
+	if capacity <= 0 {
+		return nil
 	}
-	return h % len(t.buckets)
-}
-
-func (t *HashTable) Put(key string, value int) {   // average O(1)
-	i := t.hash(key)
-	for j, e := range t.buckets[i] {
-		if e.key == key { t.buckets[i][j].value = value; return }
+	return &HashTable{
+		buckets:  make([][]Entry, capacity),
+		capacity: capacity,
 	}
-	t.buckets[i] = append(t.buckets[i], entry{key, value})
 }
 
-func (t *HashTable) Get(key string) (int, bool) {  // average O(1)
-	i := t.hash(key)
-	for _, e := range t.buckets[i] {
-		if e.key == key { return e.value, true }
+func (table *HashTable) hash(key string) int {
+	value := 0
+	for index := 0; index < len(key); index++ {
+		value = (value*31 + int(key[index])) & 0x7fffffff
+	}
+	return value % table.capacity
+}
+
+func (table *HashTable) Put(key string, value int) {
+	index := table.hash(key)
+	for position := range table.buckets[index] {
+		if table.buckets[index][position].Key == key {
+			table.buckets[index][position].Value = value
+			return
+		}
+	}
+	table.buckets[index] = append(table.buckets[index], Entry{Key: key, Value: value})
+	table.size++
+}
+
+func (table *HashTable) Get(key string) (int, bool) {
+	for _, entry := range table.buckets[table.hash(key)] {
+		if entry.Key == key {
+			return entry.Value, true
+		}
 	}
 	return 0, false
+}
+
+func (table *HashTable) Remove(key string) bool {
+	index := table.hash(key)
+	for position, entry := range table.buckets[index] {
+		if entry.Key == key {
+			table.buckets[index] = append(table.buckets[index][:position], table.buckets[index][position+1:]...)
+			table.size--
+			return true
+		}
+	}
+	return false
+}
+
+func (table *HashTable) Contains(key string) bool {
+	_, found := table.Get(key)
+	return found
+}
+
+func (table *HashTable) Size() int {
+	return table.size
 }
 ```
 
@@ -254,22 +428,25 @@ func (t *HashTable) Get(key string) (int, bool) {  // average O(1)
 
 | Operation | Average time | Worst-case time | Space |
 | --- | --- | --- | --- |
-| Insert / put | O(1) | O(n) | O(n) |
-| Lookup / get | O(1) | O(n) | O(n) |
-| Delete | O(1) | O(n) | O(n) |
-| Contains (hash set) | O(1) | O(n) | O(n) |
+| Put | O(1) | O(n) | O(n) total, O(1) auxiliary |
+| Get | O(1) | O(n) | O(1) auxiliary |
+| Remove | O(1) | O(n) | O(1) auxiliary |
+| Contains (hash set) | O(1) | O(n) | O(1) auxiliary |
+| Resize | O(n) | O(n) | O(n) peak while copying |
+
+The load factor is the number of entries divided by the number of buckets. Keeping it below the implementation's resize threshold keeps expected bucket lengths short. A universal hash family gives an expected collision bound for any fixed pair of distinct keys, but it does not make every individual operation constant time.
 
 ## When to use
 
-- You need fast key-based lookup, insert, and delete (caches, dictionaries, symbol tables).
-- Deduplicating elements (hash set) or counting frequencies (hash map).
-- Building indexes and memoization tables where O(1) expected access matters more than ordering.
+- You need average O(1) lookup, insertion, removal, or membership tests.
+- Keys do not need to be traversed in sorted order.
+- You are deduplicating values, counting frequencies, caching lookups, or memoizing results.
 
 ## Alternatives
 
-- **Balanced binary search tree** — O(log n) guaranteed operations and ordered iteration, but slower constants and more complex.
-- **Array / linear scan** — trivial and cache-friendly, but O(n) lookup for larger collections.
-- **Bloom filter** — O(k) constant memory membership test with no false negatives, but allows false positives and cannot store values.
+- **Balanced binary search tree** — provides O(log n) worst-case operations and ordered traversal, at the cost of pointer or node overhead.
+- **Array or linear scan** — simple and cache-friendly for small data, but lookup grows linearly.
+- **Bloom filter** — uses O(k) memory for membership tests with no false negatives, but allows false positives and cannot retrieve values.
 
 ## Related
 

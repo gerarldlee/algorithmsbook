@@ -52,3 +52,4 @@ common: [WAL for crash recovery, bloom filters to skip absent keys]
 - [NoSQL Databases](02-nosql.md)
 - [ACID and Isolation Levels](04-acid-isolation.md)
 - [Distributed Query and Point-in-Time Recovery](07-distributed-query-pitr.md)
+- [Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)](../../01-algorithms/02-search-trees/03-storage-engine-trees.md)

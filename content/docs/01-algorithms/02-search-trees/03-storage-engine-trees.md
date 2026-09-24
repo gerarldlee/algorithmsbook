@@ -1,80 +1,94 @@
 ---
-title: "Storage Engine Trees (B-Trees and LSM-Trees)"
+title: "Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)"
 weight: 3
 toc: true
 ---
 
 ## What it is
-B-trees and LSM-trees are the two dominant on-disk indexing structures. A B-tree is a self-balancing search tree with high branching factor that keeps data sorted and supports O(log n) point reads and range scans; an LSM-tree (log-structured merge-tree) appends writes to an in-memory buffer and immutable sorted files on disk, later merging them in background compaction.
+Storage-engine trees keep ordered data efficient when records live in pages or immutable files rather than contiguous memory. A B-tree provides ordered point lookup and range traversal in a self-balancing tree, a B+ tree concentrates records in linked leaves for scans, and a log-structured merge-tree (LSM-tree) buffers writes and merges sorted runs in the background.
 
 ## How it works
-A B-tree stores many keys per node (between `t-1` and `2t-1` for minimum degree `t`) so each node is roughly the size of a disk page, minimizing I/O. Insertion descends to the correct leaf and, when a full node would overflow, splits it and pushes the median key up to the parent. An LSM-tree instead writes sequentially: writes land in a memtable, flush to an immutable sorted SSTable, and compaction merges overlapping files to bound read amplification.
+A B-tree stores many sorted keys in each node. With minimum degree `t`, a node has between `t-1` and `2t-1` keys and up to `2t` children. Search compares within a node, insertion descends to a leaf, and a full child splits around a median key that moves into the parent. A high branching factor makes the tree shallow and aligns internal nodes with storage pages.
+
+A B+ tree keeps separator keys in internal nodes and links leaf pages in key order. A range scan locates the first leaf and follows links, which avoids returning to the root after each leaf. A B-tree also supports both operations but can require more internal-node work during a scan.
+
+An LSM-tree writes updates to an in-memory **memtable**. When the memtable reaches a threshold, the engine flushes its sorted contents to an immutable **SSTable** and starts a new memtable. Reads inspect the memtable and relevant SSTables; **compaction** merges runs to remove obsolete versions and limit the number that a read must probe. Leveled and tiered compaction policies trade write cost, read cost, and temporary space differently. LevelDB and RocksDB use leveled designs, while Cassandra and HBase commonly use tiered families.
+
+The implementations below demonstrate a minimum-degree-2 B-tree with the same `search` and `insert` operations in all six languages. Storage engines add page pinning, checksums, concurrency, and recovery around this core structure.
 
 ```java
 import java.util.ArrayList;
 import java.util.List;
 
 public class BTree {
-    static final int T = 2; // minimum degree
+    private static final int T = 2;
 
-    static class Node {
-        List<Integer> keys = new ArrayList<>();
-        List<Node> children = new ArrayList<>();
-        boolean leaf = true;
+    static class BTreeNode {
+        final List<Integer> keys = new ArrayList<>();
+        final List<BTreeNode> children = new ArrayList<>();
+        final boolean leaf;
 
-        boolean isFull() { return keys.size() == 2 * T - 1; }
+        BTreeNode(boolean leaf) {
+            this.leaf = leaf;
+        }
+
+        boolean isFull() {
+            return keys.size() == 2 * T - 1;
+        }
     }
 
-    Node root = new Node();
+    private BTreeNode root = new BTreeNode(true);
 
     public boolean search(int key) {
         return search(root, key);
     }
 
-    private boolean search(Node node, int key) {
-        int i = 0;
-        while (i < node.keys.size() && key > node.keys.get(i)) i++;
-        if (i < node.keys.size() && key == node.keys.get(i)) return true;
-        if (node.leaf) return false;
-        return search(node.children.get(i), key);
-    }
-
     public void insert(int key) {
         if (root.isFull()) {
-            Node s = new Node();
-            s.leaf = false;
-            s.children.add(root);
-            splitChild(s, 0);
-            root = s;
+            BTreeNode parent = new BTreeNode(false);
+            parent.children.add(root);
+            splitChild(parent, 0);
+            root = parent;
         }
         insertNonFull(root, key);
     }
 
-    private void splitChild(Node parent, int i) {
-        Node full = parent.children.get(i);
-        Node right = new Node();
-        right.leaf = full.leaf;
-        for (int j = 0; j < T - 1; j++) right.keys.add(full.keys.remove(T));
-        if (!full.leaf)
-            for (int j = 0; j < T; j++) right.children.add(full.children.remove(T));
-        parent.keys.add(i, full.keys.remove(T - 1));
-        parent.children.add(i + 1, right);
+    private boolean search(BTreeNode node, int key) {
+        int index = 0;
+        while (index < node.keys.size() && key > node.keys.get(index)) index++;
+        if (index < node.keys.size() && key == node.keys.get(index)) return true;
+        return !node.leaf && search(node.children.get(index), key);
     }
 
-    private void insertNonFull(Node node, int key) {
-        int i = node.keys.size() - 1;
+    private void splitChild(BTreeNode parent, int index) {
+        BTreeNode full = parent.children.get(index);
+        BTreeNode right = new BTreeNode(full.leaf);
+        for (int offset = 0; offset < T - 1; offset++) {
+            right.keys.add(full.keys.remove(T));
+        }
+        if (!full.leaf) {
+            for (int offset = 0; offset < T; offset++) {
+                right.children.add(full.children.remove(T));
+            }
+        }
+        parent.keys.add(index, full.keys.remove(T - 1));
+        parent.children.add(index + 1, right);
+    }
+
+    private void insertNonFull(BTreeNode node, int key) {
+        int index = node.keys.size() - 1;
         if (node.leaf) {
-            while (i >= 0 && key < node.keys.get(i)) i--;
-            node.keys.add(i + 1, key);
+            while (index >= 0 && key < node.keys.get(index)) index--;
+            node.keys.add(index + 1, key);
             return;
         }
-        while (i >= 0 && key < node.keys.get(i)) i--;
-        i++;
-        if (node.children.get(i).isFull()) {
-            splitChild(node, i);
-            if (key > node.keys.get(i)) i++;
+        while (index >= 0 && key < node.keys.get(index)) index--;
+        index++;
+        if (node.children.get(index).isFull()) {
+            splitChild(node, index);
+            if (key > node.keys.get(index)) index++;
         }
-        insertNonFull(node.children.get(i), key);
+        insertNonFull(node.children.get(index), key);
     }
 }
 ```
@@ -85,78 +99,112 @@ public class BTree {
 
 #define T 2
 
-typedef struct Node {
+typedef struct BTreeNode {
     int keys[2 * T - 1];
-    struct Node *children[2 * T];
-    int n;
+    struct BTreeNode *children[2 * T];
+    int size;
     bool leaf;
-} Node;
+} BTreeNode;
 
-Node *node_new(bool leaf) {
-    Node *n = malloc(sizeof(Node));
-    n->n = 0; n->leaf = leaf;
-    return n;
+typedef struct BTree {
+    BTreeNode *root;
+} BTree;
+
+BTreeNode *btree_node_new(bool leaf) {
+    BTreeNode *node = malloc(sizeof(BTreeNode));
+    node->size = 0;
+    node->leaf = leaf;
+    return node;
 }
 
-bool btree_search(Node *node, int key) {
-    int i = 0;
-    while (i < node->n && key > node->keys[i]) i++;
-    if (i < node->n && key == node->keys[i]) return true;
-    if (node->leaf) return false;
-    return btree_search(node->children[i], key);
+BTree *btree_new(void) {
+    BTree *tree = malloc(sizeof(BTree));
+    tree->root = btree_node_new(true);
+    return tree;
 }
 
-static void split_child(Node *parent, int i) {
-    Node *full = parent->children[i];
-    Node *right = node_new(full->leaf);
-    right->n = T - 1;
-    for (int j = 0; j < T - 1; j++) right->keys[j] = full->keys[j + T];
-    if (!full->leaf)
-        for (int j = 0; j < T; j++) right->children[j] = full->children[j + T];
-    for (int j = parent->n; j > i; j--) parent->children[j + 1] = parent->children[j];
-    parent->children[i + 1] = right;
-    for (int j = parent->n - 1; j >= i; j--) parent->keys[j + 1] = parent->keys[j];
-    parent->keys[i] = full->keys[T - 1];
-    parent->n++;
-    full->n = T - 1;
-}
-
-static void insert_nonfull(Node *node, int key) {
-    int i = node->n - 1;
-    if (node->leaf) {
-        while (i >= 0 && key < node->keys[i]) {
-            node->keys[i + 1] = node->keys[i];
-            i--;
+void btree_node_destroy(BTreeNode *node) {
+    if (!node->leaf) {
+        for (int index = 0; index <= node->size; index++) {
+            btree_node_destroy(node->children[index]);
         }
-        node->keys[i + 1] = key;
-        node->n++;
+    }
+    free(node);
+}
+
+void btree_destroy(BTree *tree) {
+    btree_node_destroy(tree->root);
+    free(tree);
+}
+
+bool btree_search(BTree *tree, int key) {
+    BTreeNode *node = tree->root;
+    while (node) {
+        int index = 0;
+        while (index < node->size && key > node->keys[index]) index++;
+        if (index < node->size && key == node->keys[index]) return true;
+        if (node->leaf) return false;
+        node = node->children[index];
+    }
+    return false;
+}
+
+void btree_split_child(BTreeNode *parent, int index) {
+    BTreeNode *full = parent->children[index];
+    BTreeNode *right = btree_node_new(full->leaf);
+    right->size = T - 1;
+    for (int offset = 0; offset < T - 1; offset++) {
+        right->keys[offset] = full->keys[offset + T];
+    }
+    if (!full->leaf) {
+        for (int offset = 0; offset < T; offset++) {
+            right->children[offset] = full->children[offset + T];
+        }
+    }
+    for (int offset = parent->size; offset > index; offset--) {
+        parent->children[offset + 1] = parent->children[offset];
+    }
+    parent->children[index + 1] = right;
+    for (int offset = parent->size - 1; offset >= index; offset--) {
+        parent->keys[offset + 1] = parent->keys[offset];
+    }
+    parent->keys[index] = full->keys[T - 1];
+    parent->size++;
+    full->size = T - 1;
+}
+
+void btree_insert_nonfull(BTreeNode *node, int key) {
+    int index = node->size - 1;
+    if (node->leaf) {
+        while (index >= 0 && key < node->keys[index]) {
+            node->keys[index + 1] = node->keys[index];
+            index--;
+        }
+        node->keys[index + 1] = key;
+        node->size++;
         return;
     }
-    while (i >= 0 && key < node->keys[i]) i--;
-    i++;
-    if (node->children[i]->n == 2 * T - 1) {
-        split_child(node, i);
-        if (key > node->keys[i]) i++;
+    while (index >= 0 && key < node->keys[index]) index--;
+    index++;
+    if (node->children[index]->size == 2 * T - 1) {
+        btree_split_child(node, index);
+        if (key > node->keys[index]) index++;
     }
-    insert_nonfull(node->children[i], key);
+    btree_insert_nonfull(node->children[index], key);
 }
 
-Node *btree_insert(Node *root, int key) {
-    if (root->n == 2 * T - 1) {
-        Node *s = node_new(false);
-        s->children[0] = root;
-        split_child(s, 0);
-        root = s;
+void btree_insert(BTree *tree, int key) {
+    if (tree->root->size == 2 * T - 1) {
+        BTreeNode *root = btree_node_new(false);
+        root->children[0] = tree->root;
+        btree_split_child(root, 0);
+        tree->root = root;
     }
-    insert_nonfull(root, key);
-    return root;
+    btree_insert_nonfull(tree->root, key);
 }
 ```
 
 ```python
-T = 2  # minimum degree
-
-
 class BTreeNode:
     def __init__(self, leaf=True):
         self.keys = []
@@ -164,7 +212,7 @@ class BTreeNode:
         self.leaf = leaf
 
     def is_full(self):
-        return len(self.keys) == 2 * T - 1
+        return len(self.keys) == 3
 
 
 class BTree:
@@ -172,92 +220,76 @@ class BTree:
         self.root = BTreeNode()
 
     def search(self, key):
-        return self._search(self.root, key)
-
-    def _search(self, node, key):
-        i = 0
-        while i < len(node.keys) and key > node.keys[i]:
-            i += 1
-        if i < len(node.keys) and key == node.keys[i]:
-            return True
-        if node.leaf:
-            return False
-        return self._search(node.children[i], key)
-
-    def _split_child(self, parent, i):
-        full = parent.children[i]
-        right = BTreeNode(full.leaf)
-        right.keys = full.keys[T:]
-        if not full.leaf:
-            right.children = full.children[T:]
-        parent.keys.insert(i, full.keys[T - 1])
-        parent.children.insert(i + 1, right)
-        full.keys = full.keys[:T - 1]
-        full.children = full.children[:T]
-
-    def _insert_nonfull(self, node, key):
-        i = len(node.keys) - 1
-        if node.leaf:
-            node.keys.append(None)
-            while i >= 0 and key < node.keys[i]:
-                node.keys[i + 1] = node.keys[i]
-                i -= 1
-            node.keys[i + 1] = key
-            return
-        while i >= 0 and key < node.keys[i]:
-            i -= 1
-        i += 1
-        if node.children[i].is_full():
-            self._split_child(node, i)
-            if key > node.keys[i]:
-                i += 1
-        self._insert_nonfull(node.children[i], key)
+        node = self.root
+        while node is not None:
+            index = 0
+            while index < len(node.keys) and key > node.keys[index]:
+                index += 1
+            if index < len(node.keys) and key == node.keys[index]:
+                return True
+            if node.leaf:
+                return False
+            node = node.children[index]
+        return False
 
     def insert(self, key):
         if self.root.is_full():
-            s = BTreeNode(leaf=False)
-            s.children.append(self.root)
-            self._split_child(s, 0)
-            self.root = s
+            root = BTreeNode(leaf=False)
+            root.children.append(self.root)
+            self._split_child(root, 0)
+            self.root = root
         self._insert_nonfull(self.root, key)
+
+    def _split_child(self, parent, index):
+        full = parent.children[index]
+        right = BTreeNode(full.leaf)
+        right.keys = full.keys[2:]
+        if not full.leaf:
+            right.children = full.children[2:]
+        parent.keys.insert(index, full.keys[1])
+        parent.children.insert(index + 1, right)
+        full.keys = full.keys[:1]
+        full.children = full.children[:2]
+
+    def _insert_nonfull(self, node, key):
+        index = len(node.keys) - 1
+        if node.leaf:
+            while index >= 0 and key < node.keys[index]:
+                index -= 1
+            node.keys.insert(index + 1, key)
+            return
+        while index >= 0 and key < node.keys[index]:
+            index -= 1
+        index += 1
+        if node.children[index].is_full():
+            self._split_child(node, index)
+            if key > node.keys[index]:
+                index += 1
+        self._insert_nonfull(node.children[index], key)
 ```
 
 ```rust
-const T: usize = 2; // minimum degree
+const T: usize = 2;
 
 #[derive(Clone)]
 pub struct BTreeNode {
-    pub keys: Vec<i32>,
-    pub children: Vec<BTreeNode>,
-    pub leaf: bool,
+    keys: Vec<i32>,
+    children: Vec<BTreeNode>,
+    leaf: bool,
 }
 
 impl BTreeNode {
-    pub fn new(leaf: bool) -> Self {
+    fn new(leaf: bool) -> Self {
         BTreeNode { keys: Vec::new(), children: Vec::new(), leaf }
     }
 
     fn is_full(&self) -> bool {
         self.keys.len() == 2 * T - 1
     }
-
-    pub fn search(&self, key: i32) -> bool {
-        let mut i = 0;
-        while i < self.keys.len() && key > self.keys[i] {
-            i += 1;
-        }
-        if i < self.keys.len() && key == self.keys[i] {
-            return true;
-        }
-        if self.leaf {
-            return false;
-        }
-        self.children[i].search(key)
-    }
 }
 
 pub struct BTree {
-    pub root: BTreeNode,
+    root: BTreeNode,
 }
 
 impl BTree {
@@ -265,18 +297,35 @@ impl BTree {
         BTree { root: BTreeNode::new(true) }
     }
 
+    pub fn search(&self, key: i32) -> bool {
+        let mut node = &self.root;
+        loop {
+            let mut index = 0;
+            while index < node.keys.len() && key > node.keys[index] {
+                index += 1;
+            }
+            if index < node.keys.len() && key == node.keys[index] {
+                return true;
+            }
+            if node.leaf {
+                return false;
+            }
+            node = &node.children[index];
+        }
+    }
+
     pub fn insert(&mut self, key: i32) {
         if self.root.is_full() {
-            let mut s = BTreeNode::new(false);
-            s.children.push(std::mem::replace(&mut self.root, BTreeNode::new(true)));
-            Self::split_child(&mut s, 0);
-            self.root = s;
+            let mut root = BTreeNode::new(false);
+            root.children.push(std::mem::replace(&mut self.root, BTreeNode::new(true)));
+            Self::split_child(&mut root, 0);
+            self.root = root;
         }
         Self::insert_nonfull(&mut self.root, key);
     }
 
-    fn split_child(parent: &mut BTreeNode, i: usize) {
-        let mut full = parent.children[i].clone();
+    fn split_child(parent: &mut BTreeNode, index: usize) {
+        let mut full = parent.children[index].clone();
         let mut right = BTreeNode::new(full.leaf);
         right.keys = full.keys.split_off(T);
         if !full.leaf {
@@ -284,39 +333,37 @@ impl BTree {
         }
         let median = full.keys.pop().unwrap();
         full.keys.truncate(T - 1);
-        parent.keys.insert(i, median);
-        parent.children[i] = full;
-        parent.children.insert(i + 1, right);
+        parent.keys.insert(index, median);
+        parent.children[index] = full;
+        parent.children.insert(index + 1, right);
     }
 
     fn insert_nonfull(node: &mut BTreeNode, key: i32) {
-        let mut i = node.keys.len();
+        let mut index = node.keys.len();
         if node.leaf {
             node.keys.push(key);
-            while i > 0 && node.keys[i - 1] > key {
-                node.keys[i] = node.keys[i - 1];
-                i -= 1;
+            while index > 0 && node.keys[index - 1] > key {
+                node.keys[index] = node.keys[index - 1];
+                index -= 1;
             }
-            node.keys[i] = key;
+            node.keys[index] = key;
             return;
         }
-        while i > 0 && key < node.keys[i - 1] {
-            i -= 1;
+        while index > 0 && key < node.keys[index - 1] {
+            index -= 1;
         }
-        if node.children[i].is_full() {
-            Self::split_child(node, i);
-            if key > node.keys[i] {
-                i += 1;
+        if node.children[index].is_full() {
+            Self::split_child(node, index);
+            if key > node.keys[index] {
+                index += 1;
             }
         }
-        Self::insert_nonfull(&mut node.children[i], key);
+        Self::insert_nonfull(&mut node.children[index], key);
     }
 }
 ```
 
 ```typescript
-const T = 2; // minimum degree
-
 class BTreeNode {
     keys: number[] = [];
     children: BTreeNode[] = [];
@@ -327,59 +374,61 @@ class BTreeNode {
     }
 
     isFull(): boolean {
-        return this.keys.length === 2 * T - 1;
-    }
-
-    search(key: number): boolean {
-        let i = 0;
-        while (i < this.keys.length && key > this.keys[i]) i++;
-        if (i < this.keys.length && key === this.keys[i]) return true;
-        if (this.leaf) return false;
-        return this.children[i].search(key);
+        return this.keys.length === 3;
     }
 }
 
 export class BTree {
-    root: BTreeNode = new BTreeNode(true);
+    private root = new BTreeNode(true);
 
     search(key: number): boolean {
-        return this.root.search(key);
+        let node: BTreeNode | undefined = this.root;
+        while (node !== undefined) {
+            let index = 0;
+            while (index < node.keys.length && key > node.keys[index]) index++;
+            if (index < node.keys.length && key === node.keys[index]) return true;
+            if (node.leaf) return false;
+            node = node.children[index];
+        }
+        return false;
     }
 
     insert(key: number): void {
         if (this.root.isFull()) {
-            const s = new BTreeNode(false);
-            s.children.push(this.root);
-            BTree.splitChild(s, 0);
-            this.root = s;
+            const root = new BTreeNode(false);
+            root.children.push(this.root);
+            BTree.splitChild(root, 0);
+            this.root = root;
         }
         BTree.insertNonFull(this.root, key);
     }
 
-    private static splitChild(parent: BTreeNode, i: number): void {
-        const full = parent.children[i];
+    private static splitChild(parent: BTreeNode, index: number): void {
+        const full = parent.children[index];
         const right = new BTreeNode(full.leaf);
-        right.keys = full.keys.splice(T);
-        if (!full.leaf) right.children = full.children.splice(T);
-        const median = full.keys.splice(T - 1, 1)[0];
-        parent.keys.splice(i, 0, median);
-        parent.children.splice(i + 1, 0, right);
+        right.keys = full.keys.splice(2);
+        if (!full.leaf) right.children = full.children.splice(2);
+        parent.keys.splice(index, 0, full.keys.splice(1, 1)[0]);
+        parent.children.splice(index + 1, 0, right);
     }
 
     private static insertNonFull(node: BTreeNode, key: number): void {
-        let i = node.keys.length - 1;
+        let index = node.keys.length;
         if (node.leaf) {
-            while (i >= 0 && key < node.keys[i]) i--;
-            node.keys.splice(i + 1, 0, key);
+            node.keys.push(key);
+            while (index > 0 && node.keys[index - 1] > key) {
+                node.keys[index] = node.keys[index - 1];
+                index--;
+            }
+            node.keys[index] = key;
             return;
         }
-        while (i >= 0 && key < node.keys[i]) i--;
-        i++;
-        if (node.children[i].isFull()) {
-            BTree.splitChild(node, i);
-            if (key > node.keys[i]) i++;
+        while (index > 0 && key < node.keys[index - 1]) index--;
+        if (node.children[index].isFull()) {
+            BTree.splitChild(node, index);
+            if (key > node.keys[index]) index++;
         }
-        BTree.insertNonFull(node.children[i], key);
+        BTree.insertNonFull(node.children[index], key);
     }
 }
 ```
@@ -387,117 +436,123 @@ export class BTree {
 ```go
 package btree
 
-const T = 2 // minimum degree
+const minimumDegree = 2
 
-type Node struct {
+type BTreeNode struct {
 	keys     []int
-	children []*Node
+	children []*BTreeNode
 	leaf     bool
 }
 
-func newBTreeNode(leaf bool) *Node {
-	return &Node{leaf: leaf}
+func newBTreeNode(leaf bool) *BTreeNode {
+	return &BTreeNode{leaf: leaf}
 }
 
-func (n *Node) isFull() bool {
-	return len(n.keys) == 2*T-1
-}
-
-func (n *Node) search(key int) bool {
-	i := 0
-	for i < len(n.keys) && key > n.keys[i] {
-		i++
-	}
-	if i < len(n.keys) && key == n.keys[i] {
-		return true
-	}
-	if n.leaf {
-		return false
-	}
-	return n.children[i].search(key)
+func (node *BTreeNode) isFull() bool {
+	return len(node.keys) == 2*minimumDegree - 1
 }
 
 type BTree struct {
-	root *Node
+	root *BTreeNode
 }
 
 func New() *BTree {
 	return &BTree{root: newBTreeNode(true)}
 }
 
-func splitChild(parent *Node, i int) {
-	full := parent.children[i]
+func (tree *BTree) Search(key int) bool {
+	node := tree.root
+	for node != nil {
+		index := 0
+		for index < len(node.keys) && key > node.keys[index] {
+			index++
+		}
+		if index < len(node.keys) && key == node.keys[index] {
+			return true
+		}
+		if node.leaf {
+			return false
+		}
+		node = node.children[index]
+	}
+	return false
+}
+
+func (tree *BTree) Insert(key int) {
+	if tree.root.isFull() {
+		root := newBTreeNode(false)
+		root.children = append(root.children, tree.root)
+		tree.splitChild(root, 0)
+		tree.root = root
+	}
+	tree.insertNonFull(tree.root, key)
+}
+
+func (tree *BTree) splitChild(parent *BTreeNode, index int) {
+	full := parent.children[index]
 	right := newBTreeNode(full.leaf)
-	right.keys = append(right.keys, full.keys[T:]...)
+	right.keys = append(right.keys, full.keys[minimumDegree:]...)
 	if !full.leaf {
-		right.children = append(right.children, full.children[T:]...)
+		right.children = append(right.children, full.children[minimumDegree:]...)
 	}
 	parent.keys = append(parent.keys, 0)
-	copy(parent.keys[i+1:], parent.keys[i:])
-	parent.keys[i] = full.keys[T-1]
+	copy(parent.keys[index+1:], parent.keys[index:])
+	parent.keys[index] = full.keys[minimumDegree-1]
 	parent.children = append(parent.children, nil)
-	copy(parent.children[i+2:], parent.children[i+1:])
-	parent.children[i+1] = right
-	full.keys = full.keys[:T-1]
-	full.children = full.children[:T]
+	copy(parent.children[index+2:], parent.children[index+1:])
+	parent.children[index+1] = right
+	full.keys = full.keys[:minimumDegree-1]
+	full.children = full.children[:minimumDegree]
 }
 
-func insertNonFull(node *Node, key int) {
-	i := len(node.keys) - 1
+func (tree *BTree) insertNonFull(node *BTreeNode, key int) {
+	index := len(node.keys)
 	if node.leaf {
-		node.keys = append(node.keys, 0)
-		for i >= 0 && key < node.keys[i] {
-			node.keys[i+1] = node.keys[i]
-			i--
+		node.keys = append(node.keys, key)
+		for index > 0 && node.keys[index-1] > key {
+			node.keys[index] = node.keys[index-1]
+			index--
 		}
-		node.keys[i+1] = key
+		node.keys[index] = key
 		return
 	}
-	for i >= 0 && key < node.keys[i] {
-		i--
+	for index > 0 && key < node.keys[index-1] {
+		index--
 	}
-	i++
-	if node.children[i].isFull() {
-		splitChild(node, i)
-		if key > node.keys[i] {
-			i++
+	if node.children[index].isFull() {
+		tree.splitChild(node, index)
+		if key > node.keys[index] {
+			index++
 		}
 	}
-	insertNonFull(node.children[i], key)
-}
-
-func (t *BTree) Insert(key int) {
-	if t.root.isFull() {
-		s := newBTreeNode(false)
-		s.children = append(s.children, t.root)
-		splitChild(s, 0)
-		t.root = s
-	}
-	insertNonFull(t.root, key)
+	tree.insertNonFull(node.children[index], key)
 }
 ```
 
 ## Complexity
-| Operation | B-tree | LSM-tree |
+| Operation or property | B-tree or B+ tree | LSM-tree |
 | --- | --- | --- |
-| Point read (search) | O(log n) | O(log n) worst case (may probe multiple levels) |
-| Write / insert | O(log n) | O(1) memtable append (amortized) |
-| Delete | O(log n) | O(1) tombstone append |
-| Range scan | O(log n + k) | O(log n + k) |
-| Space amplification | Low | Higher (old versions until compaction) |
-| Write amplification | Higher (in-place updates) | Lower (sequential writes) |
+| Search | O(log n) key comparisons | O(F log n) for `F` candidate files or levels |
+| Insert or update | O(log n) key comparisons and page updates | O(1) expected memtable append before flush and compaction |
+| Delete | O(log n) key comparisons and page updates | O(1) expected tombstone append before flush and compaction |
+| Ordered range result | O(log n + k) for `k` results | O(F(log n + k)) under a simple leveled layout |
+| Build from sorted keys | O(n) | O(n) plus merge and flush cost |
 
-The B-tree's high fan-out means log base is large, so tree height is only a handful of levels even for billions of keys — a single root-to-leaf path touches a few disk pages.
+`F` is the number of candidate SSTable files or levels consulted. These bounds omit I/O latency. The B+ tree keeps a small height because page-sized nodes have a large fan-out, but random page faults can dominate key comparisons.
 
 ## When to use
-- B-tree: read-heavy workloads with point reads and range scans, where you want strong read latency guarantees and few surprises (e.g. PostgreSQL, InnoDB, most SQL engines).
-- LSM-tree: write-heavy workloads that benefit from sequential I/O and high throughput, accepting higher read cost and background compaction (e.g. RocksDB, LevelDB, Cassandra, HBase).
+- You need ordered point lookups and range scans over indexes larger than memory.
+- Read latency matters more than raw write throughput, favoring a B+ tree.
+- Write-heavy ingestion benefits from sequential LSM flushes and tolerates compaction overhead.
+- The storage engine needs concurrent versions, recovery, or level-based retention.
 
 ## Alternatives
-- Hash index — O(1) point lookups but no ordered range scans.
-- In-memory balanced BST — fastest when data fits in RAM but loses persistence and page-oriented I/O efficiency.
-- Fractal tree / write-optimized B-tree — lower write amplification via buffers in internal nodes, at added implementation complexity.
+- **Hash index** — gives expected O(1) point lookup but no ordered range traversal.
+- **In-memory balanced search tree** — gives simpler low-latency operations but does not solve page or file persistence by itself.
+- **Log-structured array** — optimizes scan and ingestion, but requires indexes for point lookup and more compaction work.
+- **Fractal tree or buffered B-tree** — reduces random write amplification with internal buffers, but adds metadata and implementation complexity.
 
 ## Related
 - [Binary Search Trees](01-binary-search-trees.md)
-- [Heaps and Priority Queues](02-heaps-priority-queues.md)
+- [Range Query Trees (Segment Trees and Fenwick Trees)](04-range-query-trees.md)
+- [Storage Engines](../../04-distributed-systems/02-databases/03-storage-engines.md)

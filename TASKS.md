@@ -59,36 +59,36 @@ For every algorithm chapter:
 ### Chapter 1 — Linear Data Structures & Memory Models
 
 - [x] 1.1 Dynamic Arrays, Memory Allocation, and Amortized Analysis
-- [ ] 1.2 Linked Lists (Singly, Doubly, Skip Lists)
-- [ ] 1.3 Stacks, Queues, Deques, and Ring/Circular Buffers
-- [ ] 1.4 Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing
-- [ ] 1.5 Bitwise Algorithms, Bitsets, and Bloom Filters
+- [x] 1.2 Linked Lists (Singly, Doubly, Skip Lists)
+- [x] 1.3 Stacks, Queues, Deques, and Ring/Circular Buffers
+- [x] 1.4 Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing
+- [x] 1.5 Bitwise Algorithms, Bitsets, and Bloom Filters
 
 ### Chapter 2 — Hierarchical Data Structures & Search Trees
 
-- [ ] 2.1 Binary Search Trees & Self-Balancing Trees (AVL, Red-Black Trees)
-- [ ] 2.2 Heaps, Priority Queues, and Fibonacci Heaps
-- [ ] 2.3 Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)
-- [ ] 2.4 Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees
-- [ ] 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
-- [ ] 2.6 Tries, Radix Trees, and Suffix Trees/Arrays
+- [x] 2.1 Binary Search Trees & Self-Balancing Trees (AVL, Red-Black Trees)
+- [x] 2.2 Heaps, Priority Queues, and Fibonacci Heaps
+- [x] 2.3 Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)
+- [x] 2.4 Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees
+- [x] 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
+- [x] 2.6 Tries, Radix Trees, and Suffix Trees/Arrays
 
 ### Chapter 3 — Core Algorithmic Paradigms
 
-- [ ] 3.1 Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)
-- [ ] 3.2 Greedy Choice Paradigms & Interval Scheduling
-- [ ] 3.3 Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)
-- [ ] 3.4 Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems
-- [ ] 3.5 Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)
+- [x] 3.1 Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)
+- [x] 3.2 Greedy Choice Paradigms & Interval Scheduling
+- [x] 3.3 Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)
+- [x] 3.4 Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems
+- [x] 3.5 Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)
 
 ### Chapter 4 — Graph Theory & Network Algorithms
 
-- [ ] 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List)
-- [ ] 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
-- [ ] 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
-- [ ] 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
-- [ ] 4.5 Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)
-- [ ] 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
+- [x] 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List)
+- [x] 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
+- [x] 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
+- [x] 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
+- [x] 4.5 Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)
+- [x] 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
 
 ## Part II — System Design Foundations & High-Scale Architecture
 

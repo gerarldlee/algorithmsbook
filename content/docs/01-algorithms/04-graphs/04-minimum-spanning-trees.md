@@ -1,66 +1,84 @@
 ---
-title: "Minimum Spanning Trees"
+title: "Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)"
 weight: 4
 toc: true
 ---
 
 ## What it is
-A minimum spanning tree (MST) of a weighted, connected, undirected graph is a subset of edges that connects all vertices with no cycles and minimum total weight. Kruskal's and Prim's algorithms are the two classic ways to build it.
+A **minimum spanning tree (MST)** is a cycle-free subset of a connected, weighted, undirected graph that connects every vertex with minimum total edge weight.
 
 ## How it works
-Kruskal's algorithm sorts all edges by weight and greedily adds each edge that does not form a cycle, tracked with a union-find (disjoint-set) structure. Prim's algorithm grows a single tree from an arbitrary start vertex, repeatedly adding the cheapest edge crossing the cut from the tree to the rest of the graph, maintained in a priority queue.
+Kruskal's algorithm sorts edges and accepts the cheapest edge whose endpoints are in different **disjoint-set (DSU)** components. Prim's algorithm grows one tree from a start vertex and repeatedly accepts the cheapest edge crossing from that tree to the rest of the graph. The examples return total weight for a connected graph and use integer weights.
 
 ```java
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
 
-public class MST {
-    static int[] parent, rank;
+public final class MST {
+    public record Edge(int from, int to, int weight) {}
 
-    static int find(int x) {
-        if (parent[x] != x) parent[x] = find(parent[x]);
-        return parent[x];
+    private static final class DSU {
+        private final int[] parent;
+        private final int[] rank;
+
+        private DSU(int size) {
+            parent = new int[size];
+            rank = new int[size];
+            for (int vertex = 0; vertex < size; vertex++) parent[vertex] = vertex;
+        }
+
+        private int find(int vertex) {
+            if (parent[vertex] != vertex) parent[vertex] = find(parent[vertex]);
+            return parent[vertex];
+        }
+
+        private boolean union(int first, int second) {
+            int firstRoot = find(first);
+            int secondRoot = find(second);
+            if (firstRoot == secondRoot) return false;
+            if (rank[firstRoot] < rank[secondRoot]) {
+                int swap = firstRoot;
+                firstRoot = secondRoot;
+                secondRoot = swap;
+            }
+            parent[secondRoot] = firstRoot;
+            if (rank[firstRoot] == rank[secondRoot]) rank[firstRoot]++;
+            return true;
+        }
     }
 
-    static boolean union(int a, int b) {
-        int ra = find(a), rb = find(b);
-        if (ra == rb) return false;
-        if (rank[ra] < rank[rb]) { int t = ra; ra = rb; rb = t; }
-        parent[rb] = ra;
-        if (rank[ra] == rank[rb]) rank[ra]++;
-        return true;
-    }
-
-    // Kruskal: edges as int[]{u, v, w}
-    public static int kruskal(int n, List<int[]> edges) {
-        parent = new int[n]; rank = new int[n];
-        for (int i = 0; i < n; i++) parent[i] = i;
-        edges.sort(Comparator.comparingInt(e -> e[2]));
-        int total = 0, count = 0;
-        for (int[] e : edges) {
-            if (union(e[0], e[1])) {
-                total += e[2];
-                if (++count == n - 1) break;
+    public static long kruskal(int vertexCount, List<Edge> edges) {
+        DSU dsu = new DSU(vertexCount);
+        edges.sort(Comparator.comparingInt(Edge::weight));
+        long total = 0;
+        int selected = 0;
+        for (Edge edge : edges) {
+            if (dsu.union(edge.from(), edge.to())) {
+                total += edge.weight();
+                if (++selected == vertexCount - 1) break;
             }
         }
         return total;
     }
 
-    // Prim: adjacency list of int[]{v, w}
-    public static int prim(List<List<int[]>> adj) {
-        int n = adj.size();
-        boolean[] inTree = new boolean[n];
-        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(e -> e[1]));
-        pq.add(new int[]{0, 0});
-        int total = 0, count = 0;
-        while (!pq.isEmpty() && count < n) {
-            int[] e = pq.poll();
-            int u = e[0];
-            if (inTree[u]) continue;
-            inTree[u] = true;
-            total += e[1];
-            count++;
-            for (int[] nb : adj.get(u)) {
-                if (!inTree[nb[0]]) pq.add(new int[]{nb[0], nb[1]});
+    public static long prim(List<List<int[]>> adjacency) {
+        int vertexCount = adjacency.size();
+        boolean[] inTree = new boolean[vertexCount];
+        PriorityQueue<int[]> queue = new PriorityQueue<>(Comparator.comparingInt(edge -> edge[1]));
+        queue.add(new int[]{0, 0});
+        long total = 0;
+        int selected = 0;
+        while (!queue.isEmpty() && selected < vertexCount) {
+            int[] edge = queue.remove();
+            int vertex = edge[0];
+            if (inTree[vertex]) continue;
+            inTree[vertex] = true;
+            if (selected > 0) total += edge[1];
+            selected++;
+            for (int[] neighbor : adjacency.get(vertex)) {
+                if (!inTree[neighbor[0]]) queue.add(neighbor);
             }
         }
         return total;
@@ -69,106 +87,175 @@ public class MST {
 ```
 
 ```c
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
-typedef struct Edge { int u, v, w; } Edge;
+typedef struct {
+    int from;
+    int to;
+    int weight;
+} Edge;
 
-static int* parent; static int* rank;
+typedef struct WeightedEdge {
+    int vertex;
+    int weight;
+    struct WeightedEdge* next;
+} WeightedEdge;
 
-static int find(int x) {
-    if (parent[x] != x) parent[x] = find(parent[x]);
-    return parent[x];
+typedef struct {
+    int* parent;
+    int* rank;
+} DSU;
+
+typedef struct {
+    int vertex;
+    int weight;
+} HeapEntry;
+
+static DSU* dsu_create(int vertex_count) {
+    DSU* dsu = malloc(sizeof(DSU));
+    dsu->parent = malloc(vertex_count * sizeof(int));
+    dsu->rank = calloc(vertex_count, sizeof(int));
+    for (int vertex = 0; vertex < vertex_count; vertex++) dsu->parent[vertex] = vertex;
+    return dsu;
 }
 
-static int unionSets(int a, int b) {
-    int ra = find(a), rb = find(b);
-    if (ra == rb) return 0;
-    if (rank[ra] < rank[rb]) { int t = ra; ra = rb; rb = t; }
-    parent[rb] = ra;
-    if (rank[ra] == rank[rb]) rank[ra]++;
+static int dsu_find(DSU* dsu, int vertex) {
+    if (dsu->parent[vertex] != vertex) dsu->parent[vertex] = dsu_find(dsu, dsu->parent[vertex]);
+    return dsu->parent[vertex];
+}
+
+static int dsu_union(DSU* dsu, int first, int second) {
+    int first_root = dsu_find(dsu, first);
+    int second_root = dsu_find(dsu, second);
+    if (first_root == second_root) return 0;
+    if (dsu->rank[first_root] < dsu->rank[second_root]) {
+        int swap = first_root;
+        first_root = second_root;
+        second_root = swap;
+    }
+    dsu->parent[second_root] = first_root;
+    if (dsu->rank[first_root] == dsu->rank[second_root]) dsu->rank[first_root]++;
     return 1;
 }
 
-static int cmpEdge(const void* a, const void* b) {
-    return ((Edge*)a)->w - ((Edge*)b)->w;
+static int compare_edge(const void* first, const void* second) {
+    int first_weight = ((const Edge*)first)->weight;
+    int second_weight = ((const Edge*)second)->weight;
+    return (first_weight > second_weight) - (first_weight < second_weight);
 }
 
-int kruskal(int n, Edge* edges, int m) {
-    parent = malloc(n * sizeof(int));
-    rank = calloc(n, sizeof(int));
-    for (int i = 0; i < n; i++) parent[i] = i;
-    qsort(edges, m, sizeof(Edge), cmpEdge);
-    int total = 0, count = 0;
-    for (int i = 0; i < m && count < n - 1; i++) {
-        if (unionSets(edges[i].u, edges[i].v)) {
-            total += edges[i].w;
-            count++;
+long long mst_kruskal(int vertex_count, Edge* edges, int edge_count) {
+    DSU* dsu = dsu_create(vertex_count);
+    qsort(edges, edge_count, sizeof(Edge), compare_edge);
+    long long total = 0;
+    int selected = 0;
+    for (int index = 0; index < edge_count && selected < vertex_count - 1; index++) {
+        if (dsu_union(dsu, edges[index].from, edges[index].to)) {
+            total += edges[index].weight;
+            selected++;
         }
     }
-    free(parent); free(rank);
+    free(dsu->parent);
+    free(dsu->rank);
+    free(dsu);
+    return total;
+}
+
+long long mst_prim(WeightedEdge** adjacency, int vertex_count) {
+    if (vertex_count == 0) return 0;
+    bool* in_tree = calloc(vertex_count, sizeof(bool));
+    HeapEntry* queue = malloc((vertex_count * 2) * sizeof(HeapEntry));
+    int queue_size = 0;
+    queue[queue_size++] = (HeapEntry){0, 0};
+    long long total = 0;
+    int selected = 0;
+    while (queue_size > 0 && selected < vertex_count) {
+        int best = 0;
+        for (int index = 1; index < queue_size; index++) {
+            if (queue[index].weight < queue[best].weight) best = index;
+        }
+        HeapEntry entry = queue[best];
+        queue[best] = queue[--queue_size];
+        if (in_tree[entry.vertex]) continue;
+        in_tree[entry.vertex] = true;
+        if (selected > 0) total += entry.weight;
+        selected++;
+        for (WeightedEdge* edge = adjacency[entry.vertex]; edge; edge = edge->next) {
+            if (!in_tree[edge->vertex]) {
+                if (queue_size == vertex_count * 2) {
+                    queue = realloc(queue, queue_size * 2 * sizeof(HeapEntry));
+                }
+                queue[queue_size++] = (HeapEntry){edge->vertex, edge->weight};
+            }
+        }
+    }
+    free(queue);
+    free(in_tree);
     return total;
 }
 ```
 
 ```python
-from typing import List, Tuple
+import heapq
 
 
 class DSU:
-    def __init__(self, n: int) -> None:
-        self.parent = list(range(n))
-        self.rank = [0] * n
+    def __init__(self, size: int) -> None:
+        self.parent = list(range(size))
+        self.rank = [0] * size
 
-    def find(self, x: int) -> int:
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
+    def find(self, vertex: int) -> int:
+        if self.parent[vertex] != vertex:
+            self.parent[vertex] = self.find(self.parent[vertex])
+        return self.parent[vertex]
 
-    def union(self, a: int, b: int) -> bool:
-        ra, rb = self.find(a), self.find(b)
-        if ra == rb:
+    def union(self, first: int, second: int) -> bool:
+        first_root = self.find(first)
+        second_root = self.find(second)
+        if first_root == second_root:
             return False
-        if self.rank[ra] < self.rank[rb]:
-            ra, rb = rb, ra
-        self.parent[rb] = ra
-        if self.rank[ra] == self.rank[rb]:
-            self.rank[ra] += 1
+        if self.rank[first_root] < self.rank[second_root]:
+            first_root, second_root = second_root, first_root
+        self.parent[second_root] = first_root
+        if self.rank[first_root] == self.rank[second_root]:
+            self.rank[first_root] += 1
         return True
 
 
-def kruskal(n: int, edges: List[Tuple[int, int, int]]) -> int:
-    dsu = DSU(n)
-    edges.sort(key=lambda e: e[2])
-    total = 0
-    count = 0
-    for u, v, w in edges:
-        if dsu.union(u, v):
-            total += w
-            count += 1
-            if count == n - 1:
-                break
-    return total
+class MST:
+    @staticmethod
+    def kruskal(vertex_count: int, edges: list[tuple[int, int, int]]) -> int:
+        dsu = DSU(vertex_count)
+        total = 0
+        selected = 0
+        for first, second, weight in sorted(edges, key=lambda edge: edge[2]):
+            if dsu.union(first, second):
+                total += weight
+                if selected == vertex_count - 1:
+                    break
+        return total
 
-
-def prim(adj: List[List[Tuple[int, int]]]) -> int:
-    import heapq
-    n = len(adj)
-    in_tree = [False] * n
-    pq = [(0, 0)]
-    total = 0
-    count = 0
-    while pq and count < n:
-        w, u = heapq.heappop(pq)
-        if in_tree[u]:
-            continue
-        in_tree[u] = True
-        total += w
-        count += 1
-        for v, vw in adj[u]:
-            if not in_tree[v]:
-                heapq.heappush(pq, (vw, v))
-    return total
+    @staticmethod
+    def prim(adjacency: list[list[tuple[int, int]]]) -> int:
+        if not adjacency:
+            return 0
+        in_tree = [False] * len(adjacency)
+        queue = [(0, 0)]
+        total = 0
+        selected = 0
+        while queue and selected < len(adjacency):
+            weight, vertex = heapq.heappop(queue)
+            if in_tree[vertex]:
+                continue
+            in_tree[vertex] = True
+            if selected > 0:
+                total += weight
+            selected += 1
+            for neighbor, edge_weight in adjacency[vertex]:
+                if not in_tree[neighbor]:
+                    heapq.heappush(queue, (edge_weight, neighbor))
+        return total
 ```
 
 ```rust
@@ -177,176 +264,260 @@ use std::collections::BinaryHeap;
 
 struct DSU {
     parent: Vec<usize>,
-    rank: Vec<usize>,
+    rank: Vec<u8>,
 }
 
 impl DSU {
-    fn new(n: usize) -> Self {
-        DSU { parent: (0..n).collect(), rank: vec![0; n] }
+    fn new(size: usize) -> Self {
+        Self { parent: (0..size).collect(), rank: vec![0; size] }
     }
-    fn find(&mut self, x: usize) -> usize {
-        if self.parent[x] != x {
-            let p = self.find(self.parent[x]);
-            self.parent[x] = p;
+
+    fn find(&mut self, vertex: usize) -> usize {
+        if self.parent[vertex] != vertex {
+            self.parent[vertex] = self.find(self.parent[vertex]);
         }
-        self.parent[x]
+        self.parent[vertex]
     }
-    fn union(&mut self, a: usize, b: usize) -> bool {
-        let (mut ra, mut rb) = (self.find(a), self.find(b));
-        if ra == rb {
+
+    fn union(&mut self, first: usize, second: usize) -> bool {
+        let mut first_root = self.find(first);
+        let mut second_root = self.find(second);
+        if first_root == second_root {
             return false;
         }
-        if self.rank[ra] < self.rank[rb] {
-            std::mem::swap(&mut ra, &mut rb);
+        if self.rank[first_root] < self.rank[second_root] {
+            std::mem::swap(&mut first_root, &mut second_root);
         }
-        self.parent[rb] = ra;
-        if self.rank[ra] == self.rank[rb] {
-            self.rank[ra] += 1;
+        self.parent[second_root] = first_root;
+        if self.rank[first_root] == self.rank[second_root] {
+            self.rank[first_root] += 1;
         }
         true
     }
 }
 
-pub fn kruskal(n: usize, edges: &mut [(usize, usize, i32)]) -> i32 {
-    edges.sort_by_key(|e| e.2);
-    let mut dsu = DSU::new(n);
-    let mut total = 0;
-    let mut count = 0;
-    for &(u, v, w) in edges.iter() {
-        if dsu.union(u, v) {
-            total += w;
-            count += 1;
-            if count == n - 1 {
-                break;
-            }
-        }
-    }
-    total
-}
+pub struct MST;
 
-pub fn prim(adj: &[Vec<(usize, i32)>]) -> i32 {
-    let n = adj.len();
-    let mut in_tree = vec![false; n];
-    let mut pq: BinaryHeap<Reverse<(i32, usize)>> = BinaryHeap::new();
-    pq.push(Reverse((0, 0)));
-    let mut total = 0;
-    let mut count = 0;
-    while let Some(Reverse((w, u))) = pq.pop() {
-        if in_tree[u] {
-            continue;
-        }
-        in_tree[u] = true;
-        total += w;
-        count += 1;
-        if count == n {
-            break;
-        }
-        for &(v, vw) in &adj[u] {
-            if !in_tree[v] {
-                pq.push(Reverse((vw, v)));
+impl MST {
+    pub fn kruskal(vertex_count: usize, edges: &mut [(usize, usize, i32)]) -> i64 {
+        edges.sort_by_key(|edge| edge.2);
+        let mut dsu = DSU::new(vertex_count);
+        let mut total = 0;
+        let mut selected = 0;
+        for &(first, second, weight) in edges.iter() {
+            if dsu.union(first, second) {
+                total += i64::from(weight);
+                selected += 1;
+                if selected == vertex_count - 1 {
+                    break;
+                }
             }
         }
+        total
     }
-    total
+
+    pub fn prim(adjacency: &[Vec<(usize, i32)>]) -> i64 {
+        if adjacency.is_empty() {
+            return 0;
+        }
+        let mut in_tree = vec![false; adjacency.len()];
+        let mut queue = BinaryHeap::new();
+        queue.push(Reverse((0, 0usize)));
+        let mut total = 0;
+        let mut selected = 0;
+        while let Some(Reverse((weight, vertex))) = queue.pop() {
+            if in_tree[vertex] {
+                continue;
+            }
+            in_tree[vertex] = true;
+            if selected > 0 {
+                total += i64::from(weight);
+            }
+            selected += 1;
+            for &(neighbor, edge_weight) in &adjacency[vertex] {
+                if !in_tree[neighbor] {
+                    queue.push(Reverse((edge_weight, neighbor)));
+                }
+            }
+        }
+        total
+    }
 }
 ```
 
 ```typescript
-export function kruskal(n: number, edges: [number, number, number][]): number {
-  const parent = Array.from({ length: n }, (_, i) => i);
-  const rank = new Array(n).fill(0);
+class DSU {
+  private parent: number[];
+  private rank: number[];
 
-  const find = (x: number): number => {
-    if (parent[x] !== x) parent[x] = find(parent[x]);
-    return parent[x];
-  };
-
-  const union = (a: number, b: number): boolean => {
-    let ra = find(a);
-    let rb = find(b);
-    if (ra === rb) return false;
-    if (rank[ra] < rank[rb]) [ra, rb] = [rb, ra];
-    parent[rb] = ra;
-    if (rank[ra] === rank[rb]) rank[ra]++;
-    return true;
-  };
-
-  edges.sort((a, b) => a[2] - b[2]);
-  let total = 0;
-  let count = 0;
-  for (const [u, v, w] of edges) {
-    if (union(u, v)) {
-      total += w;
-      if (++count === n - 1) break;
-    }
+  constructor(size: number) {
+    this.parent = Array.from({ length: size }, (_, vertex) => vertex);
+    this.rank = new Array<number>(size).fill(0);
   }
-  return total;
+
+  find(vertex: number): number {
+    if (this.parent[vertex] !== vertex) this.parent[vertex] = this.find(this.parent[vertex]);
+    return this.parent[vertex];
+  }
+
+  union(first: number, second: number): boolean {
+    let firstRoot = this.find(first);
+    let secondRoot = this.find(second);
+    if (firstRoot === secondRoot) return false;
+    if (this.rank[firstRoot] < this.rank[secondRoot]) [firstRoot, secondRoot] = [secondRoot, firstRoot];
+    this.parent[secondRoot] = firstRoot;
+    if (this.rank[firstRoot] === this.rank[secondRoot]) this.rank[firstRoot]++;
+    return true;
+  }
 }
 
-export function prim(adj: [number, number][][]): number {
-  const n = adj.length;
-  const inTree = new Array(n).fill(false);
-  const pq: [number, number][] = [[0, 0]]; // [weight, vertex]
-  let total = 0;
-  let count = 0;
-  while (pq.length > 0 && count < n) {
-    pq.sort((a, b) => a[0] - b[0]);
-    const [w, u] = pq.shift()!;
-    if (inTree[u]) continue;
-    inTree[u] = true;
-    total += w;
-    count++;
-    for (const [v, vw] of adj[u]) {
-      if (!inTree[v]) pq.push([vw, v]);
+export class MST {
+  static kruskal(vertexCount: number, edges: [number, number, number][]): number {
+    const dsu = new DSU(vertexCount);
+    edges.sort((first, second) => first[2] - second[2]);
+    let total = 0;
+    let selected = 0;
+    for (const [from, to, weight] of edges) {
+      if (dsu.union(from, to)) {
+        total += weight;
+        if (++selected === vertexCount - 1) break;
+      }
     }
+    return total;
   }
-  return total;
+
+  static prim(adjacency: [number, number][][]): number {
+    if (adjacency.length === 0) return 0;
+    const inTree = new Array<boolean>(adjacency.length).fill(false);
+    const queue: [number, number][] = [[0, 0]];
+    let total = 0;
+    let selected = 0;
+    while (queue.length > 0 && selected < adjacency.length) {
+      queue.sort((first, second) => first[0] - second[0]);
+      const [weight, vertex] = queue.shift()!;
+      if (inTree[vertex]) continue;
+      inTree[vertex] = true;
+      if (selected > 0) total += weight;
+      selected++;
+      for (const [neighbor, edgeWeight] of adjacency[vertex]) {
+        if (!inTree[neighbor]) queue.push([edgeWeight, neighbor]);
+      }
+    }
+    return total;
+  }
 }
 ```
 
 ```go
-package main
+package graph
 
-import "sort"
+import (
+	"container/heap"
+	"sort"
+)
 
-type Edge struct{ u, v, w int }
+type Edge struct {
+	From   int
+	To     int
+	Weight int
+}
 
-func kruskal(n int, edges []Edge) int {
-	parent := make([]int, n)
-	rank := make([]int, n)
-	for i := range parent {
-		parent[i] = i
+type DSU struct {
+	parent []int
+	rank   []int
+}
+
+func newDSU(size int) *DSU {
+	dsu := &DSU{parent: make([]int, size), rank: make([]int, size)}
+	for vertex := 0; vertex < size; vertex++ {
+		dsu.parent[vertex] = vertex
 	}
-	var find func(x int) int
-	find = func(x int) int {
-		if parent[x] != x {
-			parent[x] = find(parent[x])
-		}
-		return parent[x]
-	}
-	union := func(a, b int) bool {
-		ra, rb := find(a), find(b)
-		if ra == rb {
-			return false
-		}
-		if rank[ra] < rank[rb] {
-			ra, rb = rb, ra
-		}
-		parent[rb] = ra
-		if rank[ra] == rank[rb] {
-			rank[ra]++
-		}
-		return true
-	}
+	return dsu
+}
 
-	sort.Slice(edges, func(i, j int) bool { return edges[i].w < edges[j].w })
-	total, count := 0, 0
-	for _, e := range edges {
-		if union(e.u, e.v) {
-			total += e.w
-			count++
-			if count == n-1 {
+func (dsu *DSU) Find(vertex int) int {
+	if dsu.parent[vertex] != vertex {
+		dsu.parent[vertex] = dsu.Find(dsu.parent[vertex])
+	}
+	return dsu.parent[vertex]
+}
+
+func (dsu *DSU) Union(first, second int) bool {
+	firstRoot := dsu.Find(first)
+	secondRoot := dsu.Find(second)
+	if firstRoot == secondRoot {
+		return false
+	}
+	if dsu.rank[firstRoot] < dsu.rank[secondRoot] {
+		firstRoot, secondRoot = secondRoot, firstRoot
+	}
+	dsu.parent[secondRoot] = firstRoot
+	if dsu.rank[firstRoot] == dsu.rank[secondRoot] {
+		dsu.rank[firstRoot]++
+	}
+	return true
+}
+
+type MST struct{}
+
+type heapEntry struct {
+	vertex int
+	weight int
+}
+
+type minHeap []heapEntry
+
+func (heap minHeap) Len() int           { return len(heap) }
+func (heap minHeap) Less(i, j int) bool { return heap[i].weight < heap[j].weight }
+func (heap minHeap) Swap(i, j int)      { heap[i], heap[j] = heap[j], heap[i] }
+func (heap *minHeap) Push(value any)    { *heap = append(*heap, value.(heapEntry)) }
+func (heap *minHeap) Pop() any {
+	old := *heap
+	last := len(old) - 1
+	value := old[last]
+	*heap = old[:last]
+	return value
+}
+
+func (MST) Kruskal(vertexCount int, edges []Edge) int64 {
+	dsu := newDSU(vertexCount)
+	sort.Slice(edges, func(first, second int) bool { return edges[first].Weight < edges[second].Weight })
+	var total int64
+	selected := 0
+	for _, edge := range edges {
+		if dsu.Union(edge.From, edge.To) {
+			total += int64(edge.Weight)
+			selected++
+			if selected == vertexCount-1 {
 				break
+			}
+		}
+	}
+	return total
+}
+
+func (MST) Prim(adjacency [][]Edge) int64 {
+	if len(adjacency) == 0 {
+		return 0
+	}
+	inTree := make([]bool, len(adjacency))
+	queue := &minHeap{{vertex: 0, weight: 0}}
+	heap.Init(queue)
+	var total int64
+	selected := 0
+	for queue.Len() > 0 && selected < len(adjacency) {
+		entry := heap.Pop(queue).(heapEntry)
+		if inTree[entry.vertex] {
+			continue
+		}
+		inTree[entry.vertex] = true
+		if selected > 0 {
+			total += int64(entry.weight)
+		}
+		selected++
+		for _, edge := range adjacency[entry.vertex] {
+			if !inTree[edge.To] {
+				heap.Push(queue, heapEntry{vertex: edge.To, weight: edge.Weight})
 			}
 		}
 	}
@@ -355,24 +526,32 @@ func kruskal(n int, edges []Edge) int {
 ```
 
 ## Complexity
-| Algorithm | Time | Space |
+For \(V\) vertices, \(E\) edges, and an undirected connected graph:
+
+| Algorithm | Time | Extra space |
 | --- | --- | --- |
-| Kruskal (sort + union-find) | O(E log E) | O(V+E) |
-| Prim (binary heap) | O(E log V) | O(V+E) |
-| Prim (Fibonacci heap) | O(E + V log V) | O(V+E) |
+| Kruskal with sorting and path-compressed DSU | O(E log E) | O(V) beyond the input |
+| Prim with a binary heap | O((V+E) log V) | O(V+E) |
+| Prim with a Fibonacci heap | O(E + V log V) | O(V) |
+| Borůvka | O(E log V) | O(V) |
+
+The C and TypeScript Prim examples maintain sorted arrays rather than a binary heap, so their running time is O(E²) under those implementations. The Java, Python, Rust, and Go examples use heap implementations with the stated heap bounds.
 
 ## When to use
-- Use Kruskal when edges can be sorted globally or the graph is sparse; it is simple to implement with union-find.
-- Use Prim when the graph is dense or given as an adjacency list; it grows a single connected tree.
-- Apply MST to network design (minimum cable/road layout), clustering (single-linkage), and approximation for problems like the traveling salesperson.
+- You need a minimum-cost network that connects every node without cycles.
+- You have an undirected edge list and can sort edges easily.
+- You need a connected subgraph with minimum total weight, not shortest paths between every pair.
+- You need a starting point for a heuristic such as single-linkage clustering.
 
 ## Alternatives
-- Borůvka's algorithm — adds many cheapest crossing edges in parallel each round; useful for parallel/distributed MST, but less common in practice.
-- Reverse-delete algorithm — starts with the full graph and removes heaviest cycle edges; simpler proof but rarely more efficient.
-- Minimum bottleneck spanning tree — minimizes the maximum edge weight rather than total weight, relevant for latency-sensitive networks.
+- **Borůvka's algorithm** — finds several safe edges per phase and suits distributed MST construction, but needs more bookkeeping.
+- **Reverse-delete** — removes the heaviest edge in every cycle, which is conceptually simple but less efficient in practice.
+- **Minimum bottleneck spanning tree** — minimizes the largest selected edge, which is different from minimizing total weight.
 
 ## Related
-- [Graph Representations](01-graph-representations.md)
-- [Graph Traversals (BFS and DFS)](02-graph-traversals.md)
-- [Shortest Paths](05-shortest-paths.md)
+- [Graph Representations (Adjacency Matrix, Adjacency List, Edge List)](01-graph-representations.md)
+- [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
+- [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Union-Find](../02-search-trees/05-union-find.md)
+- [Heaps, Priority Queues, and Fibonacci Heaps](../02-search-trees/02-heaps-priority-queues.md)
+- [Greedy Choice Paradigms & Interval Scheduling](../03-paradigms/02-greedy.md)
