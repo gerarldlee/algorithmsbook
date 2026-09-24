@@ -114,3 +114,4 @@ Safety boundaries belong outside the model. Validate every argument, authorize a
 ## Related
 - [Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking](02-rag.md)
 - [Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)](01-vector-databases.md)
+- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)

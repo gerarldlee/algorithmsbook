@@ -1,5 +1,5 @@
 ---
-title: "Bitwise Algorithms, Bitsets, and Bloom Filters"
+title: "Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)"
 weight: 5
 toc: true
 ---

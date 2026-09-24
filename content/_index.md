@@ -1,6 +1,5 @@
 ---
-title: Learn Algorithms and Design
-toc: false
+title: "Learn Algorithms and Design"
 ---
 
 Intuitively learn algorithms and system design for your interviews and sanity.
@@ -23,7 +22,7 @@ finally the templates you should memorize.
 - [Part II: System Design Foundations & High-Scale Architecture](docs/02-system-design/)
 - [Part III: Messaging, Notifications & Real-Time Communication](docs/03-messaging/)
 - [Part IV: Distributed Systems & Database Architecture](docs/04-distributed-systems/)
-- [Part V: Cloud Architecture, Deployment Engineering & DevOps](docs/05-cloud-devops/)
+- [Part V: Cloud Architecture, Operating Systems & DevOps Engineering](docs/05-cloud-devops/)
 - [Part VI: Machine Learning Systems & Scalable AI Infrastructure](docs/06-ml-ai/)
 
 > Bad programmers worry about the code. Good programmers worry about data structures and their relationships.

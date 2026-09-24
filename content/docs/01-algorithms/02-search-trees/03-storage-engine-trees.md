@@ -556,3 +556,4 @@ func (tree *BTree) insertNonFull(node *BTreeNode, key int) {
 - [Binary Search Trees](01-binary-search-trees.md)
 - [Range Query Trees (Segment Trees and Fenwick Trees)](04-range-query-trees.md)
 - [Storage Engines](../../04-distributed-systems/02-databases/03-storage-engines.md)
+- [Spatial Indexing & Geospatial Data Structures](07-spatial-indexing.md)

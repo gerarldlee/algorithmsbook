@@ -1,5 +1,5 @@
 ---
-title: "Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration"
+title: "Content Delivery Networks (CDNs), Edge Computing, Edge Runtimes (Wasm at Edge, eBPF), and Static/Dynamic Content Acceleration"
 weight: 3
 toc: true
 ---

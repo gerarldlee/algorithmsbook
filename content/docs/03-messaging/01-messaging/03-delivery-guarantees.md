@@ -82,3 +82,4 @@ The **transactional outbox** solves a different dual-write problem: the producer
 - [Backpressure and Dead Letter Queues](04-backpressure-dlq.md)
 - [Publish-Subscribe](02-pub-sub.md)
 - [Distributed Transactions](../../04-distributed-systems/01-consensus/04-distributed-transactions.md)
+- [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Exponential Backoff, Retry Strategies, and Timeout Budgets](../../02-system-design/02-software-architecture-patterns/03-resilience-fault-tolerance.md)

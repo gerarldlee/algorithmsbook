@@ -1,5 +1,5 @@
 ---
-title: "API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems"
+title: "API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications"
 weight: 5
 toc: true
 ---
@@ -10,7 +10,7 @@ API paradigms define the contract and direction of communication between compone
 
 ## How it works
 
-REST maps a domain operation to a resource URI and an HTTP method, then uses status codes, headers, and a representation such as JSON to exchange data. GraphQL clients send operations against a schema; the server resolves the selected fields and returns matching data, usually as JSON. gRPC code generators turn a schema into typed clients and servers, and Protocol Buffers provide a compact, language-neutral wire format. Event-driven systems instead publish a domain event to durable storage or a broker; consumers acknowledge progress and may replay the event to rebuild state or trigger follow-on work.
+REST maps a domain operation to a resource URI and an HTTP method, then uses status codes, headers, and a representation such as JSON to exchange data. GraphQL clients send operations against a schema; the server resolves the selected fields and returns matching data, usually as JSON. gRPC code generators turn a schema into typed clients and servers, and Protocol Buffers provide a compact, language-neutral wire format. Event-driven systems instead publish a domain event to durable storage or a broker; consumers acknowledge progress and may replay the event to rebuild state or trigger follow-on work. **tRPC** keeps a TypeScript procedure definition as the source of truth and generates a typed client, router, and runtime validation from it. **OpenAPI** describes synchronous HTTP operations, while **AsyncAPI** describes event-driven channels, messages, and brokers.
 
 The GraphQL contract names resources as graph fields:
 
@@ -65,6 +65,76 @@ REST represents the same operation as `GET /users/{id}`, while an event describe
 
 For REST, clients and intermediaries can cache responses when cache headers permit, and independent resources can evolve without exposing every internal service. GraphQL reduces accidental over-fetching for clients with different field needs, but arbitrary selections complicate HTTP caching and can trigger excessive resolver work unless query cost and data-loader controls are explicit. gRPC makes method schemas and generated types visible to build systems, but browser clients need a proxy and generic clients need tooling for discovery. In an event-driven design, the producer records that a fact occurred; the broker orders records within a partition, and consumers track offsets. Retries can duplicate delivery, so consumers need idempotent handling, schema compatibility, and a policy for poison messages. A webhook is one delivery mechanism for an event, not a substitute for the event-driven architecture itself.
 
+tRPC is especially useful when a TypeScript web application and its server share one repository. A procedure definition names the input, output, and authorization context; the framework creates a typed caller and can validate input at the boundary. It removes hand-written fetch clients and keeps contracts close to the code, but it is not a wire standard understood by every language or external partner. A public API still needs a language-neutral contract or an adapter.
+
+OpenAPI is a machine-readable description of HTTP paths, methods, parameters, request bodies, responses, and security schemes. It can generate documentation, mock servers, client stubs, and contract tests. AsyncAPI applies a similar idea to event channels: it describes topics, message schemas, producers, consumers, acknowledgments, and broker bindings. A specification describes intent; it does not prove that a broker, consumer, or authorization policy behaves that way. CI should lint the specification, run compatibility checks, and test representative messages.
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Orders API
+  version: 1.0.0
+paths:
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      security:
+        - oauth2: [orders:read]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://identity.example.com/authorize
+          tokenUrl: https://identity.example.com/token
+          scopes:
+            orders:read: Read an order
+```
+
+```yaml
+asyncapi: 3.0.0
+info:
+  title: Orders Events
+  version: 1.0.0
+channels:
+  orderPlaced:
+    address: orders.placed.v1
+    messages:
+      OrderPlaced:
+        payload:
+          type: object
+          required: [eventId, orderId, occurredAt]
+          properties:
+            eventId:
+              type: string
+            orderId:
+              type: string
+            occurredAt:
+              type: string
+              format: date-time
+operations:
+  receiveOrderPlaced:
+    action: receive
+    channel:
+      $ref: "#/channels/orderPlaced"
+```
+
+A tRPC contract is strongest when the team controls the TypeScript boundary. OpenAPI is strongest when many HTTP clients need an interoperable contract. AsyncAPI is strongest when the contract must describe channels and message evolution. They can be combined: OpenAPI can describe the command endpoint, tRPC can power an internal TypeScript client, and AsyncAPI can describe the resulting event.
+
 ## Tradeoffs
 
 Use the interaction and deployment model together when choosing a paradigm:
@@ -74,6 +144,9 @@ Use the interaction and deployment model together when choosing a paradigm:
 | REST over HTTP | Cacheable semantics, broad tooling, independent resources | Multiple calls for related data; field and contract drift across endpoints | Public resource-oriented APIs or cacheable HTTP workloads |
 | GraphQL | One endpoint can serve different field selections and related data | Query-cost control, resolver N+1 patterns, and less predictable intermediary caching | Several clients need different views of a connected domain |
 | gRPC with Protocol Buffers | Typed methods, compact messages, and native streaming | Browser support requires a bridge; wire traffic is less human-readable | Controlled service-to-service calls and typed internal contracts |
+| tRPC | TypeScript callers, routers, and validation come from one procedure definition | Couples clients to the TypeScript ecosystem and needs adapters for other languages | A TypeScript application and its internal service boundary |
+| OpenAPI | Interoperable HTTP description for documentation, clients, and contract tests | Describes intent rather than runtime behavior and needs compatibility policy | Public or cross-team HTTP APIs |
+| AsyncAPI | Makes event channels, message schemas, and broker bindings reviewable | Does not provide durable delivery or enforce consumer behavior | Event-driven integrations and schema evolution |
 | Event-driven system | Producers and consumers scale and deploy independently; new consumers can use past facts | Duplicate delivery, ordering boundaries, schema evolution, and replay operations | Long-running workflows, fan-out, or decoupled integrations |
 | Webhook delivery | Pushes an event directly to an HTTP endpoint without polling callbacks | The provider handles retries, signatures, and endpoint availability | The consumer exposes a stable, security-controlled HTTPS endpoint |
 
@@ -98,5 +171,8 @@ GraphQL and gRPC require explicit query and method limits. Event-driven systems 
 - [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](01-fundamentals.md)
 - [Network Protocols](02-network-protocols.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
+- [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../02-software-architecture-patterns/02-domain-driven-event-architectures.md)
+- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
 - [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](../02-caching/04-rate-limiting.md)
 - [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)
+- [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)

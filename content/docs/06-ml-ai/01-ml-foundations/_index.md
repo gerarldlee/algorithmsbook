@@ -9,4 +9,4 @@ The learning algorithms: supervised and unsupervised learning, neural networks, 
 - [Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)](02-unsupervised-learning.md)
 - [Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)](03-neural-networks.md)
 - [Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)](04-deep-learning-architectures.md)
-- [Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention](05-transformers.md)
+- [Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics](05-transformers.md)

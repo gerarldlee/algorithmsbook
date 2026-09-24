@@ -87,7 +87,7 @@
 
 ### Chapter 7A: Data Engineering & Stream Processing
 
-* 7A.1 Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, Windowing Paradigms (Tumbling, Sliding, Session)
+* 7A.1 Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, and Windowing Paradigms (Tumbling, Sliding, Session)
 * 7A.2 Data Architecture & Lakehouse Engines: ETL vs ELT, Data Lake vs Data Warehouse vs Data Lakehouse (Apache Iceberg, Delta Lake, Apache Hudi)
 * 7A.3 Data Serialization & In-Memory Formats: Protobuf, Apache Avro, Apache Thrift, Apache Arrow Zero-Copy Memory Mapping, and Feather
 

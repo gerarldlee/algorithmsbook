@@ -308,6 +308,6 @@ For \(V\) vertices and \(E\) edges:
 - [Graph Representations (Adjacency Matrix, Adjacency List, Edge List)](01-graph-representations.md)
 - [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)
 - [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)
-- [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)
+- [Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions](../04a-computational-theory/01-complexity-theory.md)
 - [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)

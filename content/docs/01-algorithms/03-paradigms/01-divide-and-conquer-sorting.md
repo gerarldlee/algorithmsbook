@@ -10,7 +10,7 @@ toc: true
 
 ## How it works
 
-Merge sort splits an array into two halves, recursively sorts each half, and linearly merges them. Its recursion has O(log n) levels, so it performs O(n log n) work even when partitions are badly balanced. Quicksort partitions around a pivot and recursively sorts the two partitions; balanced partitions give O(n log n) work, while a repeatedly extreme pivot gives O(n²).
+Merge sort splits an array near its midpoint, recursively sorts each half, and linearly merges them. Its median split gives O(log n) recursion levels and O(n log n) work regardless of how values are distributed. Quicksort partitions around a pivot and recursively sorts the two partitions; balanced partitions give O(n log n) work, while a repeatedly extreme pivot gives O(n²).
 
 Radix sort processes one digit at a time. Starting at the least significant digit, it performs a **stable** counting-sort pass, so an earlier ordering is preserved when the next digit is processed. Counting sort counts each key, uses prefix sums to locate keys in an output array, and restores their input order for equal keys. Both radix sort and counting sort require nonnegative integer keys; counting sort also performs best when the key range is close to the input size.
 
@@ -219,7 +219,7 @@ Sorting sorting_radix_sort(const int *values, size_t size) {
 }
 
 Sorting sorting_counting_sort(const int *values, size_t size) {
-    if (size == 0) return {NULL, 0};
+    if (size == 0) return (Sorting){NULL, 0};
     int max = 0;
     for (size_t i = 0; i < size; i++) {
         if (values[i] > max) max = values[i];
@@ -232,7 +232,7 @@ Sorting sorting_counting_sort(const int *values, size_t size) {
     if (result == NULL) abort();
     for (size_t i = size; i > 0; i--) result[--counts[values[i - 1]]] = values[i - 1];
     free(counts);
-    return {result, size};
+    return (Sorting){result, size};
 }
 ```
 
@@ -613,6 +613,6 @@ Here, `d` is the number of digits processed and `k` is the radix or key range. M
 
 - [Greedy Choice Paradigms & Interval Scheduling](02-greedy.md)
 - [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](03-dynamic-programming.md)
-- [Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems](04-backtracking.md)
+- [Concurrency & Parallel Computing](06-concurrency-parallel-computing.md)
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](../01-linear-data-structures/01-dynamic-arrays.md)
 - [Tries, Radix Trees, and Suffix Trees/Arrays](../02-search-trees/06-tries-suffix.md)

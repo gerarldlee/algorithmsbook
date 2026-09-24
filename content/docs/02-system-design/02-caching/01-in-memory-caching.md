@@ -1,5 +1,5 @@
 ---
-title: "In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)"
+title: "In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams, Bitmaps, HyperLogLog), & Eviction Policies (LRU, LFU, ARC)"
 weight: 1
 toc: true
 ---
@@ -108,7 +108,7 @@ LRUCache *lru_cache_create(int capacity) {
     LRUCache *c = calloc(1, sizeof(*c));
     c->capacity = capacity;
     c->nbuckets = capacity * 2 + 1;
-    c->buckets = calloc((size_t)c->nbuckets, sizeof(Node *));
+    c->buckets = calloc((size_t)c->nbuckets, sizeof(*c->buckets));
     c->head = calloc(1, sizeof(Node));
     c->tail = calloc(1, sizeof(Node));
     c->head->next = c->tail;
@@ -299,9 +299,9 @@ impl LRUCache {
         let mut data = node.borrow_mut();
         data.prev = Rc::downgrade(&self.head);
         data.next = first.clone();
-        self.head.borrow_mut().next = Some(node.clone());
+        self.head.borrow_mut().next = Some(Rc::clone(node));
         if let Some(first_node) = first {
-            first_node.borrow_mut().prev = Some(node.clone());
+            first_node.borrow_mut().prev = Some(Rc::clone(node));
         }
     }
 

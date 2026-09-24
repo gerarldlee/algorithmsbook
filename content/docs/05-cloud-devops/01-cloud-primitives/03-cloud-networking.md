@@ -1,5 +1,5 @@
 ---
-title: "Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, and Transit Gateways"
+title: "Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, Transit Gateways, and Mesh Networks"
 weight: 3
 toc: true
 ---
@@ -116,3 +116,4 @@ Above the raw network sit **load balancers** and **DNS**. Application load balan
 - [Storage Primitives](02-storage-primitives.md)
 - [Serverless](04-serverless.md)
 - [Infrastructure as Code](05-infrastructure-as-code.md)
+- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../../02-system-design/02-software-architecture-patterns/01-enterprise-architecture-patterns.md)

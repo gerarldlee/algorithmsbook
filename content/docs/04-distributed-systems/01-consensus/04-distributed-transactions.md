@@ -71,3 +71,5 @@ idempotency:
 - [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
 - [Replication](../02-databases/05-replication.md)
 - [Message Delivery Guarantees](../../03-messaging/01-messaging/03-delivery-guarantees.md)
+- [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../../02-system-design/02-software-architecture-patterns/02-domain-driven-event-architectures.md)
+- [Decentralized Systems, Web3 & Blockchain](05-decentralized-systems-blockchain.md)

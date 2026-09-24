@@ -21,8 +21,8 @@ already exists.
 - [x] Maintain the relative-link render hook in `layouts/_markup/render-link.html`.
 - [x] Keep generated output (`public/`, `resources/`, `.hugo_build.lock`) out of source control.
 - [x] Keep the link, front-matter, weight, naming, and heading checks passing with `python tools/check_links.py`.
-- [ ] Add every new page to its parent `_index.md` in weight order.
-- [ ] Add every new category or part to the relevant navigation pages and home-page table of contents.
+- [x] Add every new page to its parent `_index.md` in weight order.
+- [x] Add every new category or part to the relevant navigation pages and home-page table of contents.
 - [x] Keep `TOC.md` synchronized with the content tree.
 
 ## Chapter implementation contract
@@ -73,7 +73,7 @@ For every algorithm chapter:
 - [x] 2.4 Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees
 - [x] 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
 - [x] 2.6 Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)
-- [ ] 2.7 Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing
+- [x] 2.7 Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing
 
 ### Chapter 3 — Core Algorithmic Paradigms & Parallel Computing
 
@@ -82,44 +82,42 @@ For every algorithm chapter:
 - [x] 3.3 Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)
 - [x] 3.4 Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems
 - [x] 3.5 Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)
-- [ ] 3.6 Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization
+- [x] 3.6 Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization
 
 ### Chapter 4 — Graph Theory & Network Algorithms
 
-- [x] 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List)
-  - [ ] Graph Neural Network Data Structures & Sparsity
+- [x] 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List, Sparsity Representations, Graph Neural Network Data Structures)
+  - [x] Graph Neural Network Data Structures & Sparsity
 - [x] 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
 - [x] 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
 - [x] 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
-- [x] 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall, Johnson’s)
+- [x] 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall, Johnson’s Algorithm, Matrix Multiplication Paths)
 - [x] 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
 
 ### Chapter 4A — Computational Theory & Advanced Algorithms
 
-- [ ] 4A.1 Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions
-- [ ] 4A.2 Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds
-- [ ] 4A.3 Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation
-- [ ] 4A.4 Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection
+- [x] 4A.1 Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions
+- [x] 4A.2 Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds
+- [x] 4A.3 Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation
+- [x] 4A.4 Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection
 
 ## Part II — System Design Foundations & High-Scale Architecture
 
 ### Chapter 5 — System Design Fundamentals & Infrastructure Security
 
 - [x] 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
-- [x] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets
-  - [ ] Streaming protocols: SSE vs WebSockets
+- [x] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)
 - [x] 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
 - [x] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
-- [x] 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
-  - [ ] Modern API contracts: tRPC, OpenAPI, and AsyncAPI Specifications
+- [x] 5.5 API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications
 - [x] 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
-- [ ] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (Vault), and Supply-Chain Security
+- [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (Vault), and Supply-Chain Security
 
 ### Chapter 5B — Software Architecture Patterns
 
-- [ ] 5B.1 Enterprise Architecture Patterns: Monolith vs Microservices, Service Mesh (Istio/Linkerd), Backend-for-Frontend (BFF), Strangler Fig, and Cell-Based Architecture (CBA)
-- [ ] 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
-- [ ] 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
+- [x] 5B.1 Enterprise Architecture Patterns: Monolith vs Microservices, Service Mesh (Istio/Linkerd), Backend-for-Frontend (BFF), Strangler Fig, and Cell-Based Architecture (CBA)
+- [x] 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
+- [x] 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
 
 ### Chapter 6 — Caching Strategies & Edge Acceleration
 
@@ -139,9 +137,9 @@ For every algorithm chapter:
 
 ### Chapter 7A — Data Engineering & Stream Processing
 
-- [ ] 7A.1 Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, Windowing Paradigms
-- [ ] 7A.2 Data Architecture & Lakehouse Engines: ETL vs ELT, Data Lake vs Data Warehouse vs Data Lakehouse (Apache Iceberg, Delta Lake, Apache Hudi)
-- [ ] 7A.3 Data Serialization & In-Memory Formats: Protobuf, Apache Avro, Apache Thrift, Apache Arrow Zero-Copy Memory Mapping, and Feather
+- [x] 7A.1 Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, and Windowing Paradigms (Tumbling, Sliding, Session)
+- [x] 7A.2 Data Architecture & Lakehouse Engines: ETL vs ELT, Data Lake vs Data Warehouse vs Data Lakehouse (Apache Iceberg, Delta Lake, Apache Hudi)
+- [x] 7A.3 Data Serialization & In-Memory Formats: Protobuf, Apache Avro, Apache Thrift, Apache Arrow Zero-Copy Memory Mapping, and Feather
 
 ### Chapter 8 — Real-Time Communication & Notification Systems
 
@@ -164,7 +162,7 @@ For every algorithm chapter:
 
 - [x] 10.1 Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)
 - [x] 10.2 NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)
-- [x] 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow)
+- [x] 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)
 - [x] 10.4 ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)
 - [x] 10.5 Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)
 - [x] 10.6 Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding
@@ -190,9 +188,9 @@ For every algorithm chapter:
 
 ### Chapter 12A — Operating Systems & Kernel Mechanics
 
-- [ ] 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms
-- [ ] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
-- [ ] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring`
+- [x] 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms
+- [x] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
+- [x] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring`
 
 ## Part VI — Machine Learning Systems & Scalable AI Infrastructure
 
@@ -213,7 +211,7 @@ For every algorithm chapter:
 
 ### Chapter 15 — Generative AI Infrastructure & Large Scale LLM Orchestration
 
-- [x] 15.1 Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics, ANN (HNSW, IVF-PQ), ScaNN, and DiskANN
+- [x] 15.1 Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search
 - [x] 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking
 - [x] 15.3 Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)
 - [x] 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching

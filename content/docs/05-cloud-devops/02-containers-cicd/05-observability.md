@@ -1,5 +1,5 @@
 ---
-title: "Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting"
+title: "Observability Platforms & Low-Level Profiling: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), Continuous Profiling, eBPF Kernel Tracing, and Alerting"
 weight: 5
 toc: true
 ---

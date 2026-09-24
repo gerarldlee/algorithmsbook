@@ -57,3 +57,4 @@ Object storage **lifecycle tiers** move data automatically: *Standard* (frequent
 - [Cloud Networking](03-cloud-networking.md)
 - [Storage Engines](../../04-distributed-systems/02-databases/03-storage-engines.md)
 - [Container Internals](../02-containers-cicd/01-container-internals.md)
+- [High-Performance File Systems & Low-Level I/O](../03-operating-systems-kernel-mechanics/03-file-systems-low-level-io.md)

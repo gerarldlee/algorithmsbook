@@ -72,3 +72,4 @@ The execution order of a micro-step is forward through tensor and pipeline group
 - [Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention](../01-ml-foundations/05-transformers.md)
 - [Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)](../01-ml-foundations/03-neural-networks.md)
 - [Deep Learning Architectures](../01-ml-foundations/04-deep-learning-architectures.md)
+- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)

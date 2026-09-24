@@ -64,7 +64,7 @@ A scalable service normally separates connection handling from message routing. 
 
 ## Related
 
-- [Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
+- [Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
 - [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
 - [Distributed Presence Engines, User State Tracking, and Heartbeat Protocols](03-presence-engines.md)
 - [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)

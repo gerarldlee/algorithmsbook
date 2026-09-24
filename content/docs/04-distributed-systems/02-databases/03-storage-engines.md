@@ -1,5 +1,5 @@
 ---
-title: "Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)"
+title: "Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)"
 weight: 3
 toc: true
 ---
@@ -67,3 +67,5 @@ Here, `n` is the number of entries in a B-tree, `m` is the number of SSTables se
 - [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
 - [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
 - [Storage Primitives](../../05-cloud-devops/01-cloud-primitives/02-storage-primitives.md)
+- [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)
+- [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)

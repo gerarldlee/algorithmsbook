@@ -1,5 +1,5 @@
 ---
-title: "Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets"
+title: "Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)"
 weight: 2
 toc: true
 ---
@@ -42,6 +42,26 @@ TCP uses sequence numbers, acknowledgments, retransmission, and congestion contr
 
 gRPC uses HTTP/2 for unary or streaming calls and Protocol Buffers for typed, compact messages. WebSocket begins with an HTTP upgrade and then reuses the connection for full-duplex text or binary frames. Both suit long-lived service communication, but a stateful long-lived connection changes reconnection, load-balancing, and capacity management.
 
+Streaming protocols decide who may send messages and how a broken connection resumes. **Server-Sent Events (SSE)** keep one HTTP response open and send server-to-client text events with an event ID. A browser's `EventSource` can reconnect with `Last-Event-ID`, while client messages use ordinary HTTP requests on a separate path. **WebSockets** create a full-duplex channel after an HTTP upgrade, so both peers can send frames immediately. Neither protocol supplies durable event history, exactly-once delivery, or automatic business-level replay; the application must define those semantics.
+
+A minimal SSE response makes the one-way contract visible:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+id: 418
+event: order.updated
+data: {"orderId":"order-123","status":"paid"}
+
+```
+
+A proxy can buffer or time out an SSE response, so the edge and gateway must disable buffering for the route and set a connection lifetime compatible with heartbeats. A WebSocket gateway must instead track upgraded connections, forward close and ping/pong behavior, and reconnect clients after a node or network failure. For a chat or collaborative editor, WebSockets are usually the simpler fit. For a browser dashboard receiving server updates, SSE is often enough and preserves ordinary HTTP authentication and monitoring.
+
+gRPC server streaming suits a controlled client that needs a typed sequence from one service, while SSE and WebSockets are useful when the consumer is a browser or a general HTTP client. Choose the protocol from message direction, client ecosystem, replay requirements, and connection capacity rather than treating every live update as a WebSocket.
+
 ## Tradeoffs
 
 Choose a protocol by matching its guarantees to the operation rather than by transport label alone:
@@ -55,6 +75,7 @@ Choose a protocol by matching its guarantees to the operation rather than by tra
 | HTTP/3 | Loss on one request should not stall other requests | Requires QUIC-aware endpoints and intermediaries | Use when the end-to-end path supports HTTP/3 |
 | gRPC | A typed internal contract and streaming matter | Browser access and human-readable inspection require extra tooling | Use between controlled services, not as the only public contract |
 | WebSocket | Both peers exchange messages over a long-lived channel | Reconnection, heartbeat, and connection-affinity state complicate scaling | Use for interactive bidirectional sessions |
+| SSE | HTTP-native one-way server push with event IDs and browser reconnect support | The response is one-way and proxies may buffer long-lived responses | Use for dashboards and notifications over ordinary HTTP |
 
 ## When to use
 
@@ -75,4 +96,6 @@ Choose a protocol by matching its guarantees to the operation rather than by tra
 - [Fundamentals of System Design](01-fundamentals.md)
 - [Load Balancing Strategies](03-load-balancing.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
+- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
+- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
 - [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)

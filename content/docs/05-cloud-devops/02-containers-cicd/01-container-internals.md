@@ -1,5 +1,5 @@
 ---
-title: "Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups"
+title: "Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups (v1/v2)"
 weight: 1
 toc: true
 ---
@@ -87,4 +87,6 @@ The writable container filesystem is typically an overlay mount: reads combine l
 - [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
 - [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
 - [Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors](../01-cloud-primitives/01-compute.md)
-- [Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems](../01-cloud-primitives/02-storage-primitives.md)
+- [Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals](../03-operating-systems-kernel-mechanics/02-virtual-memory-kernel-traps.md)
+- [Processes & Threads](../03-operating-systems-kernel-mechanics/01-processes-threads.md)
+- [High-Performance File Systems & Low-Level I/O](../03-operating-systems-kernel-mechanics/03-file-systems-low-level-io.md)

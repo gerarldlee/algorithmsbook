@@ -1,5 +1,5 @@
 ---
-title: "Stacks, Queues, Deques, and Ring/Circular Buffers"
+title: "Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)"
 weight: 3
 toc: true
 ---

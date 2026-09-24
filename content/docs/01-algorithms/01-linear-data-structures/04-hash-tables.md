@@ -1,5 +1,5 @@
 ---
-title: "Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing"
+title: "Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage"
 weight: 4
 toc: true
 ---
@@ -10,7 +10,7 @@ A hash table maps keys to values by applying a **hash function** that selects a 
 
 ## How it works
 
-The hash function spreads keys across buckets. When two keys select the same bucket, the table resolves the collision with **separate chaining** by storing a small collection of entries in that bucket. The implementation below uses the same operation set in all six languages: put, get, remove, contains, and size.
+The hash function spreads keys across buckets. When two keys select the same bucket, the table resolves the collision with **separate chaining** by storing a small collection of entries in that bucket. The implementation below uses the same operation set in all six languages: put, get, remove, contains, and size, with a fixed bucket capacity so each operation is independent.
 
 A hash function should be deterministic during a table's lifetime, inexpensive to compute, and stable across processes when a hash is persisted. A universal hash family makes the choice of hash function less predictable. For integer keys, a common family is \(h_{a,b}(x) = ((ax+b) \bmod p) \bmod m\), where \(p\) is a prime larger than the key domain and \(m\) is the number of buckets; selecting random \(a\) and \(b\) gives a collision bound in expectation for a fixed pair of keys.
 
@@ -131,8 +131,10 @@ void ht_put(HashTable *table, const char *key, int value) {
     }
     Entry *entry = malloc(sizeof(Entry));
     if (entry == NULL) abort();
-    entry->key = strdup(key);
+    size_t key_length = strlen(key) + 1;
+    entry->key = malloc(key_length);
     if (entry->key == NULL) abort();
+    memcpy(entry->key, key, key_length);
     entry->value = value;
     entry->next = table->buckets[index];
     table->buckets[index] = entry;
@@ -432,9 +434,8 @@ func (table *HashTable) Size() int {
 | Get | O(1) | O(n) | O(1) auxiliary |
 | Remove | O(1) | O(n) | O(1) auxiliary |
 | Contains (hash set) | O(1) | O(n) | O(1) auxiliary |
-| Resize | O(n) | O(n) | O(n) peak while copying |
 
-The load factor is the number of entries divided by the number of buckets. Keeping it below the implementation's resize threshold keeps expected bucket lengths short. A universal hash family gives an expected collision bound for any fixed pair of distinct keys, but it does not make every individual operation constant time.
+The load factor is the number of entries divided by the number of buckets. Choosing capacity for the expected number of entries keeps bucket lengths short in these fixed-capacity examples. A universal hash family gives an expected collision bound for any fixed pair of distinct keys, but it does not make every individual operation constant time.
 
 ## When to use
 

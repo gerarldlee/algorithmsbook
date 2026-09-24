@@ -1,5 +1,5 @@
 ---
-title: "Tries, Radix Trees, and Suffix Trees/Arrays"
+title: "Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)"
 weight: 6
 toc: true
 ---
@@ -342,3 +342,4 @@ Here `L` is the inspected key length, `m` is the pattern length, and `n` is the 
 - [Binary Search Trees](01-binary-search-trees.md)
 - [Divide and Conquer Sorting](../03-paradigms/01-divide-and-conquer-sorting.md)
 - [Amortized Analysis](../03-paradigms/05-amortized-analysis.md)
+- [Finite Automata & Formal Languages](../04a-computational-theory/03-automata-formal-languages.md)

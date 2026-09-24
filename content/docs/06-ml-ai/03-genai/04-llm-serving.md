@@ -1,5 +1,5 @@
 ---
-title: "High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding"
+title: "High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching"
 weight: 4
 toc: true
 ---
@@ -89,3 +89,4 @@ Operational capacity models should track the separate compute and memory bounds 
 - [Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking](02-rag.md)
 - [Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)](01-vector-databases.md)
 - [Inference Serving](../02-mlops/04-inference-serving.md)
+- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)

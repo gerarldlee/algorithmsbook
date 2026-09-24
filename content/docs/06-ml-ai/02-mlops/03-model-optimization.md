@@ -69,3 +69,4 @@ optimization_pipeline:
 - [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
 - [Deep Learning Architectures](../01-ml-foundations/04-deep-learning-architectures.md)
 - [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](02-feature-stores-pipelines.md)
+- [Fine-Tuning & Model Alignment](../03-genai/06-fine-tuning-alignment.md)

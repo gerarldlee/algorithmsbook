@@ -71,3 +71,4 @@ Event replay is a controlled second delivery path, not a blanket reset. Kafka co
 - [Queues vs Streams](01-queues-vs-streams.md)
 - [Rate Limiting](../../02-system-design/02-caching/04-rate-limiting.md)
 - [Notification Dispatchers](../02-realtime/01-notification-dispatchers.md)
+- [Stateful Stream & Batch Processing Frameworks](../03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)

@@ -1,5 +1,5 @@
 ---
-title: "Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)"
+title: "Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)"
 weight: 5
 toc: true
 ---
@@ -66,4 +66,4 @@ propagation:
 - [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
 - [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)
 - [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)
-- [Consensus Algorithms](../01-consensus/02-consensus.md)
+- [Decentralized Systems, Web3 & Blockchain](../01-consensus/05-decentralized-systems-blockchain.md)

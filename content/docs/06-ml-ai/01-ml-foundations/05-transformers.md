@@ -1,5 +1,5 @@
 ---
-title: "Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention"
+title: "Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics"
 weight: 5
 toc: true
 ---

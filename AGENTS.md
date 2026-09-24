@@ -12,16 +12,16 @@ enforces the parts that can be checked mechanically.
 | `hugo.yaml` | Site config: menus, author/footer params, `editURL`, markup (raw HTML allowed, math passthrough delimiters). |
 | `go.mod` / `go.sum` | Hextra `v0.12.3` imported as a **Go module**. There is deliberately no `themes/` directory and no git submodule — do not re-add one. |
 | `content/` | All prose. `content/docs/**` = the book; `content/_index.md` = home; `content/about.md` = about page. |
-| `TOC.md` | Canonical outline: 15 chapters across 6 parts, 74 numbered sections — the same 74 pages that live in `content/docs/**`. Keep them in step: a new chapter means a new section here (and vice versa). |
+| `TOC.md` | Canonical expanded outline; the implemented book currently reaches Chapter 15, while later topics remain future scope. Keep implemented pages and navigation synchronized as sections are added (and vice versa). |
 | `archetypes/default.md` | Template used by `hugo new`: derives `title`/`weight` from the filename and emits the §5 skeleton. |
 | `layouts/_markup/render-link.html` | Project-level link render hook. Hextra's own hook only rewrites destinations that begin with `/`; this one also resolves **relative** destinations, which is what the content uses (§9). |
 | `tools/check_links.py` | Relative-link/front-matter/weight checker (`python tools/check_links.py`). |
 | `.github/workflows/pages.yaml` | CI: build with Hugo `0.159.2` and deploy to GitHub Pages on push to `main`. |
 | `public/`, `resources/`, `.hugo_build.lock` | Generated output, gitignored. **Never edit or commit.** |
 
-Current content shape: 107 Markdown files — 74 chapters (Part I 22, II 9, III 8, IV 11, V 10,
-VI 14), 8 `00-essentials` reference pages, 23 `_index.md` navigation pages, `content/about.md`,
-`content/_index.md`. All 74 chapters open with the §5 sections in that order.
+Current content shape: 130 Markdown files — 93 chapters (Part I 28, II 14, III 11, IV 12, V 13,
+VI 15), 8 `00-essentials` reference pages, 27 `_index.md` navigation pages, `content/about.md`,
+`content/_index.md`. All 93 chapters open with the §5 sections in that order.
 
 ## 2. Book requirements → what they mean when you write
 
@@ -63,7 +63,7 @@ consistent with the language, theme, and content requirements they describe.
 
 ## 4. Front matter contract
 
-Every content file starts with **YAML** front matter delimited by `---`. All 107 files use YAML;
+Every content file starts with **YAML** front matter delimited by `---`. All 130 files use YAML;
 never use TOML `+++`.
 
 ```yaml
@@ -77,7 +77,7 @@ toc: true
 | Key | Rule |
 | --- | --- |
 | `title` | Quoted string, Title Case, same as the `_index.md` link text. No trailing period. |
-| `weight` | Integer. **Must equal the file's two-digit name prefix.** Unique among siblings. |
+| `weight` | Integer. For numbered chapter files, it must equal the two-digit filename prefix. For category indexes, it follows the canonical TOC order and must be unique among siblings. |
 | `toc` | `toc: true` on chapters (explicit, even though Hextra defaults to `true`). Omit on `_index.md`, `content/about.md` and the `00-essentials` reference pages. `toc: false` hides the right-hand in-page TOC. |
 | `next` / `prev` | Only used to override the Hextra pager link; `content/docs/_index.md` sets `next: 01-algorithms`. |
 | `type` | Only `content/about.md` (`type: about`). Section/category `_index.md` files get a plain docs page. |
@@ -105,11 +105,11 @@ Keep to these sections, in this order, with these exact names:
 | `## Alternatives` | yes | Bullets: `**Named alternative** — when it wins, and what it costs.` |
 | `## Related` | yes | Relative links to neighbouring pages. Always the **last** section. |
 
-All 74 chapters have the five required sections in this order, `Related` last. `Complexity` (22
-chapters) and `Tradeoffs` (52) are mutually exclusive in today's content and sit immediately after
-`How it works`; pick the one that fits the topic. Extra `##` sections are the exception, not the norm
-(2 of 74 chapters add one, e.g. "Techniques for iterating…"), and `###` sub-headings are rarer still
-(4 in the whole book) — prefer folding material into the canonical sections.
+All 93 chapters have the five required sections in this order, `Related` last. `Complexity` (39
+chapters) and `Tradeoffs` (54) are mutually exclusive in today's content and sit immediately after
+`How it works`; pick the one that fits the topic. Extra `##` sections are not used in the current
+outline, and `###` sub-headings are used sparingly (15 in the whole book) — prefer folding material
+into the canonical sections.
 
 Complexity tables in use (any of these shapes is fine — pick the one that fits, keep the header):
 
@@ -127,7 +127,7 @@ annotate code with the same notation in a trailing comment (`// amortized O(1)`)
 
 **Always tag the fence** (`java`, `c`, `python`, `rust`, `typescript`, `go`, `yaml`, `bash`, `sql`,
 `proto`, `mermaid`, `json`) — there are zero untagged fences in the book today; an untagged block is
-invisible to the future language switcher and gets no syntax highlighting.
+invisible to the language switcher and gets no syntax highlighting.
 
 **Algorithm chapters are polyglot.** The six blocks form one contiguous group, in this order:
 
@@ -145,7 +145,7 @@ invisible to the future language switcher and gets no syntax highlighting.
   the same API in a different dialect, not a different program.
 - Every language implements the **same operation set and the same algorithm** — no language gets a
   simplified version.
-- **Compliance today: complete.** All 22 Part I chapters carry one contiguous six-language group, and
+- **Compliance today: complete.** All 28 Part I chapters carry one contiguous six-language group, and
   so do the five algorithm-bearing chapters elsewhere (the three caching chapters, `06-sharding`,
   `01-vector-databases`). `01-dynamic-arrays.md` adds four extra complete six-language groups to
   illustrate array declaration, indexed access, iteration, and linear search — extra groups are fine,
@@ -163,6 +163,26 @@ invisible to the future language switcher and gets no syntax highlighting.
 // …
 ```
 {{< /tab >}}
+{{< tab name="C" >}}
+```c
+// …
+```
+{{< /tab >}}
+{{< tab name="Python" >}}
+```python
+# …
+```
+{{< /tab >}}
+{{< tab name="Rust" >}}
+```rust
+// …
+```
+{{< /tab >}}
+{{< tab name="TypeScript" >}}
+```typescript
+// …
+```
+{{< /tab >}}
 {{< tab name="Go" >}}
 ```go
 // …
@@ -174,13 +194,13 @@ invisible to the future language switcher and gets no syntax highlighting.
 **Systems chapters (Parts II–VI)** lead with the artifact that shows the mechanism — Kubernetes YAML,
 Terraform/HCL, Cloudflare config, GitHub Actions, protocol/state-machine descriptions — and add
 implementation code only when the chapter teaches an algorithm (then use the six-language group).
-`yaml` is the most common fence in those parts (38 uses book-wide).
+`yaml` is the most common fence in those parts (58 uses book-wide).
 
 **Diagrams** use ```` ```mermaid ````; Hextra renders it, loads Mermaid from the CDN, and switches
 the diagram theme with the reader's light/dark choice, so never bake colours into diagram nodes.
 
-**`00-essentials`** is reference material, not algorithm chapters: Java-only snippets are fine there
-(3 files, 12 fences).
+**`00-essentials`** is reference material, not algorithm chapters. It uses the fixed six-language
+groups where it teaches implementation detail; do not add ad hoc language mixes there.
 
 ## 7. Math
 
@@ -191,7 +211,7 @@ Math passthrough is configured in `hugo.yaml`, so use those delimiters — nothi
 
 Hextra detects math per page and loads KaTeX automatically (`site.Params.math.engine`, default
 `katex`) — no `math: true` front matter needed. KaTeX is fetched from jsDelivr at build time, so a
-math-bearing page needs network access to build cleanly. Only 3 pages currently use math; prefer
+math-bearing page needs network access to build cleanly. Only 20 pages currently use math; prefer
 plain text or a code block unless the notation genuinely helps.
 
 ## 8. Shortcodes
@@ -206,9 +226,9 @@ inside the body — the shortcode markdownifies its inner content itself.
 {{< /callout >}}
 ```
 
-Introduce shortcodes sparingly: no chapter uses one today, and the plain template is what keeps the
-book skimmable. The header language selector is implemented with a site asset; if language tabs are
-introduced later, keep them synchronized as described in §6.
+Introduce shortcodes sparingly: cards are used on the home page, and synchronized tabs are used on
+algorithm examples where the page benefits from them. The header language selector is implemented
+with a site asset; keep language groups synchronized as described in §6.
 
 ## 9. Links and navigation integrity
 
@@ -240,7 +260,7 @@ introduced later, keep them synchronized as described in §6.
   form for both, and page-bundle resources work as well.
 - Run `python tools/check_links.py` after any link or file move; it also reports missing front
   matter, `weight`/filename mismatches, duplicate weights, unlisted pages, and stray `# H1`s.
-  (Current state: 107 files checked, 0 problems.)
+  (Current state: 130 files checked, 0 problems.)
 
 ## 10. Prose style
 

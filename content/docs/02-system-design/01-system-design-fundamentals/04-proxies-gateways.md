@@ -79,4 +79,6 @@ Separate routing from business logic. A gateway should validate and route reques
 - [Load Balancing Strategies](03-load-balancing.md)
 - [Network Protocols](02-network-protocols.md)
 - [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](05-api-paradigms.md)
+- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
+- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
 - [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](../02-caching/03-cdns-edge.md)

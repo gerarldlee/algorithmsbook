@@ -74,3 +74,4 @@ distributed_locks:
 - [Clocks & Ordering](03-clocks-ordering.md)
 - [Distributed Transactions](04-distributed-transactions.md)
 - [Replication](../02-databases/05-replication.md)
+- [Decentralized Systems, Web3 & Blockchain](05-decentralized-systems-blockchain.md)

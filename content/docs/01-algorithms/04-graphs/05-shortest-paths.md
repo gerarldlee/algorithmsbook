@@ -1,5 +1,5 @@
 ---
-title: "Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)"
+title: "Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall Space Optimizations, Johnson’s Algorithm, Matrix Multiplication Paths)"
 weight: 5
 toc: true
 ---

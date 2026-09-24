@@ -14,7 +14,7 @@ Interval scheduling chooses the maximum number of non-overlapping intervals. The
 
 The same proof structure appears in other greedy paradigms. Fractional knapsack repeatedly takes the highest value-to-weight ratio because any fractional solution can exchange a smaller item for the remaining fraction of that item. Huffman coding repeatedly combines the two least frequent symbols, and Prim's and Kruskal's algorithms repeatedly add the cheapest edge that preserves a partial solution.
 
-The implementations expose one `select` operation that returns the chosen intervals in start-time order. They accept intervals whose start is less than or equal to their finish, sort by finish time with start time as the tie-breaker, and allow touching endpoints. In C, `select` writes the result length through `selected_size`, and the returned array belongs to the caller.
+The implementations expose one `select` operation that returns the chosen intervals in start-time order. They require intervals whose start is less than or equal to their finish, sort by finish time with start time as the tie-breaker, and allow touching endpoints. In C, `select` writes the result length through `selected_size`, and the returned array belongs to the caller.
 
 ```java
 import java.util.ArrayList;

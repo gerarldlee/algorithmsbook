@@ -1,5 +1,5 @@
 ---
-title: "Graph Representations (Adjacency Matrix, Adjacency List, Edge List)"
+title: "Graph Representations (Adjacency Matrix, Adjacency List, Edge List, Sparsity Representations, Graph Neural Network Data Structures)"
 weight: 1
 toc: true
 ---
@@ -9,6 +9,11 @@ A **graph representation** stores the same vertices and edges in a form optimize
 
 ## How it works
 A graph has a fixed vertex count and either directed or undirected edges. `addEdge` records the edge in all three representations. `hasEdge` uses the adjacency list, `neighbors` returns the vertices that adjacency-list traversal visits, and `edges` exposes the edge-list view.
+
+### Graph Neural Network data structures
+A **graph neural network (GNN)** keeps the graph topology separate from the numerical features used by message passing. A node-feature matrix stores one vector of \(d\) values per vertex. An edge list stores the source and destination vertex IDs, while **compressed sparse row (CSR)** storage groups destination IDs by source vertex so neighbor gathering is a contiguous read. Edge features are an optional third matrix for relationship attributes such as distance, type, or time.
+
+For a layer, the GNN gathers each vertex's neighbor features, aggregates them with a permutation-invariant operation such as sum or mean, combines the result with the vertex's current state, and applies a neural-network update. A mini-batch can represent several graphs with one node table plus a batch-ID vector, avoiding a separate object for every graph. Sparse adjacency saves memory when \(E \ll V^2\), while a dense matrix makes tensor operations simpler but costs \(O(V^2)\) storage. Production frameworks such as PyTorch Geometric, DGL, and TensorFlow use combinations of edge lists, CSR-style indices, sampled neighborhoods, and contiguous feature buffers.
 
 ```java
 import java.util.ArrayList;
@@ -332,6 +337,7 @@ For \(V\) vertices, \(E\) edges, and maximum degree \(\Delta\), the storage incl
 | Adjacency list | O(1) amortized | O(deg(u)) | O(deg(u)) | O(V+E) |
 | Edge list | O(1) amortized | O(E) | O(E) | O(E) |
 | Linked adjacency list | O(1) | O(deg(u)) | O(deg(u)) | O(V+E) |
+| GNN message passing with CSR neighbor storage | O(E + Nd) | O(E) edge index | O(deg(u)) per node gather | O(Vd + E) for features and indices |
 
 `O(deg(u))` is at most `O(Δ)`. Head insertion in a linked-list implementation costs `O(1)` because the example stores each new edge at the head.
 
@@ -347,6 +353,8 @@ For \(V\) vertices, \(E\) edges, and maximum degree \(\Delta\), the storage incl
 - **Implicit graph** — generates neighbors on demand and avoids storage when the full edge set is never materialized.
 
 ## Related
+- [Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing](../02-search-trees/07-spatial-indexing.md)
+- [Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization](../03-paradigms/06-concurrency-parallel-computing.md)
 - [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
 - [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)
 - [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)

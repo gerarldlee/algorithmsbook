@@ -77,6 +77,7 @@ Availability, latency, and consistency are separate choices rather than a single
 
 - [Network Protocols](02-network-protocols.md)
 - [Load Balancing Strategies](03-load-balancing.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](05-api-paradigms.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
+- [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Exponential Backoff, Retry Strategies, and Timeout Budgets](../02-software-architecture-patterns/03-resilience-fault-tolerance.md)
 - [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](../02-caching/01-in-memory-caching.md)
 - [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](../02-caching/02-caching-patterns.md)

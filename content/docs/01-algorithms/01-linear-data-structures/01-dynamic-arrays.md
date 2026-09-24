@@ -1,5 +1,5 @@
 ---
-title: "Dynamic Arrays, Memory Allocation, and Amortized Analysis"
+title: "Dynamic Arrays, Memory Allocation, Custom Allocators, Cache Locality, and Amortized Analysis"
 weight: 1
 toc: true
 ---

@@ -76,3 +76,5 @@ pipeline_orchestration:
 - [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
 - [Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)](03-model-optimization.md)
 - [Supervised Learning](../01-ml-foundations/01-supervised-learning.md)
+- [Stateful Stream & Batch Processing Frameworks](../../03-messaging/03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)
+- [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)

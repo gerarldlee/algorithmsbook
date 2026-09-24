@@ -251,3 +251,4 @@ A Fenwick tree uses one additional cell for `n` input values, while a convention
 - [Binary Search Trees](01-binary-search-trees.md)
 - [Union-Find (Disjoint Set Union)](05-union-find.md)
 - [Storage Engine Trees (B-Trees and LSM-Trees)](03-storage-engine-trees.md)
+- [Spatial Indexing & Geospatial Data Structures](07-spatial-indexing.md)

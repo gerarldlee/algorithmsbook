@@ -1,5 +1,5 @@
 ---
-title: "Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)"
+title: "Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)"
 weight: 3
 toc: true
 ---

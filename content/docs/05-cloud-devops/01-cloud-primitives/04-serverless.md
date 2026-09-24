@@ -1,5 +1,5 @@
 ---
-title: "Serverless & Edge Computing (AWS Lambda, Cloudflare Workers, Event-Driven Triggers)"
+title: "Serverless, Edge & IoT Infrastructure: AWS Lambda, Cloudflare Workers, MQTT, CoAP, Microcontrollers (ESP32/ARM), Conflict-Free Replicated Data Types (CRDTs), and Local-First Sync"
 weight: 4
 toc: true
 ---

@@ -115,3 +115,4 @@ Argo CD and Flux render the selected Git revision and compare the resulting desi
 - [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
 - [Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu](../01-cloud-primitives/05-infrastructure-as-code.md)
 - [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)
+- [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security](../../02-system-design/01-system-design-fundamentals/07-appsec-threat-defense.md)
