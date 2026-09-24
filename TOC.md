@@ -1,5 +1,7 @@
 # Algorithmic Foundations, Distributed Systems & AI Architecture
 
+> **Authoring Contract Note:** All CS Theory and Algorithmic chapters must present concepts using intuitive, layman-friendly explanations alongside technical mathematical formulations.
+
 ## Part I: Fundamental Data Structures & Core Algorithms
 
 ### Chapter 1: Linear Data Structures & Memory Models
@@ -10,7 +12,7 @@
 * 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
 * 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
 
-### Chapter 2: Hierarchical Data Structures & Search Trees
+### Chapter 2: Hierarchical Data Structures, Search Trees & Spatial Indexing
 
 * 2.1 Binary Search Trees & Self-Balancing Trees (AVL, Red-Black Trees)
 * 2.2 Heaps, Priority Queues, and Fibonacci Heaps
@@ -18,6 +20,7 @@
 * 2.4 Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees
 * 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
 * 2.6 Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)
+* 2.7 Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing
 
 ### Chapter 3: Core Algorithmic Paradigms & Parallel Computing
 
@@ -30,12 +33,19 @@
 
 ### Chapter 4: Graph Theory & Network Algorithms
 
-* 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List)
+* 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List, Sparsity Representations, Graph Neural Network Data Structures)
 * 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
 * 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
 * 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
-* 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall, Johnson’s)
+* 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall Space Optimizations, Johnson’s Algorithm, Matrix Multiplication Paths)
 * 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
+
+### Chapter 4A: Computational Theory & Advanced Algorithms
+
+* 4A.1 Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions
+* 4A.2 Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds
+* 4A.3 Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation
+* 4A.4 Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection
 
 ---
 
@@ -44,15 +54,22 @@
 ### Chapter 5: System Design Fundamentals & Infrastructure Security
 
 * 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
-* 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets
+* 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)
 * 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
 * 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
-* 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
+* 5.5 API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications
 * 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
+* 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security
+
+### Chapter 5B: Software Architecture Patterns
+
+* 5B.1 Enterprise Architecture Patterns: Monolith vs Microservices, Service Mesh (Istio/Linkerd), Backend-for-Frontend (BFF), Strangler Fig, and Cell-Based Architecture (CBA)
+* 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
+* 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
 
 ### Chapter 6: Caching Strategies & Edge Acceleration
 
-* 6.1 In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams), & Eviction Policies (LRU, LFU, ARC)
+* 6.1 In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams, Bitmaps, HyperLogLog), & Eviction Policies (LRU, LFU, ARC)
 * 6.2 Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind
 * 6.3 Content Delivery Networks (CDNs), Edge Computing, Edge Runtimes (Wasm at Edge, eBPF), and Static/Dynamic Content Acceleration
 * 6.4 Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter
@@ -67,6 +84,12 @@
 * 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
 * 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
 * 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
+
+### Chapter 7A: Data Engineering & Stream Processing
+
+* 7A.1 Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, Windowing Paradigms (Tumbling, Sliding, Session)
+* 7A.2 Data Architecture & Lakehouse Engines: ETL vs ELT, Data Lake vs Data Warehouse vs Data Lakehouse (Apache Iceberg, Delta Lake, Apache Hudi)
+* 7A.3 Data Serialization & In-Memory Formats: Protobuf, Apache Avro, Apache Thrift, Apache Arrow Zero-Copy Memory Mapping, and Feather
 
 ### Chapter 8: Real-Time Communication & Notification Systems
 
@@ -91,31 +114,37 @@
 
 * 10.1 Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)
 * 10.2 NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)
-* 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)
+* 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)
 * 10.4 ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)
-* 10.5 Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)
+* 10.5 Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)
 * 10.6 Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding
 * 10.7 Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)
 
 ---
 
-## Part V: Cloud Architecture, Deployment Engineering & DevOps
+## Part V: Cloud Architecture, Operating Systems & DevOps Engineering
 
-### Chapter 11: Cloud Primitives & Serverless Architectures
+### Chapter 11: Cloud Primitives, Edge Systems & IoT Engineering
 
 * 11.1 Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors
 * 11.2 Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems
-* 11.3 Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, and Transit Gateways
-* 11.4 Serverless & Edge Computing (AWS Lambda, Cloudflare Workers, Event-Driven Triggers)
+* 11.3 Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, Transit Gateways, and Mesh Networks
+* 11.4 Serverless, Edge & IoT Infrastructure: AWS Lambda, Cloudflare Workers, MQTT, CoAP, Microcontrollers (ESP32/ARM), Conflict-Free Replicated Data Types (CRDTs), and Local-First Sync
 * 11.5 Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu
 
 ### Chapter 12: Containerization, Orchestration & CI/CD Pipelines
 
-* 12.1 Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups
+* 12.1 Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups (v1/v2)
 * 12.2 Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)
 * 12.3 Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments
 * 12.4 CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)
-* 12.5 Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting
+* 12.5 Observability Platforms & Low-Level Profiling: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), Continuous Profiling, eBPF Kernel Tracing, and Alerting
+
+### Chapter 12A: Operating Systems & Kernel Mechanics
+
+* 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms (Preemption, MLFQ, Real-Time)
+* 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, Translation Lookaside Buffer (TLB), Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
+* 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring` Asynchronous Ring Buffers
 
 ---
 
@@ -127,7 +156,7 @@
 * 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
 * 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
 * 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
-* 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention
+* 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics
 
 ### Chapter 14: MLOps & Production Machine Learning Systems
 
@@ -136,10 +165,105 @@
 * 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
 * 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
 
-### Chapter 15: Generative AI Infrastructure & Large-Scale LLM Orchestration
+### Chapter 15: Generative AI Infrastructure & Large Scale LLM Orchestration
 
-* 15.1 Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)
+* 15.1 Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search
 * 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking
 * 15.3 Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)
-* 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding
+* 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching
 * 15.5 AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration
+* 15.6 Fine-Tuning & Model Alignment: Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA), Reinforcement Learning Alignment (RLHF, DPO)
+
+---
+
+## Part VII: Financial Systems, Identity & Compliance
+
+### Chapter 16: Banking & Payment Infrastructure
+
+* 16.1 Core Banking Systems: Account Structures, General Ledger, Core Banking Vendors (Temenos, Mambu, Thought Machine)
+* 16.2 Double-Entry Bookkeeping: Ledger Design, Journal Entries, Chart of Accounts, Multi-Currency Ledgers
+* 16.3 Payment Rails & Messaging Standards: ACH, SWIFT/SEPA, Wire Transfers, Card Networks (Visa/Mastercard), Real-Time Payments (RTP, FedNow), and ISO 20022 Protocol Integration
+* 16.4 Payment Processing Architecture: Authorization/Capture/Settlement Flow, Payment Orchestration, Idempotency Keys & Idempotent Request Handling
+* 16.5 Reconciliation Systems: Statement Matching, Break Detection, Automated Clearing, Ledger-to-Bank Reconciliation
+* 16.6 Ledger Consistency: Event-Sourced Ledgers, Immutable Audit Trails, Double-Spend Prevention, Eventual Consistency in Distributed Ledgers
+* 16.7 Fraud Detection: Rule Engines, Velocity Checks, Device Fingerprinting, ML-Based Anomaly Scoring
+* 16.8 Card Tokenization: PAN Tokenization (Network Tokens - Visa/MC Token Service), EMV Tokenization, Format-Preserving Encryption, Token Vaults, Device-Bound Tokens (Apple Pay/Google Pay), Detokenization Flow & PCI Scope Reduction
+
+### Chapter 17: Identity, KYC & Decentralized Identity
+
+* 17.1 KYC/KYB Pipelines: Identity Verification, Document/Liveness Checks, Sanctions & PEP Screening, Ongoing Monitoring
+* 17.2 AML Systems: Transaction Monitoring, Suspicious Activity Reports (SARs), Rule-Based vs ML Detection
+* 17.3 Digital Identity Standards & Authentication: OAuth2/OIDC, Passkeys (FIDO2/WebAuthn), Verifiable Credentials (VCs), Self-Sovereign Identity (SSI)
+* 17.4 Decentralized Identifiers (DIDs): DID Methods, DID Documents, Resolution, Wallet-Based Identity
+* 17.5 Identity Federation: SSO, SAML, Cross-Border Identity Interoperability
+* 17.6 AML Deep Dive: Transaction Graph Analysis, Entity Resolution, Sanctions List Matching (OFAC/UN), Risk Scoring Models, Case Management Workflows, Regulatory Filing (SAR/CTR)
+* 17.7 Face & Identity Verification: Face Detection vs Recognition, Liveness Detection (Active/Passive, Anti-Spoofing/Deepfake Detection), 1:1 Face Matching vs 1:N Search, Document Authenticity (MRZ/NFC Chip Reading, Hologram Detection), Biometric Template Storage & Privacy
+
+### Chapter 18: Trading Systems & Market Infrastructure
+
+* 18.1 Exchange Architecture: Order Books, Matching Engines, Price-Time Priority
+* 18.2 Order Types & Execution: Market/Limit/Stop Orders, Smart Order Routing
+* 18.3 Market Data Systems: Ticker Plants, Data Broadcast/Fan-Out, Multicast Feeds, FIX Protocol
+* 18.4 Low-Latency Engineering & High-Frequency Trading: Kernel Bypass, Co-Location, Hardware Timestamping, LMAX Disruptor Pattern, and FPGA Accelerator Offloading
+* 18.5 Risk Controls: Pre-Trade Risk Checks, Position Limits, Circuit Breakers, Margin/Collateral Engines
+* 18.6 Clearing & Settlement: Central Counterparties (CCPs), T+1/T+0 Settlement, DvP
+* 18.7 Auction Mechanisms & Price Matching: Continuous Double Auction, Batch/Call Auctions, Uniform vs Discriminatory Pricing, Opening/Closing Auctions, Dutch/English/Vickrey Auctions
+* 18.8 Exchange System Design: Multi-Asset Exchange Architecture, Sequencer/Matching Engine Determinism, Order Book Replication, Market Maker Incentives, Cross-Exchange Arbitrage Infra
+* 18.9 On-Chain Exchange Mechanics: AMM Bonding Curves vs Order-Book DEXs, MEV, Batch Auctions (CoWSwap-style), Slippage/Price Impact Models
+
+### Chapter 19: DAOs & On-Chain Governance
+
+* 19.1 DAO Architecture: Governance Tokens, Voting Mechanisms (Token-Weighted, Quadratic, Conviction Voting)
+* 19.2 Treasury Management & Multi-Sig Custody
+* 19.3 On-Chain Proposal/Execution Pipelines (Governor Contracts, Timelocks)
+* 19.4 DAO Tooling: Snapshot, Aragon, and Legal Wrapper Considerations
+
+### Chapter 20: Compliance, Risk & Regulatory Systems
+
+* 20.1 Regulatory Frameworks: PCI-DSS, SOX, GDPR/data residency, MiCA (crypto), Basel III (risk capital)
+* 20.2 Risk Engines: Credit Risk Scoring, Market Risk (VaR), Operational Risk Frameworks
+* 20.3 Audit & Compliance Reporting: Immutable Logging, Regulatory Reporting Pipelines, Explainability for Automated Decisions
+* 20.4 Data Governance: PII Handling, Data Retention/Deletion, Consent Management
+
+### Chapter 21: Search, Ranking & Recommendation Systems
+
+* 21.1 Inverted Indices & Search Engines (Lucene/Elasticsearch/OpenSearch)
+* 21.2 Ranking Algorithms: TF-IDF, BM25, Learning-to-Rank
+* 21.3 Recommendation Architectures: Collaborative Filtering, Content-Based, Hybrid, Two-Tower Retrieval + Ranking
+* 21.4 Real-Time Personalization: Feature Freshness, Online Learning, A/B Test Infrastructure
+
+---
+
+## Part VIII: Web3 Security, Multi-Tenancy & Embedded Finance
+
+### Chapter 22: Crypto Custody, Privacy Cryptography & Web3 Security
+
+* 22.1 Key Management: HSMs, MPC Wallets, HD Wallet Derivation, Hot/Cold/Warm Architecture, Hardware Wallet Integration
+* 22.2 Zero-Knowledge Proofs & Privacy Computation: zk-SNARKs/STARKs, ZK-Rollups, Privacy-Preserving KYC, Private Set Intersection (PSI), and Garbled Circuits
+* 22.3 Smart Contract Security: Reentrancy, Formal Verification, Audits, Proxy/Upgrade Patterns
+* 22.4 Cross-Chain Infrastructure: Bridges, Oracle Networks, Interoperability Protocols
+
+### Chapter 23: Multi-Tenant SaaS & Licensing
+
+* 23.1 Multi-Tenant Architecture: Silo/Pool/Bridge Models, Tenant Isolation, Noisy-Neighbor Mitigation
+* 23.2 Billing & Metering: Usage-Based Billing, Invoicing, Dunning, Subscription Lifecycle
+* 23.3 Licensing & Entitlements: JWT License Validation, Feature Gating, Entitlement Management
+
+### Chapter 24: Embedded Finance & Lending
+
+* 24.1 Banking-as-a-Service: Sponsor Bank Models, Program Management
+* 24.2 Credit & Lending: Underwriting Engines, Credit Scoring, Loan Origination
+* 24.3 Cross-Border: Correspondent Banking, FX Conversion, Remittances
+* 24.4 Chargebacks & Dispute Management
+
+### Chapter 25: Resilience, Testing, SRE & Privacy-Preserving ML
+
+* 25.1 Testing Strategy: Unit/Integration/Contract/E2E, Chaos Engineering (Litmus, Chaos Mesh)
+* 25.2 Feature Flags & Experimentation Infrastructure (A/B Test Deployment)
+* 25.3 Privacy Tech & Privacy-Preserving ML: Differential Privacy, Federated Learning, Homomorphic Encryption
+* 25.4 SRE Practices & Incident Engineering: Runbooks, Post-Mortems, SLA/SLO/SLI Error Budgets, Incident Response, Multi-Region Disaster Recovery & Active-Active Failover
+
+### Chapter 26: Embedded Systems & Edge Sync
+
+* 26.1 Embedded Architecture: Microcontroller Constraints, BLE Sync Patterns
+* 26.2 Offline-First / Local-First Sync: Conflict Resolution, Conflict-Free Replicated Data Types (CRDT Deep Dive)
