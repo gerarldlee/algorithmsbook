@@ -1,14 +1,51 @@
 ---
-title: "Rate Limiting"
+title: "Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter"
 weight: 4
 toc: true
 ---
 
 ## What it is
-Rate limiting caps how many requests a client can make in a window to protect services from abuse, runaway clients, and cascading failures. Common algorithms are the token bucket (allows bursts up to a capacity, refilled steadily), the leaky bucket (a fixed-rate queue that smooths output), and fixed or sliding window counters.
+Rate limiting and traffic shaping enforce a request or job-admission policy so one client, tenant, route, or downstream service cannot exceed a defined budget. Rate limiting decides whether to admit work now; traffic shaping controls when admitted work is sent. Common admission algorithms include token bucket, leaky bucket, sliding window log, and fixed or sliding counters.
 
 ## How it works
-The token bucket holds a fixed capacity of tokens that refill at a steady rate. Each request consumes one token; when the bucket is empty the request is rejected, but a full bucket lets a client burst up to its capacity before being throttled. The leaky bucket instead meters outgoing requests at a constant rate, queuing (or dropping) any excess, which smooths traffic but adds latency under bursts. For distributed systems the same bucket state is stored atomically in Redis (e.g. a Lua script decrementing a key), so limits hold across many server instances.
+An edge or gateway makes the policy decision before work reaches the protected tier. This Envoy local rate-limit filter fragment allows a burst of 20 requests and refills one token every 50 milliseconds. It defines a process-wide default bucket and does not show per-key request-descriptor overrides:
+
+```yaml
+filter:
+  name: envoy.filters.http.local_ratelimit
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+    stat_prefix: api_rate_limit
+    token_bucket:
+      max_tokens: 20
+      tokens_per_fill: 1
+      fill_interval: 50ms
+    filter_enabled:
+      runtime_key: rate_limit_api_enabled
+      default_value:
+        numerator: 100
+        denominator: HUNDRED
+    filter_enforced:
+      runtime_key: rate_limit_api_enforced
+      default_value:
+        numerator: 100
+        denominator: HUNDRED
+```
+
+The filter's default bucket is shared across the Envoy process, while matching descriptor overrides can select other bucket policies. The filter reads the selected bucket state, refills it from elapsed time, and consumes one token per admitted request. A rejection returns `429 Too Many Requests` by default; clients should also receive retry guidance from the deployment.
+
+A **token bucket** stores a token balance and refill time. It admits a short burst up to capacity, then admits traffic at the refill rate. A **leaky bucket** admits requests at a fixed output rate and either queues excess work or drops it when a bounded queue is full. A **sliding window log** stores one timestamp per request, removes timestamps older than the window, and rejects when the remaining count reaches the limit; it evaluates every request in the current window exactly. A **counter** stores a count for a window. A fixed counter is O(1) state but has a boundary discontinuity between adjacent windows; a sliding counter combines the current and previous window to approximate a sliding limit with constant state.
+
+Choose an algorithm from the behavior and state budget, not from the algorithm name:
+
+| Algorithm | State per key | Admission behavior | Best fit |
+| --- | --- | --- | --- |
+| Token bucket | Balance and last-refill time | Allows bounded bursts; long-term average equals refill rate | Public APIs with legitimate spikes |
+| Leaky bucket | Queue contents or virtual queue state | Smooths output at one rate; excess waits or fails | Workload shaping and protected downstream services |
+| Sliding window log | One timestamp per request in the window | Enforces the exact recent count | Low-limit or compliance-sensitive paths |
+| Fixed or sliding counter | Constant numeric state | Cheap approximate count; fixed windows reset at boundaries | High-cardinality, high-throughput limits |
+
+Local state is fast but applies independently to every process. A distributed limit stores the selected state in Redis or another coordination service and performs refill, membership, and increment operations atomically. The caller must then choose a deliberate dependency policy: fail open preserves availability but removes protection, while fail closed preserves the limit but can turn a store outage into an application outage.
 
 ```java
 class TokenBucket {
@@ -185,26 +222,31 @@ func (b *TokenBucket) Allow() bool {
 }
 ```
 
-## Tradeoffs
-- **Burst behavior**: the token bucket permits short bursts up to capacity, which is friendly to legitimate spikes but lets a client briefly exceed the steady rate.
-- **Smoothing vs. latency**: the leaky bucket outputs at a constant rate, smoothing traffic, but queues requests during bursts and adds tail latency.
-- **Precision**: fixed-window counters are simple but allow up to 2× the limit at window boundaries; sliding windows are more accurate but cost more state and computation.
-- **State overhead**: per-client in-memory buckets are cheap on one node but do not coordinate across instances; distributed limiting via Redis is accurate but adds a network hop and a single point of dependency.
-- **Memory amplification**: a naive per-key counter for many clients can exhaust memory, so designs cap the tracked key set or use approximate (probabilistic) counters.
+## Complexity
+
+| Algorithm operation | Time | Space |
+| --- | --- | --- |
+| Token-bucket allow | O(1) expected | O(1) |
+| Leaky-bucket dequeue | O(1) with a queue | O(q), where `q` is queued work |
+| Sliding-window-log admit | O(log n) with an ordered set, or O(n) with a scanned timestamp list | O(n), where `n` is requests in the window |
+| Counter increment and read | O(1) expected | O(1) |
+
+The six implementations above use local token-bucket state, so their expected decision work and space are O(1). A shared Redis implementation adds a network round trip and must execute each decision atomically, normally with a server-side Lua function or an equivalent transaction.
 
 ## When to use
-- Protecting public APIs from abusive or runaway clients, per user, per IP, or per API key.
-- Smoothing bursty ingestion into a downstream queue or database so backpressure does not overwhelm it.
-- Enforcing a global quota across many stateless server instances via a shared Redis-backed bucket.
-- Shaping outbound traffic to third-party APIs that bill or throttle by request volume.
+- You need per-user, per-IP, per-tenant, or per-key protection for a public or multi-tenant API.
+- You need to enforce an average request rate while allowing a defined burst.
+- You need to smooth outbound work before a database, queue, or rate-limited third-party API.
+- You need a policy that remains consistent across stateless instances.
+- You can define the identity source, response status, retry guidance, and dependency failure mode.
 
 ## Alternatives
-- **Leaky bucket** — constant output rate that smooths traffic, but queues requests and can add latency under bursts.
-- **Fixed/sliding window counters** — simpler to reason about and cheap to store, but less burst-friendly and (fixed) less precise at boundaries.
-- **Distributed Redis rate limiter (Lua/INCR + EXPIRE)** — accurate across instances but adds a network round trip and a Redis dependency.
+- **Concurrency limit** — caps simultaneously active work and protects thread, connection, or memory limits, but does not enforce a request rate.
+- **Queue length limit** — rejects work when a buffer is full, but does not control the rate at which the queue drains.
+- **Calendar or billing quota** — limits long-period usage, but is too coarse to protect an individual request burst.
 
 ## Related
-- [In-Memory Caching](01-in-memory-caching.md)
-- [CDNs and Edge Computing](03-cdns-edge.md)
-- [Load Balancing](../01-system-design-fundamentals/03-load-balancing.md)
-- [API Paradigms](../01-system-design-fundamentals/05-api-paradigms.md)
+- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](03-cdns-edge.md)
+- [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../01-system-design-fundamentals/03-load-balancing.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../01-system-design-fundamentals/05-api-paradigms.md)

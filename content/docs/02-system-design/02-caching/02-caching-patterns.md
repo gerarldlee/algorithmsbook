@@ -1,14 +1,34 @@
 ---
-title: "Caching Patterns"
+title: "Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind"
 weight: 2
 toc: true
 ---
 
 ## What it is
-Caching patterns are read/write strategies that coordinate an application, its cache, and the backing database: cache-aside (lazy loading), read-through, write-through, and write-back/write-behind. They trade off freshness, latency, and write amplification, and are usually paired with TTLs and a frequency-aware eviction policy such as LFU (least-frequently-used).
+Application caching patterns define who reads from and writes to the cache when an application changes data in its backing store. Cache-aside, write-through, write-around, and write-behind move the cache-fill and cache-update steps to different places in the request path. The choice controls read latency, write amplification, staleness, and the work required to recover when a cache operation fails.
 
 ## How it works
-In cache-aside, the application checks the cache on read, loads from the database on miss, and writes through to both cache and DB (write-through) or defers the DB write (write-back). TTLs bound staleness, while a long TTL on a popular key risks a stampede when it expires and many callers rebuild it simultaneously. LFU eviction removes the least frequently accessed items: a hash map tracks each key's value and frequency, and a second map groups keys by frequency in insertion order, so an eviction removes the oldest key in the lowest frequency bucket in O(1).
+Write the application's cache contract before selecting an eviction algorithm. This artifact makes the read and write responsibilities explicit:
+
+```yaml
+patterns:
+  cache_aside:
+    read: [cache, source_of_truth, populate_cache]
+    write: [source_of_truth, invalidate_cache]
+  write_through:
+    read: [cache]
+    write: [cache, source_of_truth]
+  write_around:
+    read: [cache, source_of_truth, populate_cache]
+    write: [source_of_truth, skip_cache]
+  write_behind:
+    read: [cache]
+    write: [cache, enqueue_source_write]
+```
+
+In **cache-aside**, the application owns both sides of the cache. It returns a hit directly, loads and populates after a miss, and updates the source of truth before invalidating the cache. In **write-through**, the cache updates the source synchronously before acknowledging the write, which keeps the two stores aligned if the operation succeeds but adds source latency to every write. In **write-around**, a write goes only to the source, so a one-off write does not evict a hot cached value; the next cache-aside read repopulates it. In **write-behind**, the cache acknowledges a write and later forwards it to the source, reducing request-path latency at the cost of buffered data loss and ordering unless the queue has suitable durability.
+
+A cache miss can become a **cache stampede** when many callers load the same expired key together. A per-key lock, request coalescing, or early recomputation for popular keys limits the duplicate work. LFU eviction is a separate capacity policy: it stores each key's access count, groups keys by count, and evicts the least popular group. Every implementation below accepts only a positive integer capacity. Hash-table lookups and direct key removal are expected O(1) in all six implementations. The C implementation's ordered frequency-list insertion is O(b), where `b` is the number of active frequency buckets, and the Rust implementation's `VecDeque::retain` removal is O(w), where `w` is the width of the current frequency bucket.
 
 ```java
 import java.util.HashMap;
@@ -22,6 +42,7 @@ class LFUCache {
     private final Map<Integer, LinkedHashSet<Integer>> freq = new HashMap<>(); // freq -> ordered keys
 
     LFUCache(int capacity) {
+        if (capacity <= 0) throw new IllegalArgumentException("capacity must be positive");
         this.capacity = capacity;
     }
 
@@ -33,7 +54,6 @@ class LFUCache {
     }
 
     public void put(int key, int value) {
-        if (capacity == 0) return;
         int[] e = cache.get(key);
         if (e != null) {
             e[0] = value;
@@ -66,116 +86,180 @@ class LFUCache {
 ```
 
 ```c
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 
-typedef struct Entry {
-    int key, value, freq;
-    struct Entry *prev, *next;   /* within its frequency bucket */
-    struct Entry *hnext;         /* hash chain */
-} Entry;
+typedef struct Entry Entry;
+typedef struct Bucket Bucket;
+
+struct Entry {
+    int key;
+    int value;
+    int freq;
+    Entry *prev;
+    Entry *next;
+    Entry *hnext;
+    Bucket *bucket;
+};
+
+struct Bucket {
+    int freq;
+    Entry *head;
+    Entry *tail;
+    Bucket *prev;
+    Bucket *next;
+    Bucket *hnext;
+};
 
 typedef struct {
-    int capacity, size, min_freq;
+    int capacity;
+    int size;
     int nbuckets;
-    Entry **buckets;
-    Entry **freq_head;
-    Entry **freq_tail;
-    int nfreq;
+    Entry **key_buckets;
+    Bucket **freq_buckets;
+    Bucket *freq_head;
+    Bucket *freq_tail;
+    Bucket *min_bucket;
 } LFUCache;
 
-static unsigned hash(int key, int n) {
-    return (unsigned)(key * 2654435761u) % (unsigned)n;
+static unsigned hash(unsigned int value, int count) {
+    return (value * 2654435761u) % (unsigned int)count;
 }
 
 LFUCache *lfu_cache_create(int capacity) {
+    if (capacity <= 0) return NULL;
     LFUCache *c = calloc(1, sizeof(*c));
     c->capacity = capacity;
     c->nbuckets = capacity * 2 + 1;
-    c->nfreq = capacity + 1;
-    c->buckets = calloc((size_t)c->nbuckets, sizeof(Entry *));
-    c->freq_head = calloc((size_t)c->nfreq, sizeof(Entry *));
-    c->freq_tail = calloc((size_t)c->nfreq, sizeof(Entry *));
+    c->key_buckets = calloc((size_t)c->nbuckets, sizeof(Entry *));
+    c->freq_buckets = calloc((size_t)c->nbuckets, sizeof(Bucket *));
     return c;
 }
 
-static void unlink(LFUCache *c, Entry *e) {
-    int f = e->freq;
-    if (e->prev) e->prev->next = e->next;
-    else c->freq_head[f] = e->next;
-    if (e->next) e->next->prev = e->prev;
-    else c->freq_tail[f] = e->prev;
-    e->prev = e->next = NULL;
+static Entry **find_entry(LFUCache *c, int key) {
+    Entry **slot = &c->key_buckets[hash((unsigned int)key, c->nbuckets)];
+    while (*slot && (*slot)->key != key) slot = &(*slot)->hnext;
+    return slot;
 }
 
-static void link_back(LFUCache *c, Entry *e) {
-    int f = e->freq;
-    e->prev = c->freq_tail[f];
-    e->next = NULL;
-    if (c->freq_tail[f]) c->freq_tail[f]->next = e;
-    else c->freq_head[f] = e;
-    c->freq_tail[f] = e;
+static Bucket **find_bucket(LFUCache *c, int freq) {
+    Bucket **slot = &c->freq_buckets[hash((unsigned int)freq, c->nbuckets)];
+    while (*slot && (*slot)->freq != freq) slot = &(*slot)->hnext;
+    return slot;
 }
 
-static Entry **find_bucket(LFUCache *c, int key) {
-    Entry **p = &c->buckets[hash(key, c->nbuckets)];
-    while (*p && (*p)->key != key) p = &(*p)->hnext;
-    return p;
+static Bucket *get_bucket(LFUCache *c, int freq) {
+    Bucket **slot = find_bucket(c, freq);
+    if (*slot) return *slot;
+    Bucket *bucket = calloc(1, sizeof(*bucket));
+    bucket->freq = freq;
+    bucket->hnext = *slot;
+    *slot = bucket;
+    Bucket *current = c->freq_head;
+    Bucket *previous = NULL;
+    while (current && current->freq < freq) {
+        previous = current;
+        current = current->next;
+    }
+    bucket->prev = previous;
+    bucket->next = current;
+    if (previous) previous->next = bucket;
+    else c->freq_head = bucket;
+    if (current) current->prev = bucket;
+    else c->freq_tail = bucket;
+    if (!c->min_bucket || bucket->freq < c->min_bucket->freq) c->min_bucket = bucket;
+    return bucket;
 }
 
-static void bump(LFUCache *c, Entry *e) {
-    unlink(c, e);
-    if (e->freq == c->min_freq && !c->freq_head[c->min_freq])
-        c->min_freq++;
-    e->freq++;
-    link_back(c, e);
+static void unlink_bucket(LFUCache *c, Bucket *bucket) {
+    if (bucket->prev) bucket->prev->next = bucket->next;
+    else c->freq_head = bucket->next;
+    if (bucket->next) bucket->next->prev = bucket->prev;
+    else c->freq_tail = bucket->prev;
+    if (c->min_bucket == bucket) c->min_bucket = bucket->next;
+    Bucket **slot = find_bucket(c, bucket->freq);
+    *slot = bucket->hnext;
+    free(bucket);
+}
+
+static void unlink_entry(LFUCache *c, Entry *entry) {
+    Bucket *bucket = entry->bucket;
+    if (entry->prev) entry->prev->next = entry->next;
+    else bucket->head = entry->next;
+    if (entry->next) entry->next->prev = entry->prev;
+    else bucket->tail = entry->prev;
+    if (!bucket->head) unlink_bucket(c, bucket);
+    entry->prev = NULL;
+    entry->next = NULL;
+    entry->bucket = NULL;
+}
+
+static void link_back(LFUCache *c, Entry *entry) {
+    Bucket *bucket = get_bucket(c, entry->freq);
+    entry->bucket = bucket;
+    entry->prev = bucket->tail;
+    entry->next = NULL;
+    if (bucket->tail) bucket->tail->next = entry;
+    else bucket->head = entry;
+    bucket->tail = entry;
+}
+
+static void bump(LFUCache *c, Entry *entry) {
+    unlink_entry(c, entry);
+    entry->freq++;
+    link_back(c, entry);
 }
 
 int lfu_cache_get(LFUCache *c, int key) {
-    Entry **p = find_bucket(c, key);
-    if (!*p) return -1;
-    bump(c, *p);
-    return (*p)->value;
+    Entry **slot = find_entry(c, key);
+    if (!*slot) return -1;
+    bump(c, *slot);
+    return (*slot)->value;
 }
 
 void lfu_cache_put(LFUCache *c, int key, int value) {
-    if (c->capacity == 0) return;
-    Entry **p = find_bucket(c, key);
-    if (*p) {
-        (*p)->value = value;
-        bump(c, *p);
+    Entry **slot = find_entry(c, key);
+    if (*slot) {
+        (*slot)->value = value;
+        bump(c, *slot);
         return;
     }
     if (c->size == c->capacity) {
-        Entry *evict = c->freq_head[c->min_freq];
-        unlink(c, evict);
-        Entry **q = find_bucket(c, evict->key);
-        *q = evict->hnext;
+        Entry *evict = c->min_bucket->head;
+        unlink_entry(c, evict);
+        Entry **key_slot = find_entry(c, evict->key);
+        *key_slot = evict->hnext;
         free(evict);
         c->size--;
     }
-    Entry *e = calloc(1, sizeof(*e));
-    e->key = key;
-    e->value = value;
-    e->freq = 1;
-    e->hnext = c->buckets[hash(key, c->nbuckets)];
-    c->buckets[hash(key, c->nbuckets)] = e;
-    link_back(c, e);
+    Entry *entry = calloc(1, sizeof(*entry));
+    entry->key = key;
+    entry->value = value;
+    entry->freq = 1;
+    entry->hnext = c->key_buckets[hash((unsigned int)key, c->nbuckets)];
+    c->key_buckets[hash((unsigned int)key, c->nbuckets)] = entry;
+    link_back(c, entry);
     c->size++;
-    c->min_freq = 1;
 }
 
 void lfu_cache_free(LFUCache *c) {
     for (int i = 0; i < c->nbuckets; i++) {
-        Entry *e = c->buckets[i];
-        while (e) {
-            Entry *n = e->hnext;
-            free(e);
-            e = n;
+        Entry *entry = c->key_buckets[i];
+        while (entry) {
+            Entry *next = entry->hnext;
+            free(entry);
+            entry = next;
         }
     }
-    free(c->buckets);
-    free(c->freq_head);
-    free(c->freq_tail);
+    Bucket *bucket = c->freq_head;
+    while (bucket) {
+        Bucket *next = bucket->next;
+        free(bucket);
+        bucket = next;
+    }
+    free(c->key_buckets);
+    free(c->freq_buckets);
     free(c);
 }
 ```
@@ -185,7 +269,9 @@ from collections import OrderedDict
 
 class LFUCache:
     def __init__(self, capacity: int):
-        self.capacity = capacity
+        if capacity <= 0:
+            raise ValueError("capacity must be positive")
+        self.capity = capacity
         self.min_freq = 0
         self.cache = {}      # key -> (value, freq)
         self.freqs = {}      # freq -> OrderedDict[key]
@@ -208,8 +294,6 @@ class LFUCache:
         return value
 
     def put(self, key: int, value: int) -> None:
-        if self.capacity == 0:
-            return
         if key in self.cache:
             _, freq = self.cache[key]
             self.cache[key] = (value, freq)
@@ -236,13 +320,16 @@ struct LFUCache {
 }
 
 impl LFUCache {
-    fn new(capacity: i32) -> Self {
-        LFUCache {
+    fn new(capacity: i32) -> Option<Self> {
+        if capacity <= 0 {
+            return None;
+        }
+        Some(LFUCache {
             capacity: capacity as usize,
             min_freq: 0,
             cache: HashMap::new(),
             freqs: HashMap::new(),
-        }
+        })
     }
 
     fn bump(&mut self, key: i32, freq: i32) {
@@ -271,9 +358,6 @@ impl LFUCache {
     }
 
     fn put(&mut self, key: i32, value: i32) {
-        if self.capacity == 0 {
-            return;
-        }
         if let Some(&(_, f)) = self.cache.get(&key) {
             self.cache.insert(key, (value, f));
             self.bump(key, f);
@@ -301,6 +385,9 @@ class LFUCache {
     private freqs = new Map<number, Map<number, null>>();    // freq -> ordered keys
 
     constructor(capacity: number) {
+        if (!Number.isInteger(capacity) || capacity <= 0) {
+            throw new Error("capacity must be a positive integer");
+        }
         this.capacity = capacity;
     }
 
@@ -324,7 +411,6 @@ class LFUCache {
     }
 
     put(key: number, value: number): void {
-        if (this.capacity === 0) return;
         if (this.cache.has(key)) {
             const [, freq] = this.cache.get(key)!;
             this.cache.set(key, [value, freq]);
@@ -354,22 +440,27 @@ import "container/list"
 type LFUCache struct {
 	capacity int
 	minFreq  int
-	cache    map[int][2]int     // key -> [value, freq]
-	freqs    map[int]*list.List // freq -> keys in insertion order
+	cache    map[int][2]int
+	freqs    map[int]*list.List
+	entries  map[int]*list.Element
 }
 
 func NewLFUCache(capacity int) *LFUCache {
-	return &LFUCache{capacity: capacity, cache: make(map[int][2]int), freqs: make(map[int]*list.List)}
+	if capacity <= 0 {
+		return nil
+	}
+	return &LFUCache{
+		capacity: capacity,
+		cache:    make(map[int][2]int),
+		freqs:    make(map[int]*list.List),
+		entries:  make(map[int]*list.Element),
+	}
 }
 
 func (c *LFUCache) bump(key, freq int) {
 	l := c.freqs[freq]
-	for e := l.Front(); e != nil; e = e.Next() {
-		if e.Value.(int) == key {
-			l.Remove(e)
-			break
-		}
-	}
+	l.Remove(c.entries[key])
+	delete(c.entries, key)
 	if l.Len() == 0 {
 		delete(c.freqs, freq)
 		if c.minFreq == freq {
@@ -379,7 +470,7 @@ func (c *LFUCache) bump(key, freq int) {
 	if c.freqs[freq+1] == nil {
 		c.freqs[freq+1] = list.New()
 	}
-	c.freqs[freq+1].PushBack(key)
+	c.entries[key] = c.freqs[freq+1].PushBack(key)
 	v := c.cache[key]
 	c.cache[key] = [2]int{v[0], freq + 1}
 }
@@ -394,9 +485,6 @@ func (c *LFUCache) Get(key int) int {
 }
 
 func (c *LFUCache) Put(key, value int) {
-	if c.capacity == 0 {
-		return
-	}
 	if v, ok := c.cache[key]; ok {
 		c.cache[key] = [2]int{value, v[1]}
 		c.bump(key, v[1])
@@ -407,6 +495,7 @@ func (c *LFUCache) Put(key, value int) {
 		evict := l.Front()
 		key := evict.Value.(int)
 		l.Remove(evict)
+		delete(c.entries, key)
 		if l.Len() == 0 {
 			delete(c.freqs, c.minFreq)
 		}
@@ -416,30 +505,35 @@ func (c *LFUCache) Put(key, value int) {
 	if c.freqs[1] == nil {
 		c.freqs[1] = list.New()
 	}
-	c.freqs[1].PushBack(key)
+	c.entries[key] = c.freqs[1].PushBack(key)
 	c.minFreq = 1
 }
 ```
 
 ## Tradeoffs
-- **Freshness vs. latency**: write-through keeps the cache and DB consistent but makes every write pay the DB cost; write-back is fast but risks data loss on crash and leaves a window of staleness.
-- **Read miss cost**: cache-aside reads miss cold and pay a full DB round trip; read-through hides this behind the cache layer but couples the cache to the loader.
-- **Eviction fidelity**: LFU favors hot items but can starve newer keys that never accumulate frequency (unlike LRU) and needs the extra frequency bookkeeping.
-- **TTL stampede**: long TTLs risk a thundering herd when a popular key expires; mitigation (locking, probabilistic early refresh) adds complexity.
-- **Complexity**: write-back requires a flush/replay mechanism and can reorder writes; cache-aside is simplest but pushes invalidation correctness onto every caller.
+
+| Choice | Gain | Cost or risk |
+| --- | --- | --- |
+| Cache-aside | Keeps cache and source libraries loosely coupled and lets the cache fail open. | Every writer must populate or invalidate correctly; misses still load the source. |
+| Write-through | Makes the cache update visible with the acknowledged write. | Couples cache availability and latency to every source write. |
+| Write-around | Preserves a stable hot set across one-off writes. | Moves the fill cost to the next read and can expose a different stale value. |
+| Write-behind | Absorbs source-write bursts into buffered work. | Requires durable delivery, replay, ordering, and duplicate-write handling. |
+| LFU | Retains established hot keys under skewed reads. | Exact counts can favor old entries; aging or probabilistic counts let new keys recover. |
 
 ## When to use
-- Cache-aside when the application controls reads and the cache is optional (e.g. product catalogs, user profiles).
-- Write-through for read-heavy workloads that must never serve stale data (e.g. configuration, inventory counts).
-- Write-back when write throughput matters more than crash consistency (e.g. counters, analytics aggregates).
-- LFU when access patterns are skewed and long-lived hot items should be retained.
+- You need cache-aside for optional derived reads whose source of truth can be loaded on a miss.
+- You need write-through when acknowledgement must wait for the backing-store update.
+- You need write-around when one-off writes should not displace a stable hot set.
+- You need write-behind when measured request latency matters more than immediate source durability and you can operate the write queue.
+- You need LFU when a small group of keys dominates access and its long-lived reuse is more important than new-key discovery.
 
 ## Alternatives
-- **LRU** — simpler, recency-based eviction; better when popularity shifts quickly but can thrash under scans.
-- **Redis cache-aside with TTL** — operationally battle-tested but leaves invalidation to the application.
-- **No cache / query DB directly** — zero staleness and complexity at the cost of high read latency.
+- **Read-through cache** — moves cache-miss loading into a cache client, but couples that client to every backing store and data shape.
+- **LRU eviction** — uses less frequency metadata and reacts faster when popularity changes, but large scans can evict a useful working set.
+- **Backing-store reads** — remove cache coherence concerns, but increase source load and place database latency on the request path.
 
 ## Related
-- [In-Memory Caching](01-in-memory-caching.md)
-- [CDNs and Edge Computing](03-cdns-edge.md)
-- [Rate Limiting](04-rate-limiting.md)
+- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](03-cdns-edge.md)
+- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
+- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](../01-system-design-fundamentals/01-fundamentals.md)

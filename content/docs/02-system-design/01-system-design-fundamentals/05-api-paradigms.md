@@ -1,63 +1,102 @@
 ---
-title: "API Paradigms"
+title: "API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems"
 weight: 5
 toc: true
 ---
 
 ## What it is
 
-API paradigms are the conventions for how clients request and receive data from a service, defined by the shape of the contract between caller and callee. The dominant styles are REST (resource-oriented over HTTP), GraphQL (client-specified queries against a schema), gRPC (typed binary RPC), and Webhooks (server-initiated callbacks to push events to subscribers).
+API paradigms define the contract and direction of communication between components. **REST** exposes resources through HTTP methods and representations, **GraphQL** exposes a typed graph that clients query for selected fields, **gRPC** exposes typed RPC methods serialized as Protocol Buffers, and **event-driven systems** publish facts that consumers process independently.
 
 ## How it works
 
-REST models the system as resources addressed by URLs and manipulated with HTTP verbs, using status codes and hypermedia for semantics. GraphQL exposes a single endpoint with a typed schema; the client sends a query selecting exactly the fields it wants and the server returns a matching JSON shape in one round trip. gRPC defines services and messages in Protocol Buffers, compiles them into client and server stubs, and invokes methods over HTTP/2 with streaming. Webhooks invert the direction: the producer makes an HTTP POST to a subscriber-registered callback URL whenever an event occurs, with the subscriber responsible for acknowledging and retrying.
+REST maps a domain operation to a resource URI and an HTTP method, then uses status codes, headers, and a representation such as JSON to exchange data. GraphQL clients send operations against a schema; the server resolves the selected fields and returns matching data, usually as JSON. gRPC code generators turn a schema into typed clients and servers, and Protocol Buffers provide a compact, language-neutral wire format. Event-driven systems instead publish a domain event to durable storage or a broker; consumers acknowledge progress and may replay the event to rebuild state or trigger follow-on work.
 
-The four styles side by side:
+The GraphQL contract names resources as graph fields:
 
-```yaml
-# One domain modeled four ways
-rest:
-  read_user:  GET    /users/{id}            -> 200 {id, name, email}
-  list_users: GET    /users?page=2          -> 200 {items: [...], next}
-  create:     POST   /users                 -> 201 Location: /users/123
-graphql:
-  endpoint: /graphql
-  query:    "{ user(id: 123) { name, email } }"
-  response: { "data": { "user": { "name": "...", "email": "..." } } }
-grpc:
-  service:  UserService { rpc GetUser(UserRequest) returns (User); }
-  wire:     protobuf over HTTP/2, unary + streaming
-webhook:
-  subscribe: POST /webhooks { url: "https://sub.example/hook", events: ["user.created"] }
-  deliver:   POST https://sub.example/hook  { event: "user.created", ... }
-  contract:  subscriber returns 2xx, producer retries with backoff
+```graphql
+type Query {
+  user(id: ID!): User
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+}
 ```
+
+The gRPC contract defines the same operation as a typed RPC:
+
+```proto
+syntax = "proto3";
+
+package accounts.v1;
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+}
+```
+
+REST represents the same operation as `GET /users/{id}`, while an event describes something that already happened rather than commanding a receiver to perform work:
+
+```json
+{
+  "eventId": "01J2YH6J8Q3P6M4N2K7R9T1V0X",
+  "eventType": "user.created.v1",
+  "occurredAt": "2026-09-24T12:00:00Z",
+  "key": "user-123",
+  "data": {
+    "userId": "user-123",
+    "name": "Ada"
+  }
+}
+```
+
+For REST, clients and intermediaries can cache responses when cache headers permit, and independent resources can evolve without exposing every internal service. GraphQL reduces accidental over-fetching for clients with different field needs, but arbitrary selections complicate HTTP caching and can trigger excessive resolver work unless query cost and data-loader controls are explicit. gRPC makes method schemas and generated types visible to build systems, but browser clients need a proxy and generic clients need tooling for discovery. In an event-driven design, the producer records that a fact occurred; the broker orders records within a partition, and consumers track offsets. Retries can duplicate delivery, so consumers need idempotent handling, schema compatibility, and a policy for poison messages. A webhook is one delivery mechanism for an event, not a substitute for the event-driven architecture itself.
 
 ## Tradeoffs
 
-| Paradigm | Strengths | Costs |
-| --- | --- | --- |
-| REST | Simple, cacheable, universal tooling | Over/under-fetching; many round trips for related data; contract drift |
-| GraphQL | Client specifies exact fields, one round trip | Harder caching, N+1 risk, complex server resolver cost, no native CDN caching |
-| gRPC | Typed schema, efficient binary, streaming | Poor browser support, needs HTTP/2, opaque to debugging/inspection |
-| Webhook | Real-time push, decoupled producer | Delivery and retry responsibility, no request/response, ordering/idempotency challenges |
+Use the interaction and deployment model together when choosing a paradigm:
+
+| Paradigm | Gain | Cost or risk | Prefer when |
+| --- | --- | --- | --- |
+| REST over HTTP | Cacheable semantics, broad tooling, independent resources | Multiple calls for related data; field and contract drift across endpoints | Public resource-oriented APIs or cacheable HTTP workloads |
+| GraphQL | One endpoint can serve different field selections and related data | Query-cost control, resolver N+1 patterns, and less predictable intermediary caching | Several clients need different views of a connected domain |
+| gRPC with Protocol Buffers | Typed methods, compact messages, and native streaming | Browser support requires a bridge; wire traffic is less human-readable | Controlled service-to-service calls and typed internal contracts |
+| Event-driven system | Producers and consumers scale and deploy independently; new consumers can use past facts | Duplicate delivery, ordering boundaries, schema evolution, and replay operations | Long-running workflows, fan-out, or decoupled integrations |
+| Webhook delivery | Pushes an event directly to an HTTP endpoint without polling callbacks | The provider handles retries, signatures, and endpoint availability | The consumer exposes a stable, security-controlled HTTPS endpoint |
+
+GraphQL and gRPC require explicit query and method limits. Event-driven systems require explicit delivery semantics. These are not formats that can be selected safely without capacity, failure, and security rules.
 
 ## When to use
 
-- Use REST for public, resource-centric APIs where caching and simplicity matter.
-- Use GraphQL when many different clients need different field subsets and want to avoid multiple round trips.
-- Use gRPC for internal service-to-service calls needing high throughput and a strict typed contract.
-- Use webhooks when a third party must be notified of events asynchronously without polling.
+- You need cacheable, resource-oriented operations with broad HTTP client support, which points to REST.
+- Several client roles need different fields from connected domain data, which points to GraphQL.
+- Controlled services need typed contracts, compact messages, or streaming, which points to gRPC.
+- Producers and consumers need independent deployment, durable replay, or many downstream reactions, which points to events.
+- A third party needs near-real-time notification through an HTTPS callback, which points to webhooks.
 
 ## Alternatives
 
-- **Server-Sent Events (SSE)** — simple one-way push over plain HTTP, but unidirectional and limited to browser text streaming.
-- **Polling** — trivial to implement with no callback infrastructure, but wasteful and high-latency compared to webhooks.
+- **Server-Sent Events** — provide simple one-way browser push over HTTP, but the server holds the connection and the model does not support arbitrary consumer groups.
+- **Long polling** — works through ordinary HTTP infrastructure, but repeated empty polls consume connections and often add latency compared with streaming.
+- **Command messages** — coordinate an action the receiver must perform, but couple senders to receiver-side state and workflow more tightly than a past-tense domain event.
 
 ## Related
 
-- [System Design Fundamentals](01-fundamentals.md)
+- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](01-fundamentals.md)
 - [Network Protocols](02-network-protocols.md)
-- [Proxies and Gateways](04-proxies-gateways.md)
-- [Load Balancing](03-load-balancing.md)
-- [Caching Strategies](../02-caching/01-in-memory-caching.md)
+- [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
+- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](../02-caching/04-rate-limiting.md)
+- [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)

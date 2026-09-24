@@ -94,18 +94,18 @@ For every algorithm chapter:
 
 ### Chapter 5 — System Design Fundamentals
 
-- [ ] 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
-- [ ] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets
-- [ ] 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
-- [ ] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
-- [ ] 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
+- [x] 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
+- [x] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets
+- [x] 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
+- [x] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
+- [x] 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
 
 ### Chapter 6 — Caching Strategies & Edge Acceleration
 
-- [ ] 6.1 In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)
-- [ ] 6.2 Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind
-- [ ] 6.3 Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration
-- [ ] 6.4 Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter
+- [x] 6.1 In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)
+- [x] 6.2 Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind
+- [x] 6.3 Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration
+- [x] 6.4 Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter
 
 ## Part III — Messaging, Notifications & Real-Time Communication
 

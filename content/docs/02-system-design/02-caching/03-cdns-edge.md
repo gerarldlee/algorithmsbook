@@ -1,64 +1,86 @@
 ---
-title: "CDNs and Edge Computing"
+title: "Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration"
 weight: 3
 toc: true
 ---
 
 ## What it is
-A Content Delivery Network (CDN) is a globally distributed network of edge servers (points of presence, or PoPs) that cache and serve static content close to users, cutting latency and offloading origin traffic. Edge computing extends these PoPs to run application logic — compute, API handlers, and dynamic responses — on the same servers instead of only caching files.
+A content delivery network (CDN) is a distributed set of proxy servers that caches HTTP responses closer to clients than the origin. Edge computing adds request-time code to those proxies, so a CDN can route, rewrite, authenticate, or compute a response without first forwarding every request to a central application. Together they accelerate versioned static assets and selectively cache or compute dynamic responses while the origin remains the authoritative service.
 
 ## How it works
-Requests are routed to the nearest PoP via Anycast DNS, which announces the same IP from many locations so the network converges on the closest healthy edge. On a cache hit the PoP serves the asset directly; on a miss it fetches from the origin, caches it, and replays the response. Content is either **pushed** (origin proactively uploads assets to edges) or **pulled** (edges fetch on first request). A `Cache-Control` header or CDN rule sets the TTL, and a surrogate/edge key controls invalidation. Edge functions (Cloudflare Workers, Lambda@Edge) intercept the request/response lifecycle to transform, personalize, or compute at the edge.
+A CDN-specific policy assigns edge and browser lifetimes to matching responses. This Cloudflare Cache Rules create request for the `http_request_cache_settings` phase makes the behavior for immutable assets and a dynamic API explicit:
 
-```yaml
-# Example CDN + edge configuration (Cloudflare-style)
-cdn:
-  zone: example.com
-  routing:
-    mode: anycast            # same IP announced from every PoP
-  cache:
-    default_ttl: 3600        # seconds a pulled asset stays fresh
-    rules:
-      - match: "*.jpg"
-        ttl: 86400           # immutable images cache longer
-        immutable: true
-      - match: "/api/*"
-        cache: bypass        # dynamic API responses skip the cache
-    invalidation:
-      strategy: purge_by_tag # surrogate-key purge across all PoPs
-  edge_function:              # runs at the PoP, near the user
-    name: geo-personalize
-    trigger: on_request
-    actions:
-      - read_header: "cf-ipcountry"
-      - rewrite_path: "/region/{country}/catalog"
-  origin:
-    pull_protocol: https
-    failover_backend: origin-failover.example.com
+```json
+{
+  "name": "static-and-dynamic-cache-policy",
+  "kind": "zone",
+  "phase": "http_request_cache_settings",
+  "rules": [
+    {
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": {
+          "mode": "override_origin",
+          "default": 86400
+        },
+        "browser_ttl": {
+          "mode": "override_origin",
+          "default": 3600
+        }
+      },
+      "expression": "http.host eq \"static.example.com\" and starts_with(http.request.uri.path, \"/assets/\")"
+    },
+    {
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": false
+      },
+      "expression": "http.host eq \"api.example.com\""
+    }
+  ]
+}
 ```
 
+Anycast can announce one address from many points of presence, and BGP routes a client toward one of those locations; it does not guarantee that the selected location is geographically closest. A cache key separates otherwise different responses and commonly includes the hostname, path, selected query parameters, and selected request headers. On a hit, the PoP returns the stored response. On a miss, it validates or fetches from the origin, stores the response under its policy, and returns it. A **preload** uploads an object to edge storage before a request; ordinary **pull** caching fills it after a request.
+
+Shared caching suits content that is public, repeatable, and valid for many users. Private or personalized responses require a private cache policy and must not be stored in a shared cache. Dynamic acceleration can terminate TLS, apply authentication, rewrite a route, or call an origin API, but any remote data fetch still incurs a network round trip. Route the response according to its reuse and privacy properties:
+
+| Response | Edge path | Source of truth | Invalidation |
+| --- | --- | --- | --- |
+| Fingerprinted image, script, or stylesheet | Shared edge cache | Object store or release pipeline | New fingerprint on deploy; old URLs can expire |
+| Anonymous page or public API response | Shared cache when its response varies by the cache key | Application or API | TTL, purge, or surrogate key |
+| Personalized HTML | Edge compute, then application request | Application and databases | Not shared; explicit private policy if cached |
+| Authenticated API response | Gateway and origin, normally without shared caching | Domain service | Request-specific freshness rules |
+
+Purge-by-URL or purge-by-tag removes content from reachable PoPs, but deletion is not an atomic global transaction; a stale response can remain or be in flight while other PoPs process the purge. A cache key generator and `Vary` policy must prevent responses for different users or variants from sharing an entry.
+
 ## Tradeoffs
-- **Latency**: static assets served from the nearest PoP cut round-trip time from hundreds to tens of milliseconds; dynamic edge compute avoids an origin round trip entirely.
-- **Freshness**: long TTLs maximize cache hits but delay propagation of updates; purge-by-tag reduces that window but invalidations still propagate asynchronously across PoPs.
-- **Consistency**: each PoP holds an independent cache, so different users can briefly see different versions after an update.
-- **Cost**: egress and cache fills at the edge cost money, and edge functions bill per invocation — cheaper than origin scaling but not free.
-- **Operational complexity**: two layers (edge + origin) to debug, plus routing and invalidation tooling; push caching requires an explicit publish pipeline.
-- **Compute limits**: edge runtimes have constrained CPU, memory, and cold-start budgets, so only lightweight, stateless logic belongs there.
+
+| Choice | Gain | Cost or risk |
+| --- | --- | --- |
+| Long shared TTL | High hit ratio and low origin load | Longer staleness and more purge coordination |
+| Versioned asset names | Deploys create a new immutable URL | Old assets and metadata can accumulate |
+| Edge compute | Request-time routing without a dedicated edge proxy tier | Constrained runtimes, provider APIs, and harder debugging |
+| Purge by tag | Targeted invalidation across object groups | Asynchronous propagation and incomplete support across CDNs |
+| Dynamic edge composition | Personalized logic can run near the client | Each remote dependency still adds latency and failure modes |
+
+A CDN also introduces a partial failure domain: an edge may hold stale or incorrectly keyed content even while origin data is current. Monitoring must distinguish cache hits, misses, revalidations, purge failures, origin fetches, and edge-function errors.
 
 ## When to use
-- Serving images, video, JavaScript, and other static assets to a global audience with low latency.
-- Offloading traffic spikes (product launches, events) so the origin does not collapse.
-- Running lightweight request-time logic — A/B flags, geolocation, authentication, header rewrites — without a full origin round trip.
-- Accelerating whole-site delivery where TLS termination and caching happen at the edge.
+- You serve repeated public assets to clients spread across multiple regions.
+- You need origin protection during predictable traffic spikes.
+- You can encode reusable public responses in a stable cache key and assign a freshness policy.
+- You need lightweight request-time routing, authentication, or transformation near clients.
+- You can observe cache age, hit ratio, purge status, and origin fallback behavior.
 
 ## Alternatives
-- **Self-hosted reverse proxy cache (Varnish/nginx)** — full control and lower egress cost, but only helps users near your own data centers.
-- **Multi-region origin replication** — keeps dynamic data consistent and globally available, but you pay to run and sync full application stacks.
-- **Cloud object storage with direct public access** — durable and cheap, but higher latency and no request-time compute.
+- **Origin or reverse-proxy cache** — gives direct control over an origin's path, but improves latency only for clients routed near that origin.
+- **Multi-region application deployment** — keeps dynamic computation close to clients, but requires replicated data, deployment, and failover management.
+- **Object storage with direct delivery** — handles immutable files simply, but provides limited per-request application logic and response composition.
 
 ## Related
-- [In-Memory Caching](01-in-memory-caching.md)
-- [Caching Patterns](02-caching-patterns.md)
-- [Rate Limiting](04-rate-limiting.md)
-- [Load Balancing](../01-system-design-fundamentals/03-load-balancing.md)
-- [Proxies and Gateways](../01-system-design-fundamentals/04-proxies-gateways.md)
+- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](02-caching-patterns.md)
+- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
+- [Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)](../01-system-design-fundamentals/04-proxies-gateways.md)

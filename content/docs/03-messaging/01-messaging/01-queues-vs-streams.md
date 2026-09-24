@@ -63,3 +63,5 @@ stream:                   # Kafka, Kinesis
 - [Backpressure and Dead Letter Queues](04-backpressure-dlq.md)
 - [Notification Dispatchers](../02-realtime/01-notification-dispatchers.md)
 - [Caching Strategies](../../02-system-design/02-caching/01-in-memory-caching.md)
+- [Load Balancing Strategies](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)
