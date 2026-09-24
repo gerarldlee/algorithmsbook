@@ -1,7 +1,6 @@
-.language-selector {
-  max-width: 9rem;
+.language-selector,
+.level-selector {
   padding: 0.45rem 1.8rem 0.45rem 0.65rem;
-  border: 1px solid currentColor;
   border-radius: 0.5rem;
   color: inherit;
   background: transparent;
@@ -11,12 +10,24 @@
   opacity: 0.85;
 }
 
+.language-selector {
+  max-width: 9rem;
+}
+
+.level-selector {
+  max-width: 7rem;
+  border: 1px solid currentColor;
+}
+
 .language-selector:hover,
-.language-selector:focus-visible {
+.language-selector:focus-visible,
+.level-selector:hover,
+.level-selector:focus-visible {
   opacity: 1;
 }
 
-.language-selector option {
+.language-selector option,
+.level-selector option {
   color: CanvasText;
   background: Canvas;
 }
@@ -26,7 +37,8 @@
 }
 
 @media (max-width: 767px) {
-  .language-selector {
+  .language-selector,
+  .level-selector {
     max-width: 7.5rem;
     font-size: 0.75rem;
   }

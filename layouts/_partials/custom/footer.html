@@ -1,0 +1,7 @@
+{{- $context := .context -}}
+<div class="hx:flex hx:flex-wrap hx:items-center hx:gap-4">
+  {{- with site.GetPage "/terms-of-use" -}}
+    <a class="hx:text-sm hx:underline" href="{{ .RelPermalink }}">Terms of Use</a>
+  {{- end -}}
+  <span class="hx:text-sm">© 2026 fociilabs.com</span>
+</div>

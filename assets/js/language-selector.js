@@ -9,6 +9,11 @@
     ["go", "Go"],
   ];
   const algorithmOrder = languages.map(([value]) => value);
+  const levels = [
+    ["all", "All"],
+    ["normal", "Normal"],
+    ["advanced", "Advanced"],
+  ];
 
   function languageOf(code) {
     return code.dataset.lang || code.className.match(/(?:^|\s)language-([^\s]+)/)?.[1];
@@ -72,7 +77,20 @@
       applyLanguage(selector.value);
     });
 
+    const levelSelector = document.createElement("select");
+    levelSelector.className = "level-selector";
+    levelSelector.setAttribute("aria-label", "Topic level");
+    levelSelector.title = "Topic level";
+
+    levels.forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      levelSelector.appendChild(option);
+    });
+
     docsLink.before(selector);
+    docsLink.before(levelSelector);
     applyLanguage(selector.value);
   }
 

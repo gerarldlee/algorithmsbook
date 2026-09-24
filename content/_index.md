@@ -2,33 +2,38 @@
 title: "Learn Algorithms and Design"
 ---
 
-Intuitively learn algorithms and system design for your interviews and sanity.
+```mermaid
+flowchart LR
+    F[Fundamentals] --> D[Data Structures]
+    D --> C[Complexity]
+    C --> A[Algorithms]
+    A --> S[System Design]
+```
+
+```mermaid
+%%{init: {"theme": "default", "themeCSS": "svg { filter: saturate(0.5) opacity(0.5); }"}}%%
+mindmap
+  root((Algorithms and Design))
+    Foundations
+    Algorithms
+    Distributed Systems
+    Cloud and DevOps
+    AI Infrastructure
+```
+
+<p class="hx:text-center hx:text-xl hx:font-semibold">Intuitively learn algorithms and system design for your interviews and sanity.</p>
 
 {{< cards >}}
   {{< card link="docs" title="Docs" icon="book-open" >}}
+  {{< card link="guide" title="How to Use This Book" icon="book-open" >}}
+  {{< card link="table-of-contents" title="Table of Contents" icon="book-open" >}}
   {{< card link="about" title="About" icon="user" >}}
 {{< /cards >}}
 
-## How are books organized?
+## Disclaimer
 
-The content follows a dependency order: start with the prerequisites and
-fundamentals, then work through data structures, complexity, techniques, and
-finally the templates you should memorize.
+This book contains condensed compilations, summaries, notes, and illustrations that the author used, created, or referenced from various sources to aid you—and the author primarily—in learning algorithms and system design.
 
-## Table of contents
+## Site information
 
-- [Essentials](docs/00-essentials/)
-- [Part I: Fundamental Data Structures & Core Algorithms](docs/01-algorithms/)
-- [Part II: System Design Foundations & High-Scale Architecture](docs/02-system-design/)
-- [Part III: Messaging, Notifications & Real-Time Communication](docs/03-messaging/)
-- [Part IV: Distributed Systems & Database Architecture](docs/04-distributed-systems/)
-- [Part V: Cloud Architecture, Operating Systems & DevOps Engineering](docs/05-cloud-devops/)
-- [Part VI: Machine Learning Systems & Scalable AI Infrastructure](docs/06-ml-ai/)
-
-> Bad programmers worry about the code. Good programmers worry about data structures and their relationships.
->
-> — Linus Torvalds
-
-> Fold knowledge into data, so program logic can be stupid and robust.
->
-> — Eric S. Raymond
+- [Terms of Use](terms-of-use.md)
