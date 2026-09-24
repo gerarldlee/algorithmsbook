@@ -1,0 +1,33 @@
+.language-selector {
+  max-width: 9rem;
+  padding: 0.45rem 1.8rem 0.45rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  opacity: 0.85;
+}
+
+.language-selector:hover,
+.language-selector:focus-visible {
+  opacity: 1;
+}
+
+.language-selector option {
+  color: CanvasText;
+  background: Canvas;
+}
+
+[data-language-filter="hidden"] {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .language-selector {
+    max-width: 7.5rem;
+    font-size: 0.75rem;
+  }
+}

@@ -152,10 +152,9 @@ invisible to the future language switcher and gets no syntax highlighting.
   is not.
 - Prose that is language-specific belongs inside that language's fenced block as a comment, so a
   selector can hide it with the block.
-- The reader-selectable language UI is planned, not yet shipped. Until it ships, preserve the same
-  language order and tab names across all groups so they can be synchronized later. When it ships,
-  wrap each group in synced tabs and set `tabs.sync: true` (or site-wide
-  `params.page.tabs.sync: true`) so one click switches every group:
+- The header language selector is available on every page. Preserve the same language order and tab
+  names across all groups. Wrap each group in synced tabs and set `tabs.sync: true` (or site-wide
+  `params.page.tabs.sync: true`) so one selection switches every group:
 
 ````markdown
 {{< tabs >}}

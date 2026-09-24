@@ -1,0 +1,2 @@
+{{- $script := resources.Get "js/language-selector.js" | minify | fingerprint -}}
+<script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}" defer></script>
