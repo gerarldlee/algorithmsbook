@@ -81,3 +81,5 @@ These patterns compose. A company can use a modular monolith for billing, servic
 - [Reverse Proxies, API Gateways, and Edge Routing](../01-system-design-fundamentals/04-proxies-gateways.md)
 - [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](../01-system-design-fundamentals/06-cryptography-system-security.md)
 - [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security](../01-system-design-fundamentals/07-appsec-threat-defense.md)
+- [Network Protocols](../01-system-design-fundamentals/02-network-protocols.md)
+- [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)

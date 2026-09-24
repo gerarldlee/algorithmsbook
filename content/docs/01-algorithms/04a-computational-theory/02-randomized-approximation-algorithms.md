@@ -2,7 +2,6 @@
 title: "Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds"
 weight: 2
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -17,8 +16,6 @@ MinHash assigns each set a small fingerprint. In the ideal random-hash model, th
 
 An **approximation ratio** or **additive error** states how far an answer can be from the best answer. A 2-approximation is useful only if being within a factor of two is acceptable. Randomized guarantees also specify success probability, such as “at least 99%,” rather than promising deterministic correctness.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.Arrays;
 
@@ -80,8 +77,6 @@ public final class RandomizedAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <limits.h>
 #include <stdbool.h>
@@ -152,8 +147,6 @@ uint32_t* randomized_algorithms_min_hash(int** sets, int* set_sizes, int set_cou
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 class RandomizedAlgorithms:
     @staticmethod
@@ -203,8 +196,6 @@ class RandomizedAlgorithms:
         return signatures
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 pub struct RandomizedAlgorithms;
 
@@ -266,8 +257,6 @@ impl RandomizedAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export class RandomizedAlgorithms {
   private static next(state: { value: number }): number {
@@ -325,8 +314,6 @@ export class RandomizedAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package randomized
 
@@ -395,8 +382,7 @@ func (RandomizedAlgorithms) MinHash(sets [][]int, signatureSize int, seed uint32
 	}
 	return signatures
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Tradeoffs
 

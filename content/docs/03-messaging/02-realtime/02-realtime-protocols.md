@@ -68,3 +68,5 @@ A scalable service normally separates connection handling from message routing. 
 - [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
 - [Distributed Presence Engines, User State Tracking, and Heartbeat Protocols](03-presence-engines.md)
 - [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)
+- [Multi-Channel Notification Dispatchers](01-notification-dispatchers.md)
+- [Publish-Subscribe](../01-messaging/02-pub-sub.md)

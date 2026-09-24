@@ -485,43 +485,43 @@ func (tree *BST) Insert(key int) bool {
 }
 
 func (tree *BST) Delete(key int) bool {
-	var parent *Node
-	current := tree.root
-	for current != nil && current.key != key {
-		parent = current
-		if key < current.key {
-			current = current.left
-		} else {
-			current = current.right
-		}
-	}
-	if current == nil {
-		return false
-	}
-	var replacement *Node
-	if current.left == nil {
-		replacement = current.right
-	} else {
-		successorParent := current
-		successor := current.right
-		for successor.left != nil {
-			successorParent = successor
-			successor = successor.left
-		}
-		if successorParent != current {
-			successorParent.left = successor.right
-			successor.right = current.right
-		}
-		replacement = successor
-	}
-	if parent == nil {
-		tree.root = replacement
-	} else if parent.left == current {
-		parent.left = replacement
-	} else {
-		parent.right = replacement
-	}
-	return true
+    var parent *Node
+    current := tree.root
+    for current != nil && current.key != key {
+        parent = current
+        if key < current.key {
+            current = current.left
+        } else {
+            current = current.right
+        }
+    }
+    if current == nil {
+        return false
+    }
+    var replacement *Node
+    if current.left == nil {
+        replacement = current.right
+    } else {
+        successorParent := current
+        successor := current.right
+        for successor.left != nil {
+            successorParent = successor
+            successor = successor.left
+        }
+        if successorParent != current {
+            successorParent.left = successor.right
+            successor.right = current.right
+        }
+        replacement = successor
+    }
+    if parent == nil {
+        tree.root = replacement
+    } else if parent.left == current {
+        parent.left = replacement
+    } else {
+        parent.right = replacement
+    }
+    return true
 }
 ```
 

@@ -79,3 +79,4 @@ mvcc:
 - [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
 - [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
 - [CAP and PACELC Theorems](../01-consensus/01-cap-pacelc.md)
+- [Clocks & Ordering](../01-consensus/03-clocks-ordering.md)

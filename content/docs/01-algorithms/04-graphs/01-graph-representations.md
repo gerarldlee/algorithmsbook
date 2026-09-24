@@ -324,7 +324,7 @@ func (g *Graph) Neighbors(vertex int) []int {
 }
 
 func (g *Graph) EdgesSnapshot() []Edge {
-	return append([]Edge(nil), g.Edges...)
+    return append([]Edge(nil), g.Edges...)
 }
 ```
 

@@ -262,24 +262,24 @@ func (GraphTraversals) BFS(adjacency [][]int, start int) []int {
 }
 
 func (GraphTraversals) DFS(adjacency [][]int, start int) []int {
-	order := []int{}
-	visited := make([]bool, len(adjacency))
-	stack := []int{start}
-	for len(stack) > 0 {
-		vertex := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		if visited[vertex] {
-			continue
-		}
-		visited[vertex] = true
-		order = append(order, vertex)
-		for _, neighbor := range adjacency[vertex] {
-			if !visited[neighbor] {
-				stack = append(stack, neighbor)
-			}
-		}
-	}
-	return order
+    order := []int{}
+    visited := make([]bool, len(adjacency))
+    stack := []int{start}
+    for len(stack) > 0 {
+        vertex := stack[len(stack)-1]
+        stack = stack[:len(stack)-1]
+        if visited[vertex] {
+            continue
+        }
+        visited[vertex] = true
+        order = append(order, vertex)
+        for _, neighbor := range adjacency[vertex] {
+            if !visited[neighbor] {
+                stack = append(stack, neighbor)
+            }
+        }
+    }
+    return order
 }
 ```
 

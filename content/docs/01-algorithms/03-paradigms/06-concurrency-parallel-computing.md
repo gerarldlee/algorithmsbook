@@ -2,7 +2,6 @@
 title: "Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization"
 weight: 6
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -21,8 +20,6 @@ An **event loop** runs a scheduler that dispatches ready callbacks and returns c
 
 The six programs expose the same operation set: `run_bounded` controls admission to a protected region, `cas_increment` performs two workers' increments on one counter, `schedule_sum` submits two range tasks and joins their results, and `vectorizedSum` reduces four lanes plus a tail. Java, C, Rust, and Go use native threads or atomic instructions for the two-worker counter; Python and TypeScript use portable serialized critical sections. Every implementation returns the same counter and range sums, but the synchronization guarantees and scheduling behavior are those stated above.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
@@ -131,8 +128,6 @@ public class ConcurrencyExample {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <pthread.h>
 #include <semaphore.h>
@@ -306,8 +301,6 @@ int64_t cc_vectorized_sum(ConcurrencyExample *example) {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 import asyncio
 import threading
@@ -392,8 +385,6 @@ class ConcurrencyExample:
         return total
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 use std::future::Future;
 use std::pin::Pin;
@@ -571,8 +562,6 @@ impl ConcurrencyExample {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export interface BoundedResult {
   total: number;
@@ -659,8 +648,6 @@ export class ConcurrencyExample {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package concurrency
 
@@ -779,8 +766,7 @@ func (example *ConcurrencyExample) VectorizedSum() int64 {
     }
     return total
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Complexity
 

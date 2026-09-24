@@ -343,6 +343,7 @@ class BloomFilter {
 ```
 
 ```go
+package main
 type Bitset struct {
 	bytes []byte
 	size  int
@@ -403,12 +404,12 @@ func (f *BloomFilter) Add(value string) {
 }
 
 func (f *BloomFilter) MightContain(value string) bool {
-	for index := 0; index < f.hashCount; index++ {
-		if !f.bits.Get(f.hash(value, 31+index)) {
-			return false
-		}
-	}
-	return true
+    for index := 0; index < f.hashCount; index++ {
+        if !f.bits.Get(f.hash(value, 31+index)) {
+            return false
+        }
+    }
+    return true
 }
 ```
 

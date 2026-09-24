@@ -1062,69 +1062,69 @@ func (NetworkFlow) Dinic(capacity [][]int64, source, sink int) int64 {
 }
 
 func (NetworkFlow) HopcroftKarp(adjacency [][]int, rightCount int) []int {
-	leftMatch := make([]int, len(adjacency))
-	rightMatch := make([]int, rightCount)
-	for left := range leftMatch {
-		leftMatch[left] = -1
-	}
-	for right := range rightMatch {
-		rightMatch[right] = -1
-	}
-	for {
-		distance := make([]int, len(adjacency))
-		queue := []int{}
-		for left := range adjacency {
-			if leftMatch[left] == -1 {
-				distance[left] = 0
-				queue = append(queue, left)
-			} else {
-				distance[left] = -1
-			}
-		}
-		shortest := -1
-		for len(queue) > 0 {
-			left := queue[0]
-			queue = queue[1:]
-			if shortest != -1 && distance[left] >= shortest {
-				continue
-			}
-			for _, right := range adjacency[left] {
-				matched := rightMatch[right]
-				if matched == -1 {
-					shortest = distance[left] + 1
-				} else if distance[matched] == -1 {
-					distance[matched] = distance[left] + 1
-					queue = append(queue, matched)
-				}
-			}
-		}
-		if shortest == -1 {
-			return leftMatch
-		}
-		var augment func(int) bool
-		augment = func(left int) bool {
-			for _, right := range adjacency[left] {
-				matched := rightMatch[right]
-				if matched == -1 {
-					if distance[left]+1 != shortest {
-						continue
-					}
-				} else if distance[matched] != distance[left]+1 || !augment(matched) {
-					continue
-				}
-				leftMatch[left] = right
-				rightMatch[right] = left
-				return true
-			}
-			distance[left] = -1
-			return false
-		}
-		for left := range adjacency {
-			if leftMatch[left] == -1 {
-				augment(left)
-			}
-		}
-	}
+    leftMatch := make([]int, len(adjacency))
+    rightMatch := make([]int, rightCount)
+    for left := range leftMatch {
+        leftMatch[left] = -1
+    }
+    for right := range rightMatch {
+        rightMatch[right] = -1
+    }
+    for {
+        distance := make([]int, len(adjacency))
+        queue := []int{}
+        for left := range adjacency {
+            if leftMatch[left] == -1 {
+                distance[left] = 0
+                queue = append(queue, left)
+            } else {
+                distance[left] = -1
+            }
+        }
+        shortest := -1
+        for len(queue) > 0 {
+            left := queue[0]
+            queue = queue[1:]
+            if shortest != -1 && distance[left] >= shortest {
+                continue
+            }
+            for _, right := range adjacency[left] {
+                matched := rightMatch[right]
+                if matched == -1 {
+                    shortest = distance[left] + 1
+                } else if distance[matched] == -1 {
+                    distance[matched] = distance[left] + 1
+                    queue = append(queue, matched)
+                }
+            }
+        }
+        if shortest == -1 {
+            return leftMatch
+        }
+        var augment func(int) bool
+        augment = func(left int) bool {
+            for _, right := range adjacency[left] {
+                matched := rightMatch[right]
+                if matched == -1 {
+                    if distance[left]+1 != shortest {
+                        continue
+                    }
+                } else if distance[matched] != distance[left]+1 || !augment(matched) {
+                    continue
+                }
+                leftMatch[left] = right
+                rightMatch[right] = left
+                return true
+            }
+            distance[left] = -1
+            return false
+        }
+        for left := range adjacency {
+            if leftMatch[left] == -1 {
+                augment(left)
+            }
+        }
+    }
 }
 ```
 

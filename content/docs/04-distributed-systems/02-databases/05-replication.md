@@ -67,3 +67,6 @@ propagation:
 - [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)
 - [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)
 - [Decentralized Systems, Web3 & Blockchain](../01-consensus/05-decentralized-systems-blockchain.md)
+- [The CAP Theorem, PACELC, and Architectural Trade-offs](../01-consensus/01-cap-pacelc.md)
+- [Consensus Protocols](../01-consensus/02-consensus.md)
+- [Relational Data Modeling, Normalization, and Indexing Strategies](01-relational-modeling.md)

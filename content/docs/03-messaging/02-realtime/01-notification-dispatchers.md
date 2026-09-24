@@ -74,3 +74,4 @@ Transient errors use a retry schedule with jitter and an expiration deadline. In
 - [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../01-messaging/01-queues-vs-streams.md)
 - [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
 - [Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)](../01-messaging/03-delivery-guarantees.md)
+- [Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks](../01-messaging/04-backpressure-dlq.md)

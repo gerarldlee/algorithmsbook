@@ -213,11 +213,11 @@ func (fenwick *FenwickTree) PrefixSum(index int) int {
 }
 
 func (fenwick *FenwickTree) RangeSum(left, right int) int {
-	beforeLeft := 0
-	if left > 0 {
-		beforeLeft = fenwick.PrefixSum(left - 1)
-	}
-	return fenwick.PrefixSum(right) - beforeLeft
+    beforeLeft := 0
+    if left > 0 {
+        beforeLeft = fenwick.PrefixSum(left - 1)
+    }
+    return fenwick.PrefixSum(right) - beforeLeft
 }
 ```
 

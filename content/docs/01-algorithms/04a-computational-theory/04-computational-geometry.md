@@ -2,7 +2,6 @@
 title: "Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection"
 weight: 4
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -15,8 +14,6 @@ The closest-pair algorithm sorts by x-coordinate, splits the set into two halves
 
 Two segments intersect when their endpoints alternate across the other segment's supporting line. Collinear endpoints and shared endpoints require a separate point-on-segment test using orientation and bounding boxes. A double-precision test also needs an application-level tolerance when measurements contain noise.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +42,7 @@ public final class GeometryAlgorithms {
         }
         Integer[] order = new Integer[count];
         for (int index = 0; index < count; index++) order[index] = index;
-        Arrays.sort(order, Comparator.comparingDouble((int index) -> points[2 * index + 1]).thenComparingDouble(index -> points[2 * index]));
+        Arrays.sort(order, Comparator.comparingDouble((int index) -> points[2 * index + 1]).thenComparingDouble((int index) -> points[2 * index]));
         int pivot = order[0];
         List<Integer> remaining = new ArrayList<>(Arrays.asList(order).subList(1, count));
         remaining.sort((left, right) -> {
@@ -168,7 +165,7 @@ public final class GeometryAlgorithms {
         if (count < 2) return new int[0];
         int[] order = new int[count];
         for (int index = 0; index < count; index++) order[index] = index;
-        Arrays.sort(order, Comparator.comparingDouble(index -> points[2 * index]).thenComparingDouble(index -> points[2 * index + 1]));
+        Arrays.sort(order, Comparator.comparingDouble((int index) -> points[2 * index]).thenComparingDouble((int index) -> points[2 * index + 1]));
         int[] best = {-1, -1};
         closestRange(points, order, 0, count, best);
         return best;
@@ -192,8 +189,6 @@ public final class GeometryAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <math.h>
 #include <stdbool.h>
@@ -458,8 +453,6 @@ bool geometry_algorithms_segments_intersect(const double* points, int a, int b, 
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 import math
 
@@ -558,8 +551,6 @@ class GeometryAlgorithms:
         return (first == 0 and GeometryAlgorithms._on_segment(points, c, a, b)) or (second == 0 and GeometryAlgorithms._on_segment(points, d, a, b)) or (third == 0 and GeometryAlgorithms._on_segment(points, a, c, d)) or (fourth == 0 and GeometryAlgorithms._on_segment(points, b, c, d))
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 pub struct GeometryAlgorithms;
 
@@ -738,8 +729,6 @@ impl GeometryAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export class GeometryAlgorithms {
   private static cross(points: number[], a: number, b: number, c: number): number {
@@ -839,8 +828,6 @@ export class GeometryAlgorithms {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package geometry
 
@@ -1027,8 +1014,7 @@ func (GeometryAlgorithms) SegmentsIntersect(points []float64, a, b, c, d int) bo
 	}
 	return first == 0 && geometryAlgorithmsOnSegment(points, c, a, b) || second == 0 && geometryAlgorithmsOnSegment(points, d, a, b) || third == 0 && geometryAlgorithmsOnSegment(points, a, c, d) || fourth == 0 && geometryAlgorithmsOnSegment(points, b, c, d)
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Complexity
 For \(n\) points and hull size \(h\):

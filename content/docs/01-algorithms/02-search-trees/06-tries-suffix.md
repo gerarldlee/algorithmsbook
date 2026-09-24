@@ -302,14 +302,14 @@ func (trie *Trie) Search(word string) bool {
 }
 
 func (trie *Trie) StartsWith(prefix string) bool {
-	current := trie.root
-	for _, character := range prefix {
-		current = current.children[character]
-		if current == nil {
-			return false
-		}
-	}
-	return true
+    current := trie.root
+    for _, character := range prefix {
+        current = current.children[character]
+        if current == nil {
+            return false
+        }
+    }
+    return true
 }
 ```
 

@@ -275,7 +275,7 @@ func (unionFind *UnionFind) Union(left, right int) bool {
 }
 
 func (unionFind *UnionFind) Connected(left, right int) bool {
-	return unionFind.Find(left) == unionFind.Find(right)
+    return unionFind.Find(left) == unionFind.Find(right)
 }
 ```
 

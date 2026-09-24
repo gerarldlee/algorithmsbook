@@ -2,7 +2,6 @@
 title: "Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation"
 weight: 3
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -19,8 +18,6 @@ This is how regular-expression engines such as RE2 use finite-automaton executio
 
 All six implementations deliberately use the same restricted alphabet: patterns contain at most 63 printable ASCII characters, and the engine reports a match only when the input is also printable ASCII. This avoids silently treating a multibyte UTF-8 sequence as several regex symbols. The C implementation additionally reserves capacity for 256 NFA states, 512 NFA transitions, 128 alphabet symbols, and 256 reachable DFA states. It rejects null or oversized inputs, invalid patterns, invalid NFA state references, and subsets that exceed the fixed DFA capacity; callers can distinguish these failures only by the returned `false` value.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -218,8 +215,6 @@ public final class FormalLanguages {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <stdbool.h>
 #include <stddef.h>
@@ -540,8 +535,6 @@ bool formal_languages_matches(const char* pattern, const char* input) {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 class FormalLanguages:
     Transition = tuple[int, int]
@@ -681,8 +674,6 @@ class FormalLanguages:
         return accepting[current]
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 
@@ -900,8 +891,6 @@ impl FormalLanguages {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export class FormalLanguages {
   static compile(pattern: string): { transitions: [number, number][][]; start: number; accept: number } {
@@ -1051,8 +1040,6 @@ export class FormalLanguages {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package automata
 
@@ -1256,7 +1243,7 @@ func (FormalLanguages) ToDfa(nfa Nfa) Dfa {
 			}
 			targetIndex := -1
 			for index, candidate := range states {
-				if FormalLanguages{}.sameStates(candidate, target) {
+				if (FormalLanguages{}).sameStates(candidate, target) {
 					targetIndex = index
 					break
 				}
@@ -1322,8 +1309,7 @@ func (FormalLanguages) Matches(pattern, inputText string) bool {
 	}
 	return dfa.Accepting[state]
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Complexity
 For NFA state count \(N\), input length \(L\), and DFA state count \(D\):

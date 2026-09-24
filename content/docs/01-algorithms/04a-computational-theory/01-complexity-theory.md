@@ -2,7 +2,6 @@
 title: "Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions"
 weight: 1
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -15,8 +14,6 @@ A reduction \(A \le_p B\) means that a solver for \(B\) can solve \(A\) after a 
 
 The implementation below performs that reduction and represents the result as an adjacency matrix. Its `reduces` operation checks whether a candidate has every required edge in that complement, where a candidate is independent in the complement exactly when it is a clique in the original graph. All six APIs take the same vertex count and edge list for the reduction, then the complement matrix and candidate for verification. SAT-to-3-SAT, set-cover reductions, and Cook-Levin constructions establish other hardness results; none turns NP-completeness into a proof that every NP problem is intractable.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.List;
 
@@ -53,8 +50,6 @@ public final class ComputationalTheory {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <stdbool.h>
 #include <stdlib.h>
@@ -99,8 +94,6 @@ bool computational_theory_reduces(int** complement, int* candidate, int candidat
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 class ComputationalTheory:
     @staticmethod
@@ -120,8 +113,6 @@ class ComputationalTheory:
         return all(complement[candidate[left]][candidate[right]] == 1 for left in range(len(candidate)) for right in range(left + 1, len(candidate)))
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 pub struct ComputationalTheory;
 
@@ -155,8 +146,6 @@ impl ComputationalTheory {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export class ComputationalTheory {
   static complementGraph(vertexCount: number, edges: [number, number][]): number[][] {
@@ -183,8 +172,6 @@ export class ComputationalTheory {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package theory
 
@@ -230,8 +217,7 @@ func (ComputationalTheory) Reduces(complement [][]int, candidate []int) bool {
 	}
 	return true
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Complexity
 For an input with \(n\) bits, an \(O(n^k)\) algorithm is polynomial for fixed \(k\). Polynomial constants can still be large, so polynomial membership does not guarantee a fast program for a particular input size.

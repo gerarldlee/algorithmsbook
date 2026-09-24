@@ -69,3 +69,4 @@ serializability:
 - [Distributed Transactions](04-distributed-transactions.md)
 - [The CAP Theorem, PACELC, and Architectural Trade-offs](01-cap-pacelc.md)
 - [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
+- [Distributed Presence Engines](../../03-messaging/02-realtime/03-presence-engines.md)

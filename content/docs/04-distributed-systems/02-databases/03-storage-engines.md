@@ -69,3 +69,4 @@ Here, `n` is the number of entries in a B-tree, `m` is the number of SSTables se
 - [Storage Primitives](../../05-cloud-devops/01-cloud-primitives/02-storage-primitives.md)
 - [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)
 - [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)
+- [Storage Engine Trees (B-Trees and LSM-Trees)](../../01-algorithms/02-search-trees/03-storage-engine-trees.md)

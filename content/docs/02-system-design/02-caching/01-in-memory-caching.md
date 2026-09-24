@@ -239,7 +239,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
-type Node = RefCell<NodeData>;
+type Node = Rc<RefCell<NodeData>>;
 
 struct NodeData {
     key: i32,
@@ -453,20 +453,20 @@ func (c *LRUCache) Get(key int) int {
 }
 
 func (c *LRUCache) Put(key, value int) {
-	if n, ok := c.m[key]; ok {
-		n.value = value
-		c.unlink(n)
-		c.pushFront(n)
-		return
-	}
-	n := &node{key: key, value: value}
-	if len(c.m) == c.capacity {
-		last := c.tail.prev
-		c.unlink(last)
-		delete(c.m, last.key)
-	}
-	c.m[key] = n
-	c.pushFront(n)
+    if n, ok := c.m[key]; ok {
+        n.value = value
+        c.unlink(n)
+        c.pushFront(n)
+        return
+    }
+    n := &node{key: key, value: value}
+    if len(c.m) == c.capacity {
+        last := c.tail.prev
+        c.unlink(last)
+        delete(c.m, last.key)
+    }
+    c.m[key] = n
+    c.pushFront(n)
 }
 ```
 
@@ -499,3 +499,4 @@ Cached values can remain stale until a write invalidates them or their TTL expir
 - [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
 - [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](../01-system-design-fundamentals/01-fundamentals.md)
 - [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)
+- [Bitwise Operations and Bloom Filters](../../01-algorithms/01-linear-data-structures/05-bitwise-bloom-filters.md)

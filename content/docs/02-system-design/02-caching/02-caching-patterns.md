@@ -485,28 +485,28 @@ func (c *LFUCache) Get(key int) int {
 }
 
 func (c *LFUCache) Put(key, value int) {
-	if v, ok := c.cache[key]; ok {
-		c.cache[key] = [2]int{value, v[1]}
-		c.bump(key, v[1])
-		return
-	}
-	if len(c.cache) == c.capacity {
-		l := c.freqs[c.minFreq]
-		evict := l.Front()
-		key := evict.Value.(int)
-		l.Remove(evict)
-		delete(c.entries, key)
-		if l.Len() == 0 {
-			delete(c.freqs, c.minFreq)
-		}
-		delete(c.cache, key)
-	}
-	c.cache[key] = [2]int{value, 1}
-	if c.freqs[1] == nil {
-		c.freqs[1] = list.New()
-	}
-	c.entries[key] = c.freqs[1].PushBack(key)
-	c.minFreq = 1
+    if v, ok := c.cache[key]; ok {
+        c.cache[key] = [2]int{value, v[1]}
+        c.bump(key, v[1])
+        return
+    }
+    if len(c.cache) == c.capacity {
+        l := c.freqs[c.minFreq]
+        evict := l.Front()
+        key := evict.Value.(int)
+        l.Remove(evict)
+        delete(c.entries, key)
+        if l.Len() == 0 {
+            delete(c.freqs, c.minFreq)
+        }
+        delete(c.cache, key)
+    }
+    c.cache[key] = [2]int{value, 1}
+    if c.freqs[1] == nil {
+        c.freqs[1] = list.New()
+    }
+    c.entries[key] = c.freqs[1].PushBack(key)
+    c.minFreq = 1
 }
 ```
 

@@ -280,7 +280,8 @@ impl HashTable {
     }
 
     pub fn remove(&mut self, key: &str) -> bool {
-        let bucket = &mut self.buckets[self.hash(key)];
+        let index = self.hash(key);
+        let bucket = &mut self.buckets[index];
         if let Some(position) = bucket.iter().position(|(stored_key, _)| stored_key == key) {
             bucket.remove(position);
             self.size -= 1;
@@ -354,6 +355,7 @@ class HashTable {
 ```
 
 ```go
+package main
 type Entry struct {
 	Key   string
 	Value int
@@ -422,7 +424,7 @@ func (table *HashTable) Contains(key string) bool {
 }
 
 func (table *HashTable) Size() int {
-	return table.size
+    return table.size
 }
 ```
 

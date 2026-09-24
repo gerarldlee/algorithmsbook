@@ -99,3 +99,5 @@ Choose a protocol by matching its guarantees to the operation rather than by tra
 - [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
 - [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
 - [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
+- [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](../../03-messaging/02-realtime/02-realtime-protocols.md)

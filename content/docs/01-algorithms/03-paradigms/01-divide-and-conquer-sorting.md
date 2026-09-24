@@ -333,8 +333,8 @@ impl Sorting {
                 j += 1;
             }
         }
-        result.append(&mut left[i..]);
-        result.append(&mut right[j..]);
+        result.append(&mut left.split_off(i));
+        result.append(&mut right.split_off(j));
         result
     }
 
@@ -479,6 +479,7 @@ export class Sorting {
 ```
 
 ```go
+package main
 type Sorting struct{}
 
 func (Sorting) MergeSort(values []int) []int {

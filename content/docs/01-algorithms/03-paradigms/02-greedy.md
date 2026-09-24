@@ -99,6 +99,7 @@ class ActivitySelection:
 ```
 
 ```rust
+#[derive(Clone)]
 pub struct Interval {
     pub start: i32,
     pub end: i32,

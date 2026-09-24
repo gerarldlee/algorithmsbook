@@ -2,7 +2,6 @@
 title: "Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing"
 weight: 7
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -17,8 +16,6 @@ An **R-tree** stores rectangles rather than quadrants. Objects are grouped when 
 
 The implementation below uses one equivalent operation set in all six languages: `insert`, `query`, `nearest`, and `geohash`. Its concrete index is a quadtree over normalized coordinates from 0 to 1, and every implementation returns exactly the requested number of geohash characters. C reports an invalid insert with `false` and returns `NULL` for an invalid geohash request; the other languages throw or panic on the same normalized-coordinate and nonnegative-precision requirements. The same algorithm makes the comparison concrete; databases such as PostGIS, Elasticsearch, and MongoDB choose among these structures according to object shape, update rate, and query mix.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.ArrayList;
 import java.util.List;
@@ -198,8 +195,6 @@ public class SpatialIndex {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <math.h>
 #include <stdbool.h>
@@ -357,7 +352,7 @@ static char *spatial_geohash(Point point, int precision) {
     int hash = 0;
     int bits = 0;
     bool even = true;
-    for (int64_t index = 0; index < (int64_t)precision * 5; index++) {
+    for (size_t index = 0; index < (size_t)precision * 5; index++) {
         int bit;
         if (even) {
             bit = x >= 0.5;
@@ -380,8 +375,6 @@ static char *spatial_geohash(Point point, int precision) {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 class Point:
     def __init__(self, x, y):
@@ -502,8 +495,6 @@ class SpatialIndex:
         return "".join(result)
 ```
 
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 const MAX_DEPTH: u32 = 32;
 
@@ -668,8 +659,6 @@ impl SpatialIndex {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export interface Point {
   x: number;
@@ -793,8 +782,6 @@ export class SpatialIndex {
 }
 ```
 
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package spatialindex
 
@@ -911,8 +898,7 @@ func (index *SpatialIndex) Geohash(point Point, precision int) string {
     }
     return string(result)
 }
-{{< /tab >}}
-{{< /tabs >}}
+```
 
 ## Complexity
 For \(n\) points, \(d\) dimensions, and a well-distributed spatial tree, the following are typical bounds. Exact constants depend on the object shape, fanout, depth cap, and query selectivity; clustered or collocated data can force a traversal to visit most nodes.

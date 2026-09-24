@@ -71,3 +71,5 @@ RabbitMQ emphasizes flexible routing and acknowledgments, including quorum queue
 - [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)
 - [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../../02-system-design/02-software-architecture-patterns/02-domain-driven-event-architectures.md)
 - [Stateful Stream & Batch Processing Frameworks](../03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)
+- [Load Balancing Strategies](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
+- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](../../02-system-design/02-caching/01-in-memory-caching.md)

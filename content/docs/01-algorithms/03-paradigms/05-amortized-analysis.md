@@ -249,3 +249,4 @@ func (array *DynamicArray) Len() int {
 - [Union-Find (Disjoint Set Union)](../02-search-trees/05-union-find.md)
 - [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
 - [Concurrency & Parallel Computing](06-concurrency-parallel-computing.md)
+- [Tries, Radix Trees, and Suffix Trees/Arrays](../02-search-trees/06-tries-suffix.md)

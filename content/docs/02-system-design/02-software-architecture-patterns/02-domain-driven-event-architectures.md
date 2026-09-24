@@ -77,3 +77,4 @@ CQRS and event sourcing are independent choices. A system can use CQRS with ordi
 - [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Backoff, Retries, and Timeout Budgets](03-resilience-fault-tolerance.md)
 - [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](../01-system-design-fundamentals/05-api-paradigms.md)
 - [Distributed Transactions: Two-Phase Commit, Three-Phase Commit, and the Saga Pattern](../../04-distributed-systems/01-consensus/04-distributed-transactions.md)
+- [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../../03-messaging/01-messaging/01-queues-vs-streams.md)

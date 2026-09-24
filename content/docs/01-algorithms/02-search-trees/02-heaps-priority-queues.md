@@ -351,23 +351,23 @@ func (heap *MinHeap) Size() int {
 }
 
 func (heap *MinHeap) siftDown() {
-	index := 0
-	for index < len(heap.data) {
-		left := 2*index + 1
-		right := left + 1
-		smallest := index
-		if left < len(heap.data) && heap.data[left] < heap.data[smallest] {
-			smallest = left
-		}
-		if right < len(heap.data) && heap.data[right] < heap.data[smallest] {
-			smallest = right
-		}
-		if smallest == index {
-			break
-		}
-		heap.data[index], heap.data[smallest] = heap.data[smallest], heap.data[index]
-		index = smallest
-	}
+    index := 0
+    for index < len(heap.data) {
+        left := 2*index + 1
+        right := left + 1
+        smallest := index
+        if left < len(heap.data) && heap.data[left] < heap.data[smallest] {
+            smallest = left
+        }
+        if right < len(heap.data) && heap.data[right] < heap.data[smallest] {
+            smallest = right
+        }
+        if smallest == index {
+            break
+        }
+        heap.data[index], heap.data[smallest] = heap.data[smallest], heap.data[index]
+        index = smallest
+    }
 }
 ```
 

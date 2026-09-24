@@ -81,7 +81,7 @@ toc: true
 | `toc` | `toc: true` on chapters (explicit, even though Hextra defaults to `true`). Omit on `_index.md`, `content/about.md` and the `00-essentials` reference pages. `toc: false` hides the right-hand in-page TOC. |
 | `next` / `prev` | Only used to override the Hextra pager link; `content/docs/_index.md` sets `next: 01-algorithms`. |
 | `type` | Only `content/about.md` (`type: about`). Section/category `_index.md` files get a plain docs page. |
-| `tabs.sync` | Required when synchronized language tabs are used: `tabs: {sync: true}` makes all tab groups on the page share the selected tab by index (§6). |
+| `tabs` | Not used. The header language selector filters tagged fences directly; keep the six language fences in the fixed order (§6). |
 | `draft` | Never in committed content. `hugo new` emits `draft: true`, so remove the key once the chapter is written; drafts are previewed with `hugo server -D` and are excluded from the production build. |
 
 ## 5. Chapter skeleton
@@ -126,7 +126,7 @@ annotate code with the same notation in a trailing comment (`// amortized O(1)`)
 ## 6. Code blocks and the six-language contract
 
 **Always tag the fence** (`java`, `c`, `python`, `rust`, `typescript`, `go`, `yaml`, `bash`, `sql`,
-`proto`, `mermaid`, `json`) — there are zero untagged fences in the book today; an untagged block is
+`proto`, `mermaid`, `json`, `http`, `graphql`, `hcl`, `text`, `dockerfile`, `prometheus`) — there are zero untagged fences in the book today; an untagged block is
 invisible to the language switcher and gets no syntax highlighting.
 
 **Algorithm chapters are polyglot.** The six blocks form one contiguous group, in this order:
@@ -150,46 +150,11 @@ invisible to the language switcher and gets no syntax highlighting.
   `01-vector-databases`). `01-dynamic-arrays.md` adds four extra complete six-language groups to
   illustrate array declaration, indexed access, iteration, and linear search — extra groups are fine,
   an *incomplete group* is not.
-- Prose that is language-specific belongs inside that language's fenced block as a comment, so a
-  selector can hide it with the block.
-- The header language selector is available on every page. Preserve the same language order and tab
-  names across all groups. Wrap each group in synced tabs and set `tabs.sync: true` (or site-wide
-  `params.page.tabs.sync: true`) so one selection switches every group:
-
-````markdown
-{{< tabs >}}
-{{< tab name="Java" >}}
-```java
-// …
-```
-{{< /tab >}}
-{{< tab name="C" >}}
-```c
-// …
-```
-{{< /tab >}}
-{{< tab name="Python" >}}
-```python
-# …
-```
-{{< /tab >}}
-{{< tab name="Rust" >}}
-```rust
-// …
-```
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
-```typescript
-// …
-```
-{{< /tab >}}
-{{< tab name="Go" >}}
-```go
-// …
-```
-{{< /tab >}}
-{{< /tabs >}}
-````
+- Prose that is language-specific belongs inside that language's fenced block as a comment, so the
+  header selector can hide it with the block.
+- The header language selector is available on every page. Preserve the same language order and names
+  across all groups. The selector filters the tagged code fences directly; do not wrap algorithm groups
+  in synchronized-tab shortcodes.
 
 **Systems chapters (Parts II–VI)** lead with the artifact that shows the mechanism — Kubernetes YAML,
 Terraform/HCL, Cloudflare config, GitHub Actions, protocol/state-machine descriptions — and add
@@ -226,9 +191,9 @@ inside the body — the shortcode markdownifies its inner content itself.
 {{< /callout >}}
 ```
 
-Introduce shortcodes sparingly: cards are used on the home page, and synchronized tabs are used on
-algorithm examples where the page benefits from them. The header language selector is implemented
-with a site asset; keep language groups synchronized as described in §6.
+Introduce shortcodes sparingly: cards are used on the home page, and the header language selector is
+implemented with a site asset. Keep algorithm language groups synchronized by fence order and tags
+as described in §6; do not wrap them in tab shortcodes.
 
 ## 9. Links and navigation integrity
 

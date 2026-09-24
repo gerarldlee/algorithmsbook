@@ -83,3 +83,4 @@ The common fan-out designs differ in where the independent copies live:
 - [Delivery Guarantees](03-delivery-guarantees.md)
 - [Realtime Protocols](../02-realtime/02-realtime-protocols.md)
 - [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)
+- [Distributed Presence Engines](../02-realtime/03-presence-engines.md)

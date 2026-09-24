@@ -746,55 +746,55 @@ func (TopologicalSCC) Tarjan(adjacency [][]int) [][]int {
 }
 
 func (TopologicalSCC) Kosaraju(adjacency [][]int) [][]int {
-	visited := make([]bool, len(adjacency))
-	finishOrder := []int{}
-	var finish func(int)
-	finish = func(vertex int) {
-		visited[vertex] = true
-		for _, neighbor := range adjacency[vertex] {
-			if !visited[neighbor] {
-				finish(neighbor)
-			}
-		}
-		finishOrder = append(finishOrder, vertex)
-	}
-	for vertex := range adjacency {
-		if !visited[vertex] {
-			finish(vertex)
-		}
-	}
-	transposed := make([][]int, len(adjacency))
-	for vertex, neighbors := range adjacency {
-		for _, neighbor := range neighbors {
-			transposed[neighbor] = append(transposed[neighbor], vertex)
-		}
-	}
-	for vertex := range visited {
-		visited[vertex] = false
-	}
-	components := [][]int{}
-	for index := len(finishOrder) - 1; index >= 0; index-- {
-		start := finishOrder[index]
-		if visited[start] {
-			continue
-		}
-		component := []int{}
-		stack := []int{start}
-		visited[start] = true
-		for len(stack) > 0 {
-			vertex := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-			component = append(component, vertex)
-			for _, neighbor := range transposed[vertex] {
-				if !visited[neighbor] {
-					visited[neighbor] = true
-					stack = append(stack, neighbor)
-				}
-			}
-		}
-		components = append(components, component)
-	}
-	return components
+    visited := make([]bool, len(adjacency))
+    finishOrder := []int{}
+    var finish func(int)
+    finish = func(vertex int) {
+        visited[vertex] = true
+        for _, neighbor := range adjacency[vertex] {
+            if !visited[neighbor] {
+                finish(neighbor)
+            }
+        }
+        finishOrder = append(finishOrder, vertex)
+    }
+    for vertex := range adjacency {
+        if !visited[vertex] {
+            finish(vertex)
+        }
+    }
+    transposed := make([][]int, len(adjacency))
+    for vertex, neighbors := range adjacency {
+        for _, neighbor := range neighbors {
+            transposed[neighbor] = append(transposed[neighbor], vertex)
+        }
+    }
+    for vertex := range visited {
+        visited[vertex] = false
+    }
+    components := [][]int{}
+    for index := len(finishOrder) - 1; index >= 0; index-- {
+        start := finishOrder[index]
+        if visited[start] {
+            continue
+        }
+        component := []int{}
+        stack := []int{start}
+        visited[start] = true
+        for len(stack) > 0 {
+            vertex := stack[len(stack)-1]
+            stack = stack[:len(stack)-1]
+            component = append(component, vertex)
+            for _, neighbor := range transposed[vertex] {
+                if !visited[neighbor] {
+                    visited[neighbor] = true
+                    stack = append(stack, neighbor)
+                }
+            }
+        }
+        components = append(components, component)
+    }
+    return components
 }
 ```
 

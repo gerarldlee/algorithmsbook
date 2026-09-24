@@ -19,7 +19,7 @@
       .map((code) => ({
         code,
         language: languageOf(code),
-        container: code.closest(".highlight") || code.parentElement,
+        container: code.closest(".hextra-code-block") || code.closest(".highlight") || code.parentElement,
       }))
       .filter(({ language }) => language);
     const groups = [];

@@ -42,6 +42,7 @@ const array = new Array<number>(10).fill(0);
 ```
 
 ```go
+package main
 // an array always has a size
 array := [10]int{}
 ```
@@ -89,6 +90,7 @@ array[5] = 30;
 ```
 
 ```go
+package main
 // get the value of array[5]
 fifthElement := array[5]
 
@@ -132,6 +134,7 @@ for (let index = 0; index < array.length; index++) {
 ```
 
 ```go
+package main
 for index := 0; index < len(array); index++ {
     tmp := array[index]
     // do useful stuff with tmp
@@ -214,6 +217,7 @@ function linearSearch(array: number[], valueToFind: number): number {
 ```
 
 ```go
+package main
 func LinearSearch(array []int, valueToFind int) int {
     for index, value := range array {
         if value == valueToFind {
@@ -329,34 +333,43 @@ class DynamicArray:
 ```rust
 pub struct DynamicArray {
     data: Vec<i32>,
+    size: usize,
     capacity: usize,
 }
 
 impl DynamicArray {
     pub fn new() -> Self {
         DynamicArray {
-            data: Vec::with_capacity(1),
+            data: vec![0; 1],
+            size: 0,
             capacity: 1,
         }
     }
 
     pub fn push(&mut self, value: i32) {
-        if self.data.len() == self.capacity {
+        if self.size == self.capacity {
             self.resize(self.capacity * 2);
         }
-        self.data.push(value);
+        self.data[self.size] = value;
+        self.size += 1;
     }
 
     pub fn get(&self, index: usize) -> Option<&i32> {
-        self.data.get(index)
+        if index < self.size {
+            self.data.get(index)
+        } else {
+            None
+        }
     }
 
     pub fn len(&self) -> usize {
-        self.data.len()
+        self.size
     }
 
     fn resize(&mut self, capacity: usize) {
-        self.data.reserve_exact(capacity - self.data.len());
+        let mut copy = self.data[..self.size].to_vec();
+        copy.resize(capacity, 0);
+        self.data = copy;
         self.capacity = capacity;
     }
 }
@@ -395,6 +408,7 @@ class DynamicArray {
 ```
 
 ```go
+package main
 type DynamicArray struct {
 	data []int
 	size int

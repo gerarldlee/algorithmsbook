@@ -506,26 +506,26 @@ func (tree *BTree) splitChild(parent *BTreeNode, index int) {
 }
 
 func (tree *BTree) insertNonFull(node *BTreeNode, key int) {
-	index := len(node.keys)
-	if node.leaf {
-		node.keys = append(node.keys, key)
-		for index > 0 && node.keys[index-1] > key {
-			node.keys[index] = node.keys[index-1]
-			index--
-		}
-		node.keys[index] = key
-		return
-	}
-	for index > 0 && key < node.keys[index-1] {
-		index--
-	}
-	if node.children[index].isFull() {
-		tree.splitChild(node, index)
-		if key > node.keys[index] {
-			index++
-		}
-	}
-	tree.insertNonFull(node.children[index], key)
+    index := len(node.keys)
+    if node.leaf {
+        node.keys = append(node.keys, key)
+        for index > 0 && node.keys[index-1] > key {
+            node.keys[index] = node.keys[index-1]
+            index--
+        }
+        node.keys[index] = key
+        return
+    }
+    for index > 0 && key < node.keys[index-1] {
+        index--
+    }
+    if node.children[index].isFull() {
+        tree.splitChild(node, index)
+        if key > node.keys[index] {
+            index++
+        }
+    }
+    tree.insertNonFull(node.children[index], key)
 }
 ```
 

@@ -91,6 +91,8 @@ typedef struct {
     int size;
 } CircularBuffer;
 
+bool cb_is_full(const CircularBuffer *buffer);
+
 void cb_init(CircularBuffer *buffer, int capacity) {
     if (capacity <= 0) abort();
     buffer->data = malloc((size_t)capacity * sizeof(int));
@@ -101,7 +103,7 @@ void cb_init(CircularBuffer *buffer, int capacity) {
 }
 
 bool cb_push_front(CircularBuffer *buffer, int value) {
-    if (buffer->size == buffer->capacity) return false;
+    if (cb_is_full(buffer)) return false;
     buffer->head = (buffer->head - 1 + buffer->capacity) % buffer->capacity;
     buffer->data[buffer->head] = value;
     buffer->size++;
@@ -109,7 +111,7 @@ bool cb_push_front(CircularBuffer *buffer, int value) {
 }
 
 bool cb_push_back(CircularBuffer *buffer, int value) {
-    if (buffer->size == buffer->capacity) return false;
+    if (cb_is_full(buffer)) return false;
     buffer->data[(buffer->head + buffer->size) % buffer->capacity] = value;
     buffer->size++;
     return true;
@@ -149,6 +151,10 @@ int cb_size(const CircularBuffer *buffer) {
 
 bool cb_is_empty(const CircularBuffer *buffer) {
     return buffer->size == 0;
+}
+
+bool cb_is_full(const CircularBuffer *buffer) {
+    return buffer->size == buffer->capacity;
 }
 
 void cb_free(CircularBuffer *buffer) {
@@ -378,6 +384,7 @@ class CircularBuffer {
 ```
 
 ```go
+package main
 type CircularBuffer struct {
 	data     []int
 	capacity int
@@ -457,7 +464,7 @@ func (buffer *CircularBuffer) IsEmpty() bool {
 }
 
 func (buffer *CircularBuffer) IsFull() bool {
-	return buffer.size == buffer.capacity
+    return buffer.size == buffer.capacity
 }
 ```
 

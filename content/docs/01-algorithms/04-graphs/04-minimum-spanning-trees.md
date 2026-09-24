@@ -497,31 +497,31 @@ func (MST) Kruskal(vertexCount int, edges []Edge) int64 {
 }
 
 func (MST) Prim(adjacency [][]Edge) int64 {
-	if len(adjacency) == 0 {
-		return 0
-	}
-	inTree := make([]bool, len(adjacency))
-	queue := &minHeap{{vertex: 0, weight: 0}}
-	heap.Init(queue)
-	var total int64
-	selected := 0
-	for queue.Len() > 0 && selected < len(adjacency) {
-		entry := heap.Pop(queue).(heapEntry)
-		if inTree[entry.vertex] {
-			continue
-		}
-		inTree[entry.vertex] = true
-		if selected > 0 {
-			total += int64(entry.weight)
-		}
-		selected++
-		for _, edge := range adjacency[entry.vertex] {
-			if !inTree[edge.To] {
-				heap.Push(queue, heapEntry{vertex: edge.To, weight: edge.Weight})
-			}
-		}
-	}
-	return total
+    if len(adjacency) == 0 {
+        return 0
+    }
+    inTree := make([]bool, len(adjacency))
+    queue := &minHeap{{vertex: 0, weight: 0}}
+    heap.Init(queue)
+    var total int64
+    selected := 0
+    for queue.Len() > 0 && selected < len(adjacency) {
+        entry := heap.Pop(queue).(heapEntry)
+        if inTree[entry.vertex] {
+            continue
+        }
+        inTree[entry.vertex] = true
+        if selected > 0 {
+            total += int64(entry.weight)
+        }
+        selected++
+        for _, edge := range adjacency[entry.vertex] {
+            if !inTree[edge.To] {
+                heap.Push(queue, heapEntry{vertex: edge.To, weight: edge.Weight})
+            }
+        }
+    }
+    return total
 }
 ```
 

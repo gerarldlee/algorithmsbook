@@ -513,3 +513,4 @@ func (Knapsack) SubsetMax(weights, values []int, target int) int64 {
 - [Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems](04-backtracking.md)
 - [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](05-amortized-analysis.md)
 - [Shortest Paths](../04-graphs/05-shortest-paths.md)
+- [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)

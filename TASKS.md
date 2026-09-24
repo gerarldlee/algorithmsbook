@@ -51,8 +51,8 @@ For every algorithm chapter:
 - [ ] Use the exact fence identifiers `java`, `c`, `python`, `rust`, `typescript`, and `go`.
 - [ ] Keep type names, operation sets, and algorithms equivalent across languages.
 - [ ] Keep language-specific explanations inside that language's code block as comments.
-- [ ] Keep language order and tab names identical across groups on a page.
-- [ ] If tab shortcodes are introduced, synchronize their language groups with `tabs.sync: true`.
+- [x] Keep language order identical across groups on a page.
+- [x] Do not wrap algorithm language groups in tab shortcodes; the header selector filters tagged fences directly.
 - [ ] Use Mermaid fences for diagrams and keep diagrams free of hard-coded colors.
 
 ## Part I — Fundamental Data Structures & Core Algorithms
@@ -91,7 +91,7 @@ For every algorithm chapter:
 - [x] 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
 - [x] 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
 - [x] 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
-- [x] 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall, Johnson’s Algorithm, Matrix Multiplication Paths)
+- [x] 4.5 Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall Space Optimizations, Johnson’s Algorithm, Matrix Multiplication Paths)
 - [x] 4.6 Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)
 
 ### Chapter 4A — Computational Theory & Advanced Algorithms
@@ -111,7 +111,7 @@ For every algorithm chapter:
 - [x] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
 - [x] 5.5 API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications
 - [x] 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
-- [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (Vault), and Supply-Chain Security
+- [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security
 
 ### Chapter 5B — Software Architecture Patterns
 
@@ -188,9 +188,9 @@ For every algorithm chapter:
 
 ### Chapter 12A — Operating Systems & Kernel Mechanics
 
-- [x] 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms
-- [x] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
-- [x] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring`
+- [x] 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms (Preemption, MLFQ, Real-Time)
+- [x] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, Translation Lookaside Buffer (TLB), Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
+- [x] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring` Asynchronous Ring Buffers
 
 ## Part VI — Machine Learning Systems & Scalable AI Infrastructure
 

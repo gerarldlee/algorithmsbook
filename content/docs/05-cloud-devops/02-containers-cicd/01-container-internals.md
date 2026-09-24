@@ -90,3 +90,4 @@ The writable container filesystem is typically an overlay mount: reads combine l
 - [Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals](../03-operating-systems-kernel-mechanics/02-virtual-memory-kernel-traps.md)
 - [Processes & Threads](../03-operating-systems-kernel-mechanics/01-processes-threads.md)
 - [High-Performance File Systems & Low-Level I/O](../03-operating-systems-kernel-mechanics/03-file-systems-low-level-io.md)
+- [Storage Primitives](../01-cloud-primitives/02-storage-primitives.md)

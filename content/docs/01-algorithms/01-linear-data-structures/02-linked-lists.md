@@ -341,6 +341,7 @@ class LinkedList {
 ```
 
 ```go
+package main
 type Node struct {
 	Value int
 	Next  *Node
@@ -392,7 +393,7 @@ func (list *LinkedList) ToArray() []int {
 }
 
 func (list *LinkedList) Length() int {
-	return list.Size
+    return list.Size
 }
 ```
 

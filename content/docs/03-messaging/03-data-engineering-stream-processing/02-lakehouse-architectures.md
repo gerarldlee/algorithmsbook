@@ -103,3 +103,4 @@ GROUP BY customer_id, date_trunc('day', event_time);
 - [Data Serialization & In-Memory Formats](03-serialization-in-memory-formats.md)
 - [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](../../04-distributed-systems/02-databases/03-storage-engines.md)
 - [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](../../06-ml-ai/02-mlops/02-feature-stores-pipelines.md)
+- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](../../04-distributed-systems/02-databases/07-distributed-query-pitr.md)

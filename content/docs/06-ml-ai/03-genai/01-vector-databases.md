@@ -2,7 +2,6 @@
 title: "Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search"
 weight: 1
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -59,8 +58,6 @@ Payload and ACL filters are only one retrieval-security layer; they do not autho
 
 The six implementations below are **bounded/unlayered graph baselines**, not HNSW implementations. The shared `BoundedGraph` API uses exact linear L2 nearest-neighbor selection for insertion, prunes each node's neighbors by their L2 distance from that node's vector, maintains a degree bound, and performs an approximate bounded best-first traversal with cosine distance, L2 distance, or negated dot product as a lower-is-better rank. Thus, the example graph is L2-based during construction even when search uses cosine or dot-product ranking; it does not use one shared cosine or dot-product metric for both graph construction and search. The traversal can stop at `maxCandidates` and can omit nearer vectors that remain unreachable through the bounded graph. These implementations intentionally omit layered routing, concurrency, persistence, quantization, and product-specific payload filters so that the graph traversal remains visible. They are teaching baselines, not substitutes for Qdrant, Milvus, Pinecone, or an HNSW library in production.
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -217,8 +214,6 @@ public final class BoundedGraph {
     }
 }
 ```
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <limits.h>
 #include <math.h>
@@ -446,8 +441,6 @@ static int bounded_graph_search(BoundedGraph *index, const double *query, int wi
     return count;
 }
 ```
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 import heapq
 import math
@@ -517,8 +510,6 @@ class BoundedGraph:
         results.sort()
         return [vector_id for _, vector_id in results[:k]]
 ```
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
@@ -669,8 +660,6 @@ impl BoundedGraph {
     }
 }
 ```
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 export enum Metric {
   Cosine = "cosine",
@@ -778,8 +767,6 @@ export class BoundedGraph {
   }
 }
 ```
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package main
 
@@ -963,8 +950,6 @@ func (index *BoundedGraph) Search(query []float64, k, maxCandidates int, metric 
 	return ids
 }
 ```
-{{< /tab >}}
-{{< /tabs >}}
 
 ## Complexity
 

@@ -600,24 +600,24 @@ func (ShortestPaths) FloydWarshall(graph [][]int64) [][]int64 {
 }
 
 func (ShortestPaths) Johnson(vertexCount int, edges []Edge) [][]int64 {
-	arcs := append([]Edge(nil), edges...)
-	for vertex := 0; vertex < vertexCount; vertex++ {
-		arcs = append(arcs, Edge{From: vertex, To: 0})
-	}
-	potential, _ := ShortestPaths{}.BellmanFord(vertexCount, arcs, 0)
-	weighted := make([][]Edge, vertexCount)
-	for _, edge := range edges {
-		weighted[edge.From] = append(weighted[edge.From], Edge{From: edge.From, To: edge.To, Weight: edge.Weight + potential[edge.From] - potential[edge.To]})
-	}
-	distance := make([][]int64, vertexCount)
-	for source := 0; source < vertexCount; source++ {
-		reduced := (ShortestPaths{}).Dijkstra(weighted, source)
-		distance[source] = make([]int64, vertexCount)
-		for target := 0; target < vertexCount; target++ {
-			distance[source][target] = reduced[target] - potential[source] + potential[target]
-		}
-	}
-	return distance
+    arcs := append([]Edge(nil), edges...)
+    for vertex := 0; vertex < vertexCount; vertex++ {
+        arcs = append(arcs, Edge{From: vertex, To: 0})
+    }
+    potential, _ := (ShortestPaths{}).BellmanFord(vertexCount, arcs, 0)
+    weighted := make([][]Edge, vertexCount)
+    for _, edge := range edges {
+        weighted[edge.From] = append(weighted[edge.From], Edge{From: edge.From, To: edge.To, Weight: edge.Weight + potential[edge.From] - potential[edge.To]})
+    }
+    distance := make([][]int64, vertexCount)
+    for source := 0; source < vertexCount; source++ {
+        reduced := (ShortestPaths{}).Dijkstra(weighted, source)
+        distance[source] = make([]int64, vertexCount)
+        for target := 0; target < vertexCount; target++ {
+            distance[source][target] = reduced[target] - potential[source] + potential[target]
+        }
+    }
+    return distance
 }
 ```
 

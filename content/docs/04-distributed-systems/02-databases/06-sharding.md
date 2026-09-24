@@ -2,7 +2,6 @@
 title: "Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding"
 weight: 6
 toc: true
-tabs: {sync: true}
 ---
 
 ## What it is
@@ -44,8 +43,6 @@ consistent_hash:
   rebalancing: affected_ring_segments_only
 ```
 
-{{< tabs >}}
-{{< tab name="Java" >}}
 ```java
 import java.nio.charset.StandardCharsets;
 import java.util.SortedMap;
@@ -97,8 +94,6 @@ public final class ConsistentHash {
     }
 }
 ```
-{{< /tab >}}
-{{< tab name="C" >}}
 ```c
 #include <stdint.h>
 #include <stdio.h>
@@ -271,8 +266,6 @@ const char *ch_get_node(ConsistentHash *ring, const char *key) {
     return ring->ring[index == ring->length ? 0 : index].node;
 }
 ```
-{{< /tab >}}
-{{< tab name="Python" >}}
 ```python
 import bisect
 
@@ -312,8 +305,6 @@ class ConsistentHash:
             position = 0
         return self.ring[position][1]
 ```
-{{< /tab >}}
-{{< tab name="Rust" >}}
 ```rust
 use std::collections::BTreeMap;
 
@@ -364,8 +355,6 @@ impl ConsistentHash {
     }
 }
 ```
-{{< /tab >}}
-{{< tab name="TypeScript" >}}
 ```typescript
 interface RingEntry {
   point: number;
@@ -430,8 +419,6 @@ export class ConsistentHash {
   }
 }
 ```
-{{< /tab >}}
-{{< tab name="Go" >}}
 ```go
 package main
 
@@ -516,8 +503,6 @@ func (ring *ConsistentHash) GetNode(key string) string {
 	return ring.ring[index].node
 }
 ```
-{{< /tab >}}
-{{< /tabs >}}
 
 ## Complexity
 

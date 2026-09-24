@@ -99,3 +99,4 @@ Security controls add latency, operational state, and failure modes. Choose cont
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
 - [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management, and Supply-Chain Security](07-appsec-threat-defense.md)
 - [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
