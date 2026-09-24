@@ -1,6 +1,7 @@
 ---
 title: "Growth of Algorithm"
 weight: 3
+tabs: {sync: true}
 ---
 
 Algorithm growth describes how work and extra memory change as the input size \(n\) increases. The
@@ -22,6 +23,8 @@ claimed without that assumption.
 
 Bubble sort repeatedly compares adjacent elements and swaps them when they are out of order:
 
+{{< tabs >}}
+{{< tab name="Java" >}}
 ```java
 for (int j=0; j<array.length-1; j++) {
     for (int i = 0; i < array.length - j - 1; i++) {
@@ -33,6 +36,79 @@ for (int j=0; j<array.length-1; j++) {
     }
 }
 ```
+{{< /tab >}}
+{{< tab name="C" >}}
+```c
+#include <stddef.h>
+
+void bubble_sort(int array[], size_t length) {
+    for (size_t j = 0; j < length - 1; j++) {
+        for (size_t i = 0; i < length - j - 1; i++) {
+            if (array[i] > array[i + 1]) {
+                int tmp = array[i];
+                array[i] = array[i + 1];
+                array[i + 1] = tmp;
+            }
+        }
+    }
+}
+```
+{{< /tab >}}
+{{< tab name="Python" >}}
+```python
+def bubble_sort(array):
+    for j in range(len(array) - 1):
+        for i in range(len(array) - j - 1):
+            if array[i] > array[i + 1]:
+                array[i], array[i + 1] = array[i + 1], array[i]
+```
+{{< /tab >}}
+{{< tab name="Rust" >}}
+```rust
+fn bubble_sort(array: &mut [i32]) {
+    for j in 0..array.len() - 1 {
+        for i in 0..array.len() - j - 1 {
+            if array[i] > array[i + 1] {
+                let tmp = array[i];
+                array[i] = array[i + 1];
+                array[i + 1] = tmp;
+            }
+        }
+    }
+}
+```
+{{< /tab >}}
+{{< tab name="TypeScript" >}}
+```typescript
+function bubbleSort(array: number[]): void {
+    for (let j = 0; j < array.length - 1; j++) {
+        for (let i = 0; i < array.length - j - 1; i++) {
+            if (array[i] > array[i + 1]) {
+                const tmp = array[i];
+                array[i] = array[i + 1];
+                array[i + 1] = tmp;
+            }
+        }
+    }
+}
+```
+{{< /tab >}}
+{{< tab name="Go" >}}
+```go
+func BubbleSort(array []int) {
+	for j := 0; j < len(array)-1; j++ {
+		for i := 0; i < len(array)-j-1; i++ {
+			if array[i] > array[i+1] {
+				tmp := array[i]
+				array[i] = array[i+1]
+				array[i+1] = tmp
+			}
+		}
+	}
+}
+```
+{{< /tab >}}
+{{< /tabs >}}
 
 With an early-exit flag, an already sorted array is the best case: the algorithm makes one pass and
 performs no swaps, so it takes \(O(n)\) time. Without that optimization, the best case is still

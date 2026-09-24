@@ -25,6 +25,31 @@ Declare an array of type `int`:
 int[] array = new int[10];
 ```
 
+```c
+// an array always has a size
+int array[10];
+```
+
+```python
+# an array always has a size
+array = [0] * 10
+```
+
+```rust
+// an array always has a size
+let mut array = [0; 10];
+```
+
+```typescript
+// an array always has a size
+const array = new Array<number>(10);
+```
+
+```go
+// an array always has a size
+array := [10]int{}
+```
+
 Access an element of an array with a specific index:
 
 ```java
@@ -35,12 +60,85 @@ int fifthElement = array[5];
 array[5] = 30;
 ```
 
+```c
+// get the value of array[5]
+int fifth_element = array[5];
+
+// set the value of array[5]
+array[5] = 30;
+```
+
+```python
+# get the value of array[5]
+fifth_element = array[5]
+
+# set the value of array[5]
+array[5] = 30
+```
+
+```rust
+// get the value of array[5]
+let fifth_element = array[5];
+
+// set the value of array[5]
+array[5] = 30;
+```
+
+```typescript
+// get the value of array[5]
+const fifthElement = array[5];
+
+// set the value of array[5]
+array[5] = 30;
+```
+
+```go
+// get the value of array[5]
+fifthElement := array[5]
+
+// set the value of array[5]
+array[5] = 30
+```
+
 Iterate an array:
 
 ```java
 for (int index=0; index < array.length; index++) {
 	int tmp = array[index];
 	// do useful stuff with tmp
+}
+```
+
+```c
+for (int index = 0; index < 10; index++) {
+    int tmp = array[index];
+    // do useful stuff with tmp
+}
+```
+
+```python
+for index in range(len(array)):
+    tmp = array[index]
+    # do useful stuff with tmp
+```
+
+```rust
+for tmp in array.iter().copied() {
+    // do useful stuff with tmp
+}
+```
+
+```typescript
+for (let index = 0; index < array.length; index++) {
+    const tmp = array[index];
+    // do useful stuff with tmp
+}
+```
+
+```go
+for index := 0; index < len(array); index++ {
+    tmp := array[index]
+    // do useful stuff with tmp
 }
 ```
 
@@ -77,6 +175,63 @@ for (int index=0; index < array.length; index++) {
 		// we can either return the index of the element, or the value itself
 		return index;
 	}
+}
+```
+
+```c
+int linear_search(int *array, int length, int value_to_find) {
+    for (int index = 0; index < length; index++) {
+        if (array[index] == value_to_find) {
+            // we can either return the index of the element, or the value itself
+            return index;
+        }
+    }
+    return -1;
+}
+```
+
+```python
+def linear_search(array, value_to_find):
+    for index in range(len(array)):
+        if array[index] == value_to_find:
+            # we can either return the index of the element, or the value itself
+            return index
+    return -1
+```
+
+```rust
+fn linear_search(array: &[i32], value_to_find: i32) -> Option<usize> {
+    for (index, value) in array.iter().enumerate() {
+        if *value == value_to_find {
+            // we can either return the index of the element, or the value itself
+            return Some(index);
+        }
+    }
+    None
+}
+```
+
+```typescript
+function linearSearch(array: number[], valueToFind: number): number {
+    for (let index = 0; index < array.length; index++) {
+        if (array[index] === valueToFind) {
+            // we can either return the index of the element, or the value itself
+            return index;
+        }
+    }
+    return -1;
+}
+```
+
+```go
+func linearSearch(array []int, valueToFind int) int {
+    for index, value := range array {
+        if value == valueToFind {
+            // we can either return the index of the element, or the value itself
+            return index
+        }
+    }
+    return -1
 }
 ```
 

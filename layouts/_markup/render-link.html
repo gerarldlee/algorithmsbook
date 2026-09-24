@@ -1,0 +1,59 @@
+{{- $dest := .Destination -}}
+{{- $url := urls.Parse $dest -}}
+{{- $isExternal := or $url.IsAbs (hasPrefix $dest "//") -}}
+{{- $isInternal := and (not $isExternal) (ne $url.Path "") -}}
+
+{{- if $isInternal -}}
+  {{- $target := $url.Path -}}
+  {{- $page := "" -}}
+  {{- if hasPrefix $target "/" -}}
+    {{- with or (site.GetPage $target) (site.GetPage (strings.TrimSuffix ".md" $target)) -}}
+      {{- $page = . -}}
+    {{- end -}}
+  {{- else -}}
+    {{- with or (.PageInner.GetPage $target) (.PageInner.GetPage (strings.TrimSuffix ".md" $target)) -}}
+      {{- $page = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $page -}}
+    {{- $resourceTarget := strings.TrimPrefix "/" $target -}}
+    {{- with or (.PageInner.Resources.Get $resourceTarget) (resources.Get $resourceTarget) -}}
+      {{- $page = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $page -}}
+    {{- $suffix := path.Clean (replace $target "../" "") -}}
+    {{- if hasSuffix $suffix "/" -}}
+      {{- $suffix = printf "%s_index.md" (strings.TrimSuffix "/" $suffix) -}}
+    {{- else if not (hasSuffix $suffix ".md") -}}
+      {{- $suffix = printf "%s.md" $suffix -}}
+    {{- end -}}
+    {{- with where site.Pages "File.Path" "suffix" $suffix -}}
+      {{- if eq (len .) 1 -}}
+        {{- $page = index . 0 -}}
+      {{- else if gt (len .) 1 -}}
+        {{- errorf "ambiguous internal link %q" $dest -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- with $page -}}
+    {{- $query := cond $url.RawQuery (printf "?%s" $url.RawQuery) "" -}}
+    {{- $fragment := cond $url.Fragment (printf "#%s" $url.Fragment) "" -}}
+    {{- $dest = printf "%s%s%s" .RelPermalink $query $fragment -}}
+  {{- else -}}
+    {{- errorf "unresolved internal link %q" $dest -}}
+  {{- end -}}
+{{- end -}}
+
+{{- with . -}}
+{{- $isExternal := strings.HasPrefix .Destination "http" -}}
+<a href="{{ $dest | safeURL }}"
+   {{- with .Title -}}title="{{ . }}"{{- end -}}
+   {{- if $isExternal -}}target="_blank" rel="noopener"{{- end -}}
+>
+  {{- .Text | safeHTML -}}
+  {{- if and .Page.Site.Params.externalLinkDecoration $isExternal -}}
+    {{- partial "utils/icon.html" (dict "name" "arrow-up-right" "attributes" `class="hx:inline hx:rtl:rotate-270 hx:align-baseline" height="1em" aria-hidden="true"`) -}}
+  {{- end -}}
+</a>
+{{- end -}}

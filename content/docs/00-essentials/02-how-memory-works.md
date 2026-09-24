@@ -55,8 +55,7 @@ object. Object headers, references, alignment, and the garbage collector add run
 
 ## Allocation and access
 
-Java normally manages allocation and reclamation for you. A declaration gives a variable a type, and
-an array allocation reserves space for a fixed number of elements:
+These examples declare a variable and allocate an array with space for a fixed number of elements:
 
 ```java
 // Declare an integer variable.
@@ -66,13 +65,62 @@ int i;
 int[] array = new int[10];
 ```
 
+```c
+int i;
+int array[10];
+```
+
+```python
+i: int
+array = [0] * 10
+```
+
+```rust
+let i: i32;
+let mut array = [0i32; 10];
+```
+
+```typescript
+let i: number;
+let array: number[] = new Array(10);
+```
+
+```go
+var i int
+var array [10]int
+```
+
 To access the variable and store something:
 
 ```java
 i = 32;
-
 array[9] = 32;
 ```
 
-`array[9]` is the tenth element because Java indexes arrays from zero. Accessing an index outside
-the array bounds raises an exception instead of silently reading unrelated memory.
+```c
+i = 32;
+array[9] = 32;
+```
+
+```python
+i = 32
+array[9] = 32
+```
+
+```rust
+i = 32;
+array[9] = 32;
+```
+
+```typescript
+i = 32;
+array[9] = 32;
+```
+
+```go
+i = 32
+array[9] = 32
+```
+
+`array[9]` is the tenth element because these examples index arrays from zero. Out-of-bounds access
+varies by language: Java raises an exception, Rust panics, and C behavior is undefined.
