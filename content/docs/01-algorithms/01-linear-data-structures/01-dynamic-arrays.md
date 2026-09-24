@@ -6,17 +6,13 @@ toc: true
 
 ## What it is
 
-A dynamic array is a contiguous, random-access collection whose capacity grows (and can shrink) automatically as elements are added or removed. Unlike a fixed-size array, it hides the reallocation behind an abstraction, giving you amortized O(1) append at the cost of occasional O(n) resizing when it runs out of space. Dynamic arrays are the substrate of every list type in real languages: Java's `ArrayList`, Python's `list`, C++'s `std::vector`, Rust's `Vec`, and Go's slices.
+A dynamic array is a contiguous, random-access collection whose capacity grows automatically as elements are appended. Unlike a fixed-size array, it hides reallocation behind an abstraction, giving you amortized O(1) append at the cost of occasional O(n) resizing when capacity is exhausted. The examples in this chapter demonstrate append, indexed access, and size; removal and shrinking policies vary by language. Java's `ArrayList`, Python's `list`, C++'s `std::vector`, Rust's `Vec`, and Go's slices use this contiguous storage model.
 
 ## How it works
 
-Arrays are a linear, contiguous collection of items or elements of pre-allocated size in the memory.
+Arrays are contiguous, indexed collections of values stored in a preallocated block of memory. An array is useful when you need fast indexed access and know an appropriate initial size. A dynamic array adds automatic capacity growth so callers do not manage resizing themselves.
 
-- you want to store contiguous elements to easily access it
-- you already know how many elements to store, before you declare it. (if not, you use a linked list instead)
-- you want O(1) access given an index of the middle of the array.  Obviously, head and tail of the array are always O(1) since you know array[0] and array[size-1] already.
-
-Note that arrays are the basic building blocks of all data structures. I will show you that we can derive all data structures from an array as we go along.
+A fixed array and a dynamic array share the same indexing model. Their difference is ownership: the fixed array exposes allocation and capacity, while the dynamic array exposes operations such as `push`, `get`, and `size`.
 
 Declare an array of type `int`:
 
@@ -42,7 +38,7 @@ let mut array = [0; 10];
 
 ```typescript
 // an array always has a size
-const array = new Array<number>(10);
+const array = new Array<number>(10).fill(0);
 ```
 
 ```go
@@ -142,47 +138,41 @@ for index := 0; index < len(array); index++ {
 }
 ```
 
-## Techniques for iterating through an Array
+### Techniques for iterating through an array
 
 ### Single-pointer approach
 
-How we just iterate an array through its index is also called single pointer.  We use the concept of the array's index as a pointer to its element value.  This is very trivial.
+Single-pointer iteration uses the array index to visit one element at a time. An index-based loop is appropriate when random access matters; a `for-each` loop is often clearer when only sequential access is needed.
 
-- We can manipulate how we want to increment or decrement its index.
-- We can use `while` or `for` loops if we want to access elements in the array *randomly*
-- Or an `Iterator` or a simplified `for-each` loop, to iterate through the array or a linked list
-
-Note that ideally, its better to use a `for-each` loop, to prevent bugs such as accidentally deleting an element in the array with `Iterators` or accidentally accessing `iterator.next()`, unless you intentionally want to.
-
-Using the index to access elements in an array or linked list is the most efficient way as its because of O(1) access time.
+The index provides O(1) access to each position, but indexed iteration is not automatically cheaper than an iterator in every language. Choose the form that makes bounds and mutation behavior explicit.
 
 ### Two-pointer approach
 
-We can also access array elements with 2 pointers approach, and is much more efficient than the single pointer.  It can cut the time of iterating over an array in half.
+A two-pointer algorithm maintains two positions and advances them according to a stopping condition. It can reduce work for problems such as finding a pair, scanning a sorted array, or partitioning values, but there is no general guarantee that it is twice as fast as a single-pointer scan.
 
-2 pointers mean there will be 2 separate indexes accessing different elements of the array at the same time.  As with the single pointer, the second pointer can also be positioned anywhere in the array that make sense.  e.g. at the last index, at the first index, at the middle, or anywhere.
+Place the first pointer at the beginning, the second at the end, or at another position required by the problem. The invariants of the two positions determine when they move.
 
-## Searching for an element in an Array
+### Searching for an element in an array
 
-### Linear search
+#### Linear search
 
-- We iterate each element, until we found the element we are looking for.
+A linear search visits each element until it finds the target or reaches the end.
 
 ```java
-int valueToFind = 4;
-for (int index=0; index < array.length; index++) {
-	if (array[index] == valueToFind) {
-		// we can either return the index of the element, or the value itself
-		return index;
-	}
+public static int linearSearch(int[] array, int valueToFind) {
+    for (int index = 0; index < array.length; index++) {
+        if (array[index] == valueToFind) {
+            return index;
+        }
+    }
+    return -1;
 }
 ```
 
 ```c
-int linear_search(int *array, int length, int value_to_find) {
+int da_linear_search(const int *array, int length, int value_to_find) {
     for (int index = 0; index < length; index++) {
         if (array[index] == value_to_find) {
-            // we can either return the index of the element, or the value itself
             return index;
         }
     }
@@ -224,7 +214,7 @@ function linearSearch(array: number[], valueToFind: number): number {
 ```
 
 ```go
-func linearSearch(array []int, valueToFind int) int {
+func LinearSearch(array []int, valueToFind int) int {
     for index, value := range array {
         if value == valueToFind {
             // we can either return the index of the element, or the value itself
@@ -235,11 +225,13 @@ func linearSearch(array []int, valueToFind int) int {
 }
 ```
 
-### Binary Search
+#### Binary search
 
 See the [Memory works (Templates)](../../00-essentials/06-memory-works-templates.md) page for the binary search template.
 
-The "dynamic" part comes from growth by a constant factor. When `push` runs out of capacity, the array is copied into a new buffer of double the size (a common growth factor of 2). Because the expensive copy happens only after a geometrically growing number of cheap pushes, the total cost of `n` pushes is O(n), so each push is O(1) *amortized*. This is the classic amortized-analysis result: charging a constant amount to each operation "pays off" the occasional full-copy.
+### Dynamic growth and amortized analysis
+
+The dynamic part comes from growth by a constant factor. When `push` runs out of capacity, the array is copied into a new buffer of double the size, which is a common growth factor of 2. Because the expensive copy happens only after a geometrically growing number of cheap pushes, the total cost of `n` pushes is O(n), so each push is O(1) *amortized*. This is the classic amortized-analysis result: charging a constant amount to each operation pays for the occasional full copy.
 
 ```java
 public class DynamicArray {
@@ -286,18 +278,26 @@ void da_init(DynamicArray *a) {
     a->capacity = 1;
     a->size = 0;
     a->data = malloc(a->capacity * sizeof(int));
+    if (a->data == NULL) abort();
 }
 
 void da_push(DynamicArray *a, int value) {        // amortized O(1)
     if (a->size == a->capacity) {
         a->capacity *= 2;
-        a->data = realloc(a->data, a->capacity * sizeof(int));
+        int *grown = realloc(a->data, a->capacity * sizeof(int));
+        if (grown == NULL) abort();
+        a->data = grown;
     }
     a->data[a->size++] = value;
 }
 
 int da_get(DynamicArray *a, int index) {          // O(1)
+    if (index < 0 || index >= a->size) return -1;
     return a->data[index];
+}
+
+int da_len(const DynamicArray *a) {
+    return a->size;
 }
 
 void da_free(DynamicArray *a) {
@@ -329,24 +329,35 @@ class DynamicArray:
 ```rust
 pub struct DynamicArray {
     data: Vec<i32>,
+    capacity: usize,
 }
 
 impl DynamicArray {
     pub fn new() -> Self {
-        DynamicArray { data: Vec::with_capacity(1) }
+        DynamicArray {
+            data: Vec::with_capacity(1),
+            capacity: 1,
+        }
     }
 
-    // Vec grows by doubling internally, so push is amortized O(1)
     pub fn push(&mut self, value: i32) {
+        if self.data.len() == self.capacity {
+            self.resize(self.capacity * 2);
+        }
         self.data.push(value);
     }
 
-    pub fn get(&self, index: usize) -> Option<&i32> {  // O(1)
+    pub fn get(&self, index: usize) -> Option<&i32> {
         self.data.get(index)
     }
 
     pub fn len(&self) -> usize {
         self.data.len()
+    }
+
+    fn resize(&mut self, capacity: usize) {
+        self.data.reserve_exact(capacity - self.data.len());
+        self.capacity = capacity;
     }
 }
 ```
@@ -423,7 +434,7 @@ func (a *DynamicArray) Len() int { return a.size }
 | Access (read/write by index) | O(1) | O(1) |
 | Search (linear) | O(n) | O(1) |
 | Search (binary, on sorted array) | O(log n) | O(1) |
-| Append / pop at end (push) | O(1) amortized | O(1) |
+| Append at end (`push`) | O(1) amortized | O(1) auxiliary; O(n) temporary during growth |
 | Insert / delete at middle | O(n) | O(1) |
 | Resize / growth | O(n) (amortized O(1) per push) | O(n) |
 
@@ -444,4 +455,3 @@ func (a *DynamicArray) Len() int { return a.size }
 - [Linked Lists and Node-Based Structures](02-linked-lists.md)
 - [Stacks, Queues, and Deques](03-stacks-queues-deques.md)
 - [Binary Search Trees](../02-search-trees/01-binary-search-trees.md)
-- [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)

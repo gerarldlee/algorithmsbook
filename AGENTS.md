@@ -147,9 +147,9 @@ invisible to the future language switcher and gets no syntax highlighting.
   simplified version.
 - **Compliance today: complete.** All 22 Part I chapters carry one contiguous six-language group, and
   so do the five algorithm-bearing chapters elsewhere (the three caching chapters, `06-sharding`,
-  `01-vector-databases`). `01-dynamic-arrays.md` adds four extra Java-only snippets to illustrate
-  iteration/search techniques — extra single-language illustrations are fine, an *incomplete group*
-  is not.
+  `01-vector-databases`). `01-dynamic-arrays.md` adds four extra complete six-language groups to
+  illustrate array declaration, indexed access, iteration, and linear search — extra groups are fine,
+  an *incomplete group* is not.
 - Prose that is language-specific belongs inside that language's fenced block as a comment, so a
   selector can hide it with the block.
 - The header language selector is available on every page. Preserve the same language order and tab

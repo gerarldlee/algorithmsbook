@@ -394,3 +394,4 @@ The worst case occurs when the tree degenerates into a linked list (e.g. inserti
 ## Related
 - [Heaps and Priority Queues](02-heaps-priority-queues.md)
 - [Storage Engine Trees (B-Trees and LSM-Trees)](03-storage-engine-trees.md)
+- [Dynamic Arrays](../01-linear-data-structures/01-dynamic-arrays.md)

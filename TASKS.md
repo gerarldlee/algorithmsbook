@@ -16,14 +16,14 @@ already exists.
 
 ## Project foundation
 
-- [ ] Keep the Hugo site on extended Hugo `0.159.2`.
-- [ ] Keep Hextra `v0.12.3` managed as a Go module; do not add a `themes/` directory or submodule.
-- [ ] Maintain the relative-link render hook in `layouts/_markup/render-link.html`.
-- [ ] Keep generated output (`public/`, `resources/`, `.hugo_build.lock`) out of source control.
-- [ ] Keep the link, front-matter, weight, naming, and heading checks passing with `python tools/check_links.py`.
+- [x] Keep the Hugo site on extended Hugo `0.159.2`.
+- [x] Keep Hextra `v0.12.3` managed as a Go module; do not add a `themes/` directory or submodule.
+- [x] Maintain the relative-link render hook in `layouts/_markup/render-link.html`.
+- [x] Keep generated output (`public/`, `resources/`, `.hugo_build.lock`) out of source control.
+- [x] Keep the link, front-matter, weight, naming, and heading checks passing with `python tools/check_links.py`.
 - [ ] Add every new page to its parent `_index.md` in weight order.
 - [ ] Add every new category or part to the relevant navigation pages and home-page table of contents.
-- [ ] Keep `TOC.md` synchronized with the content tree.
+- [x] Keep `TOC.md` synchronized with the content tree.
 
 ## Chapter implementation contract
 
@@ -58,7 +58,7 @@ For every algorithm chapter:
 
 ### Chapter 1 — Linear Data Structures & Memory Models
 
-- [ ] 1.1 Dynamic Arrays, Memory Allocation, and Amortized Analysis
+- [x] 1.1 Dynamic Arrays, Memory Allocation, and Amortized Analysis
 - [ ] 1.2 Linked Lists (Singly, Doubly, Skip Lists)
 - [ ] 1.3 Stacks, Queues, Deques, and Ring/Circular Buffers
 - [ ] 1.4 Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing
