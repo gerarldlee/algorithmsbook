@@ -1,57 +1,80 @@
 ---
-title: "Delivery Guarantees"
+title: "Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)"
 weight: 3
 toc: true
 ---
 
 ## What it is
 
-Delivery guarantees describe how many times a message may be delivered and processed: **at-most-once** (0 or 1), **at-least-once** (1 or more), and **exactly-once** (precisely 1). They are the contract between a producer, a broker, and a consumer, and they determine how you must design for duplicates, retries, and idempotency.
+Message delivery guarantees describe the number of delivery attempts a system makes under failure. **At-most-once** delivery may deliver a message zero or one time, **at-least-once** delivery delivers it one or more times, and **exactly-once** delivery defines one processing effect within an explicitly bounded system boundary. Delivery is not the same as a business effect: a broker can deliver a message once while a handler sends an email twice, or redeliver a message after a handler completed its database write.
 
 ## How it works
 
-The guarantee is the product of acknowledgment timing and retry behavior. At-most-once fires the message and never retries: if the consumer crashes before processing, the message is lost. At-least-once acknowledges only after processing, so a crash before the ack triggers redelivery — safe against loss but permitting duplicates. Exactly-once is impossible to achieve by the broker alone across an unreliable network; it is built by combining at-least-once delivery with **idempotent consumers** (deduplicating by message ID) and, where supported, transactional writes to broker and store together (Kafka's idempotent producer + transactional API, or an outbox pattern). Ordering is a related guarantee: a queue preserves order per-queue and a stream per-partition, but a single key must map to one partition to keep its events ordered.
+At-most-once delivery sends a message and does not retry after an uncertain failure. A fire-and-forget producer can lose a message, and a consumer that acknowledges before processing can also lose work. At-least-once delivery acknowledges only after the handler completes. A crash between the side effect and acknowledgment causes redelivery, so the handler must tolerate duplicates or deduplicate them.
 
-The guarantees mapped to their mechanisms:
+Exactly-once processing is a scoped property. Kafka can use idempotent producers, consumer isolation, and transactions to make a Kafka-to-Kafka read-process-write operation atomic. A database and a broker cannot become exactly once merely because both support transactions; the boundary, failure recovery, and external side effects must be included. The common application pattern is an **inbox**: insert the event ID and apply the business change in one database transaction, then acknowledge the broker. The event ID is protected by a unique constraint, so a redelivery becomes a no-op.
+
+The guarantee and its recovery point can be expressed as an operational policy:
 
 ```yaml
-# Delivery guarantees and how they are built
 at_most_once:
-  ack: before processing          # or fire-and-forget
-  retry: never
-  loss: possible                  # message may vanish
+  acknowledgment: before_processing
+  retry: none
+  failure: loss_is_accepted
 at_least_once:
-  ack: after processing
-  retry: on no-ack / timeout
-  duplicates: possible            # reprocess after crash
+  acknowledgment: after_transaction_commit
+  retry: on_timeout_or_negative_acknowledgment
+  failure: duplicate_handling_required
 exactly_once:
-  transport: at-least-once        # broker redelivers
-  consumer: idempotent            # dedupe by message id / idempotency key
-  storage: transactional          # write result + offset atomically
+  scope: all_effects_in_one_transactional_boundary
+  consumer: unique_event_id_and_business_write
+  external_side_effects: use_idempotency_key_or_reconciliation
 ordering:
-  queue: per-queue (FIFO modes)
-  stream: per-partition            # route one key to one partition
+  queue: only_when_delivery_mode_and_consumer_count_allow_it
+  stream: within_one_partition
 ```
+
+An inbox table and its insert turn the deduplication decision into a database constraint:
+
+```sql
+create table processed_events (
+  event_id text primary key,
+  processed_at timestamptz not null default now()
+);
+
+insert into processed_events (event_id)
+values ($1)
+on conflict (event_id) do nothing;
+```
+
+The handler checks whether the insert affected a row. If it did, the handler applies the business change in the same transaction and commits both together; if it did not, the event was already processed and the handler only acknowledges it. A unique event ID is essential, and the handler must not acknowledge before the transaction commits.
+
+The **transactional outbox** solves a different dual-write problem: the producer writes a business change and an outbound event to the database in one transaction, then a relay publishes the event. The relay normally remains at-least-once, so the consumer still needs idempotency. Ordering is likewise bounded: a queue can preserve order only when its delivery mode and consumer behavior permit it, while a stream preserves order within a partition and only when related records use the same partition key.
 
 ## Tradeoffs
 
-| Guarantee | Strengths | Costs |
+| Guarantee or technique | Gain | Cost or limitation |
 | --- | --- | --- |
-| At-most-once | Lowest latency, no dedupe state | Messages can be silently lost |
-| At-least-once | No message loss; simple to build | Duplicates — consumers must tolerate or dedupe |
-| Exactly-once | Cleanest application semantics | Requires idempotency, transactional stores, higher latency and complexity |
-| Strict ordering | Simplifies stateful consumers | Limits parallelism — a hot key serializes its partition |
+| At-most-once | Lowest processing overhead and no deduplication state | A failure can lose work silently |
+| At-least-once | Prevents broker-side loss and suits retryable work | Duplicates, retry traffic, and idempotency state |
+| Transactional exactly-once | Atomic read-process-write inside one supported boundary | Narrow scope, infrastructure requirements, and added latency |
+| Idempotent consumer | Effectively-once effects over at-least-once delivery | Stable IDs, unique constraints, and retention or cleanup of processed IDs |
+| Transactional outbox | Avoids a business-write versus publish race | A relay, polling or change-data-capture path, and delayed publication |
+| Strict partition ordering | Simplifies stateful event handling | Hot keys serialize processing and reduce parallelism |
 
 ## When to use
 
-- Use at-least-once plus an idempotency key when losing a message is unacceptable (payments, orders) but an occasional retried duplicate is tolerable.
-- Use exactly-once (idempotent consumer + transactional write) when a duplicate would corrupt state — e.g. incrementing a balance twice.
-- Use at-most-once for lossy telemetry and metrics where a fresh sample is worth more than a stale retry.
+- You cannot tolerate losing an order, payment, or account event and can tolerate a duplicate attempt.
+- A duplicate would corrupt state, so the consumer can enforce a stable event ID or idempotency key transactionally.
+- A provider explicitly supports transactions and every effect stays inside that provider's boundary.
+- Lossy telemetry is acceptable and avoiding deduplication state is more valuable than replaying a missed sample.
 
 ## Alternatives
 
-- **Idempotency keys in the consumer** — achieve exactly-once effect on top of at-least-once without broker transactions, at the cost of storing processed IDs.
-- **Transactional outbox** — write the message to a database table in the same transaction as the business change, guaranteeing exactly-once publication without two-phase commit.
+- **Inbox deduplication** — makes redelivery safe with ordinary at-least-once delivery, but requires durable event IDs and database uniqueness.
+- **Transactional outbox** — makes the business change and publication intent atomic, but does not by itself make the published message's consumer effect exactly once.
+- **Two-phase commit or XA** — can coordinate supported resources atomically, but adds blocking, availability, and operational costs.
+- **Reconciliation** — repairs missing or duplicate effects by comparing authoritative state later, but temporarily permits divergence and requires a repair process.
 
 ## Related
 

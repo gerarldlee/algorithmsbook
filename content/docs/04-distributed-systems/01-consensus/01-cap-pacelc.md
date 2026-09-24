@@ -1,63 +1,70 @@
 ---
-title: "CAP and PACELC Theorems"
+title: "The CAP Theorem, PACELC, and Architectural Trade-offs"
 weight: 1
 toc: true
 ---
 
 ## What it is
 
-The CAP theorem states that a distributed data store can guarantee at most two of three properties at once: **Consistency** (every read sees the latest write), **Availability** (every request receives a non-error response, even during failures), and **Partition tolerance** (the system keeps working despite messages being dropped or delayed between nodes). Since network partitions are unavoidable in practice, every real system must tolerate partitions and therefore must choose between consistency and availability when a partition occurs. PACELC refines CAP: if there is a **P**artition, choose between **A**vailability and **C**onsistency; **E**lse (during normal operation), choose between **L**atency and **C**onsistency.
+The CAP theorem describes the consistency-availability trade-off of a replicated data store during a network **partition**, when nodes cannot reliably communicate. **Consistency** means reads appear to observe the latest completed write in one agreed history, while **availability** means every request received by a non-failing node eventually receives a non-error response. Because a partitioned distributed system must choose between those guarantees, CAP classifies a design as **CP** or **AP** in the partition branch. **PACELC** adds the normal-operation branch: if a **P**artition occurs, choose **A**vailability or **C**onsistency; **E**lse, choose **L**atency or **C**onsistency.
 
 ## How it works
 
-During a partition, the nodes of a replicated store cannot communicate to agree on the current state. A **CP** system chooses consistency, refusing or erroring writes on the minority side so no divergent copy can serve stale data; a **AP** system chooses availability, accepting writes on any reachable node and reconciling later. Because partitions are rare relative to normal operation, PACELC points out that the more common decision is the "else" branch: even with no partition, a system must decide whether each read waits for all replicas to agree (consistent but slow) or returns a fast, possibly stale answer (low latency). The theorem frames a spectrum, not a binary — many systems offer tunable consistency per operation.
+During a partition, a CP design preserves one agreed history by rejecting operations that cannot reach a quorum, so requests may fail while a minority is isolated. An AP design continues serving reachable replicas, accepts divergent work, and reconciles conflicts later. The decision is operational rather than a permanent label: a system can expose strong consistency for some operations and eventual consistency for others.
 
-The choice surface is described below:
+The normal-operation branch matters because coordination is expensive even when no partition exists. A low-latency design can read a nearby replica and return immediately, while a consistency-first design waits for enough acknowledgement to establish the requested consistency. Quorums provide one common mechanism: with `N` replicas, overlapping read and write quorums satisfy `R + W > N`, but that equation alone does not establish linearizability without versioning, conflict rules, or a stronger coordination protocol.
 
 ```yaml
-# CAP / PACELC decision surface for one replicated store
-partition_behavior:          # the "PA" or "PC" branch, chosen once per system
-  choice: CP                 # or AP
-  cp: rejects minority writes/reads during partition (e.g. ZooKeeper, HBase)
-  ap: accepts any-reachable-node writes, reconciles later (e.g. DynamoDB, Cassandra)
-normal_operation_behavior:   # the "EL" branch, usually tunable per read/write
-  choice: EC                 # or EL (consistency vs latency)
-  ec: strong consistency — read waits for quorum agreement, higher latency
-  el: low latency — read any replica, may return stale data
-tuning:
-  quorum: [R + W > N for strong consistency, else eventual]
-  examples:
-    - DynamoDB:  AP with per-item tunable consistency (strong vs eventual)
-    - Cassandra: AP with per-query consistency levels (ONE, QUORUM, ALL)
-    - PostgreSQL: CP/EC (single-node strong consistency, no partition survival)
+partition_behavior:
+  choice: CP
+  cp: rejects operations that cannot reach a quorum
+  ap: serves reachable replicas and reconciles divergent operations later
+normal_operation_behavior:
+  choice: EC
+  ec: waits for the required acknowledgement before returning
+  el: returns from a reachable replica and may expose stale data
+quorum_overlap:
+  condition: R + W > N
+  limitation: overlap alone does not prove linearizability
+examples:
+  coordination:
+    system: ZooKeeper
+    posture: CP under a partition that prevents quorum
+  replicated_data:
+    system: Cassandra
+    posture: partition-tolerant with per-query consistency levels
+  managed_replicated_data:
+    system: DynamoDB
+    posture: partition-tolerant with per-operation consistency choices
 ```
 
 ## Tradeoffs
 
 | Property | Gain | Cost |
 | --- | --- | --- |
-| Consistency (C) | Every client observes the same, latest state; reasoning is simple | Slower reads/writes; reduced or zero availability during partitions |
-| Availability (A) | The system answers even when the network is partitioned | Reads may return stale data; requires conflict resolution (CRDTs, LWW, version vectors) |
-| Partition tolerance (P) | System survives node/network failures | Forces the C-vs-A (and E-vs-L) choice; adds replication and reconciliation machinery |
-| Low latency (PACELC "E") | Fast reads/writes; better user experience and throughput | Eventual consistency; stale reads and read-your-writes anomalies |
-| Strong consistency (PACELC "C") | No anomalies; linearizable behavior | Higher tail latency; quorum round-trips on every operation |
+| Consistency (C) | Clients observe one ordered history under the chosen protocol | Coordination latency; unavailable operations on a partition that cannot form a quorum |
+| Availability (A) | Reachable replicas continue serving requests during a partition | Stale reads or conflicting writes; reconciliation is required |
+| Partition tolerance (P) | The architecture handles communication loss between nodes | Replication, quorum handling, and conflict resolution increase operational complexity |
+| Low latency (PACELC "E") | Short read and write response times and better throughput under normal load | Eventual consistency can expose stale data and ordering anomalies |
+| Strong consistency (PACELC "C") | Linearizable and externally visible ordering when the store provides it | Extra round trips, higher tail latency, and reduced progress during failures |
 
 ## When to use
 
-- When choosing a database, decide the CP/AP posture first: payment ledgers and coordination (locks, leader election) need CP, while shopping carts and social feeds tolerate AP for availability and low latency.
-- When documenting why a system accepts stale reads or refuses writes under failure, to make the trade-off explicit for reviewers.
-- When an existing store offers tunable consistency, to pick the right per-query level (e.g. QUORUM for correctness-critical paths, ONE for hot reads).
+- You need a quorum-backed coordination service and would rather reject an operation than permit two leaders or conflicting linearization decisions.
+- You need replicated reads and writes to remain available during a regional partition and can accept eventual convergence.
+- You need per-operation consistency because a single workload contains both correctness-critical transactions and latency-sensitive lookups.
+- You need to document the failure behavior of a design so operators can distinguish unavailable operations from stale or conflicting results.
 
 ## Alternatives
 
-- **Strongly consistent single-node store (PostgreSQL)** — simplest model, no partition survival, but becomes a single point of failure under network issues.
-- **Quorum-based tunable store (Cassandra/DynamoDB)** — lets each operation choose consistency vs latency, but pushes conflict handling onto the application.
-- **CRDT / conflict-free replicated data types** — always available and merge-safe, but restricted to commutative data types and eventually-consistent reads.
+- **Single-node store with backups** — gives a simple consistency model and fast local reads, but the node is a single point of failure and a partition does not provide distributed availability.
+- **Quorum-based tunable replication** — lets each operation trade consistency against latency, but the application must understand version selection, read repair, or conflict handling.
+- **CRDT-based replication** — supports concurrent updates that merge without a central coordinator, but each data type needs merge semantics and reads can remain stale until propagation completes.
 
 ## Related
 
-- [Consensus Algorithms](02-consensus.md)
-- [Clocks and Ordering](03-clocks-ordering.md)
+- [Consensus Protocols](02-consensus.md)
+- [Clocks & Ordering](03-clocks-ordering.md)
 - [Distributed Transactions](04-distributed-transactions.md)
 - [Replication](../02-databases/05-replication.md)
 - [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)

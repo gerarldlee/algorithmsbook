@@ -1,56 +1,69 @@
 ---
-title: "Backpressure and Dead Letter Queues"
+title: "Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks"
 weight: 4
 toc: true
 ---
 
 ## What it is
 
-Backpressure is the mechanism that prevents a fast producer from overwhelming a slow consumer by throttling or buffering the flow. A **dead letter queue (DLQ)** is a holding queue where messages that cannot be processed successfully — after exhausting retries, or that are malformed — are parked for inspection instead of being lost or retried forever.
+Backpressure is the deliberate slowdown, pause, or rejection of work when a consumer cannot keep up with a producer. A **dead letter queue (DLQ)** is a separate holding destination for messages that fail a retry policy or cannot be processed because of a permanent defect, such as an invalid schema. Backpressure protects the pipeline's memory and latency; a DLQ preserves failed work for diagnosis, replay, or deliberate disposal.
 
 ## How it works
 
-When consumers fall behind, the broker buffers messages and consumer lag grows; backpressure signals the producer to slow down (bounded queues, blocking puts, TCP flow control, or Kafka producer quotas) so memory and disk are not exhausted. Retries handle transient failures, typically with **exponential backoff and jitter** to avoid a retry storm. After a configured retry limit, the broker routes the message to a DLQ, where operators can inspect, replay, or discard it. This keeps a poison message from blocking its queue (head-of-line blocking) and preserves the evidence of failures for later analysis.
+A producer sends work at its natural rate, while the broker and consumer expose their available capacity through queue depth, in-flight limits, acknowledgment lag, or stream consumer lag. When a bounded queue reaches its limit, the system blocks, rejects with a retryable error, pauses the producer, or routes overflow to a separate policy. An unbounded queue can accept more work, but its memory or disk use grows until the system fails. Consumer lag is a measurement, not itself backpressure: a system must act on that measurement by scaling consumers, limiting concurrency, or throttling upstream work.
 
-A typical flow-control and retry configuration:
+A retryable failure is delayed with a bounded retry policy. Exponential backoff increases the delay after each attempt, and jitter spreads attempts so many consumers do not retry at the same instant. After the retry budget is exhausted, the broker or application moves the record to a DLQ and records the failure reason, original topic or queue, attempt count, and correlation ID. A DLQ must be monitored; parking a message indefinitely is not recovery.
+
+This policy describes a bounded queue and a dead-letter route in a broker-neutral form:
 
 ```yaml
-# Backpressure and dead-letter handling
-backpressure:
-  bounded_queue: true           # reject or block when full
-  consumer_lag: alert_threshold # monitor and scale out if exceeded
-  producer: [quota, pause]     # slow the source, don't buffer forever
-retries:
-  max_attempts: 5              # bounded, never infinite
-  backoff: exponential         # 1s, 2s, 4s, 8s ...
-  jitter: full                 # randomize to spread the retry storm
-  idempotency_key: required    # so retries are safe
+queue:
+  capacity: bounded
+  overflow: pause_producer_or_reject_with_retry_after
+  redelivery: unacknowledged_message_may_be_requeued
+consumer:
+  concurrency: bounded_by_throughput_test
+  lag: measured_per_partition
+retry:
+  maximum_attempts: 5
+  delay: exponential_with_jitter
+  retryable: [timeout, rate_limit, dependency_unavailable]
 dead_letter:
-  on: retry_exhausted          # or poison message / schema error
-  action: [inspect, replay, discard]
-  alert: true                  # DLQ growth is a signal, not a sink
+  destination: orders.dlq
+  payload: [message, failure_reason, attempt_count, correlation_id]
+  operations: [inspect, repair, replay, discard]
 ```
+
+A broker redelivery policy makes an unacknowledged message eligible for delivery again after its consumer or visibility timeout. If the original consumer is still processing, the broker can deliver the message again, so redelivery creates a risk of duplicate or concurrent processing. Consumers therefore need idempotent handlers or a mechanism that coordinates exclusive processing.
+
+RabbitMQ can bind a queue to a dead-letter exchange and configure a dead-letter routing key. Amazon SQS provides a native DLQ redrive policy, while an application retry queue can add its own delay before redriving the message. Kafka commonly uses retry topics and a dead-letter topic because the log itself is retained; a consumer can copy the original record and failure metadata to the dead-letter topic before advancing its source offset.
+
+Event replay is a controlled second delivery path, not a blanket reset. Kafka consumer groups can reset offsets to a retained position, RabbitMQ can republish DLQ records, and Amazon EventBridge can replay events from an archive. A replay framework should support an explicit source range, the original event ID and schema version, a bounded destination or rate, progress visibility, and a way to stop the replay. Debezium-style change capture can supply a new event stream for rebuilding a projection, but it does not replace a replay policy for arbitrary business events.
 
 ## Tradeoffs
 
-| Approach | Strengths | Costs |
+| Approach | Gain | Cost or failure behavior |
 | --- | --- | --- |
-| Unbounded buffering | Never drops; producer never blocks | Unbounded memory/disk; lag can grow forever |
-| Bounded queue + blocking | Predictable resource use | Producer stalls if consumers stay slow |
-| Exponential backoff + jitter | Spreads retries, avoids thundering herd | Adds latency; needs an idempotent consumer |
-| Dead letter queue | Isolates poison messages, preserves evidence | Requires ops to monitor and replay; silent failure if ignored |
+| Bounded queue with blocking or rejection | Caps memory and storage use; exposes overload to the producer | Producers can stall or receive retryable failures |
+| Unbounded buffering | Absorbs bursts without immediate producer rejection | Backlog and latency grow without a hard limit |
+| Consumer autoscaling | Increases drain rate when more work is available | Costs rise during bursts and cannot react instantly to every spike |
+| Exponential backoff with jitter | Reduces synchronized retry pressure | Adds latency and requires retry classification and idempotency |
+| DLQ | Isolates poison messages and preserves failure evidence | Requires monitoring, ownership, and a repair or replay procedure |
+| Offset or archive replay | Rebuilds projections or reprocesses a historical range | Replays can duplicate side effects, overload downstream systems, or lose data past retention |
 
 ## When to use
 
-- Use backpressure whenever producers can outpace consumers — event ingestion, batch jobs, and any queue with bursty traffic — to keep memory and latency bounded.
-- Use a DLQ whenever messages can be permanently unprocessable (schema changes, poisoned payloads) or when retries are bounded and failures must be inspected rather than dropped.
-- Use exponential backoff with jitter for calls to flaky downstream services so retries converge instead of synchronizing into a storm.
+- Producer rate can exceed sustained consumer capacity and memory, disk, or latency must remain bounded.
+- A downstream dependency can fail transiently and retries need explicit backoff and a maximum budget.
+- Poison messages or schema failures must be isolated for inspection rather than blocking healthy work.
+- You need to rebuild a projection or replay a known range after a consumer bug or deployment.
 
 ## Alternatives
 
-- **Drop on overflow** — shed load when the queue is full, trading lost messages for stable latency (common in telemetry and rate-limited APIs).
-- **Scale consumers instead of buffering** — autoscale workers to absorb the surge, which keeps latency low but costs more and lags behind sudden spikes.
-- **Infinite retry** — keep retrying forever, which preserves the message but risks a poison message blocking the queue indefinitely.
+- **Drop or sample on overflow** — protects a telemetry path's availability, but discards work and makes recovery incomplete.
+- **Unbounded buffering** — absorbs a short spike, but shifts the failure to resource exhaustion when the backlog grows.
+- **Synchronous retry in the consumer** — avoids an extra queue, but can hold worker capacity and amplify a dependency outage.
+- **Reconciliation from an authoritative store** — repairs derived state after loss or duplication, but does not preserve the original event workflow by itself.
 
 ## Related
 

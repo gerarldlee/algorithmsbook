@@ -1,55 +1,70 @@
 ---
-title: "Storage Engines"
+title: "Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)"
 weight: 3
 toc: true
 ---
 
 ## What it is
-A storage engine is the component of a database that physically organizes and retrieves data on disk and in memory — how records are laid out, indexed, and made durable. The two dominant families are B-tree (page-oriented, in-place updates) and LSM-tree (log-structured, immutable sorted runs).
+
+A storage engine is the database layer that maps logical rows, columns, and indexes to pages, files, buffers, and durable logs. It determines the access pattern a database optimizes: row-oriented B-tree engines favor OLTP point operations, log-structured merge-tree engines favor append-heavy writes, and columnar engines favor scans and aggregations.
 
 ## How it works
-B-tree engines keep records in fixed-size pages arranged as a balanced tree, updating pages in place and protecting against crashes with a write-ahead log (WAL). LSM-tree engines buffer writes in an in-memory memtable, flush it to disk as an immutable sorted file (SSTable), and periodically merge overlapping files in background compaction to reclaim space and bound read amplification. Both rely on a WAL so committed writes survive a crash before they reach their final on-disk structure.
+
+A row-oriented engine such as InnoDB stores an entire row in a page and organizes secondary indexes into B-trees. A transaction records changes in a write-ahead log, updates data pages, and recovers by replaying the log after a crash. A heap-plus-index design also lets a secondary index identify rows without duplicating the complete row.
+
+A log-structured merge-tree engine such as RocksDB accepts writes in a memtable and flushes immutable sorted tables called SSTables. Reads search the memtable and relevant SSTables, using per-table filters to skip files that cannot contain a key. Compaction merges files to control file count and read amplification. Cassandra, HBase, and many other systems use LSM families for write-heavy workloads.
+
+Columnar OLAP engines store values by column, compress repeated values, and process only the columns referenced by a query. Parquet provides a file format for this layout, while ClickHouse is a server engine that executes queries over columnar parts. OLTP row storage remains a better fit when a transaction updates a few attributes in a small record.
 
 ```yaml
-b-tree:
-  structure: balanced tree of fixed-size pages
-  update: in-place page writes
-  durability: write-ahead log (WAL) + dirty page flush
-  read_amplification: low (single tree traversal)
-  write_amplification: high (page rewrites, fragmentation)
-  examples: [InnoDB, Postgres heap, BerkeleyDB]
-lsm-tree:
-  structure: memtable -> immutable SSTable levels
-  update: append-only; compaction merges levels
-  durability: WAL/memtable + periodic SSTable flush
-  read_amplification: higher (may probe multiple levels + bloom filters)
-  write_amplification: low, sequential (but compaction rewrites)
+oltp_row_engine:
+  examples: [InnoDB, PostgreSQL heap]
+  layout: row_and_index_pages
+  write_path: wal_then_page_update
+  recovery: wal_replay
+olap_column_engine:
+  examples: [ClickHouse]
+  format: columnar_parts
+  write_path: append_and_merge
+  read_path: predicate_pushdown_and_vectorized_aggregation
+lsm_engine:
   examples: [RocksDB, LevelDB, Cassandra, HBase]
-common: [WAL for crash recovery, bloom filters to skip absent keys]
+  write_path: memtable_to_sstable
+  maintenance: compaction
+  read_path: memtable_and_sstable_search
 ```
 
-## Tradeoffs
-| Property | B-tree | LSM-tree |
-| --- | --- | --- |
-| Write throughput | Lower; random in-place page writes | High; append-only sequential writes |
-| Read latency | Lower; one tree lookup | Higher; multiple files/levels, mitigated by bloom filters |
-| Space overhead | Fragmentation, page slack | Compaction rewrites, temporary file growth |
-| Predictability | Stable, bounded worst case | Compaction can cause latency spikes |
-| Crash recovery | WAL replay | WAL + SSTable reuse |
+## Complexity
+
+| Operation | B-tree page engine | LSM-tree engine | Columnar OLAP engine |
+| --- | --- | --- | --- |
+| Point lookup by key | O(log n) after warm pages | Depends on the workload and SSTables searched; each relevant SSTable is typically O(log s) | Usually not the primary access pattern |
+| Range scan | O(log n + k) pages or index entries | Depends on overlapping SSTables and filters; output work is O(k) after per-table search and read costs | O(Σ selected column values) |
+| Point update | O(log n) index work plus page write | Lookup cost depends on the workload and SSTables searched, then append or merge work remains | Higher when a column segment must be rewritten |
+| Bulk append or load | Repeated page and index maintenance | Sequential writes plus eventual compaction | Efficient column-wise encoding and compression |
+| Memory and disk | Buffers, pages, indexes, and WAL | Memtable, WAL, SSTables, filters, and compaction | Compressed column segments plus query intermediates |
+| Amplification | Random page and index writes | Read and write amplification; compaction I/O | Column pruning and vectorized execution trade memory for throughput |
+
+Here, `n` is the number of entries in a B-tree, `m` is the number of SSTables searched, `s` is the number of entries in one SSTable, and `k` is the number of matching entries. LSM read cost also depends on key distribution, bloom-filter effectiveness, level structure, compaction, cache behavior, and overlap. The constants also depend on page size, compression, and hardware; the table describes asymptotic work rather than a latency guarantee.
 
 ## When to use
-- B-tree engines for transaction-heavy OLTP with many point reads and in-place updates (banking, orders).
-- LSM-tree engines for write-heavy and append-mostly workloads such as time-series, metrics, and event ingestion.
-- Any engine where durability across crash is required — rely on the WAL, not the in-memory cache.
+
+- You need transactional point reads and writes with strong constraints and durable commits.
+- You ingest events or measurements where append throughput matters more than in-place updates.
+- You run analytical scans that read a small subset of columns over many rows.
+- You understand the backup, compaction, and recovery behavior of the engine you choose.
 
 ## Alternatives
-- Heap files with append-only logs (classic) — simple sequential writes, but require periodic compaction and slower point reads.
-- In-memory engines (Redis, MemSQL) — eliminate disk I/O entirely at the cost of capacity and durability (mitigated by snapshots/AOF).
-- Specialized columnar engines (ClickHouse, Parquet) — fast column scans for analytics, poor for row-level OLTP updates.
+
+- **Heap plus B-tree indexes** — flexible row updates and familiar relational behavior, with page and index maintenance costs.
+- **LSM-tree storage** — high write throughput and efficient sequential persistence, with read amplification and compaction overhead.
+- **Columnar storage** — compression, pruning, and aggregation, with less natural behavior for small transactional updates.
+- **In-memory storage** — low latency and simple access paths, with capacity and durability requirements that need explicit design.
 
 ## Related
-- [Relational Modeling](01-relational-modeling.md)
-- [NoSQL Databases](02-nosql.md)
-- [ACID and Isolation Levels](04-acid-isolation.md)
-- [Distributed Query and Point-in-Time Recovery](07-distributed-query-pitr.md)
+
+- [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
+- [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
+- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
+- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)
 - [Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)](../../01-algorithms/02-search-trees/03-storage-engine-trees.md)

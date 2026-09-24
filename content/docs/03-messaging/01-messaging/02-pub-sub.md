@@ -1,61 +1,85 @@
 ---
-title: "Publish-Subscribe"
+title: "Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns"
 weight: 2
 toc: true
 ---
 
 ## What it is
 
-Publish-subscribe (pub/sub) is a messaging pattern where a producer publishes events to a **topic**, and every subscriber interested in that topic receives a copy — decoupling publishers from consumers entirely. Neither side knows the other exists: publishers emit to a channel, and the broker fans the message out to all current subscribers.
+Publish-subscribe is a messaging pattern in which a producer publishes an event to a named channel and each eligible subscription receives its own copy. The broker, not the producer, maintains subscriptions and performs fan-out, so publishers do not need to know the addresses or processing logic of consumers. A subscription is the durable routing target when the broker supports it; a live client connection is only one possible subscription.
 
 ## How it works
 
-A publisher sends a message to a topic rather than to a specific consumer. The broker maintains a registry of subscribers for each topic and duplicates the message to each one (fan-out). Subscription can be pull-based (subscribers poll or hold a consumer-group position, as in Kafka) or push-based (the broker delivers to a registered endpoint or socket). Kafka achieves fan-out through independent consumer groups — every group gets a full copy of the topic, while members within a group split the partitions. RabbitMQ implements pub/sub with a **fanout** or **topic** exchange that routes to bound queues. Redis Pub/Sub is the simplest form: a fire-and-forget broadcast to any client currently subscribed, with no persistence or replay.
+A publisher sends an event with a topic or exchange name. The broker matches that name against subscriptions, creates a delivery or record for each matching subscription, and records whether the subscription is live, queued, or replayable. Consumers then process their copies independently. This is **fan-out**: one publication becomes multiple deliveries. Fan-out does not mean that every consumer receives every message; routing keys, partitions, filters, and consumer-group membership determine the eligible destinations.
 
-A comparison of the common engines:
+RabbitMQ implements subscriptions as durable queues bound to exchanges. A fanout exchange copies a message to every bound queue, while a topic exchange selects queues by a routing-key pattern. Kafka implements group fan-out with consumer groups: every group reads the topic, but each record is assigned to one member within a group, and the group commits its own offset. Redis Pub/Sub broadcasts to currently connected subscribers and does not retain messages for later delivery. A webhook uses HTTP push instead of a broker subscription, so retries, endpoint availability, and backpressure become the sender's responsibility.
 
-```yaml
-# Pub/sub engines compared
-kafka:
-  model: partitioned log + consumer groups
-  fan_out: one full copy per group
-  persistence: durable, replayable
-  ordering: per partition
-rabbitmq:
-  model: exchange routes to bound queues
-  fan_out: fanout exchange to every queue; topic exchange by routing key
-  persistence: messages durable on disk until acked
-  ordering: best-effort per queue
-redis_pubsub:
-  model: channel broadcast to connected clients
-  fan_out: to all current subscribers
-  persistence: none — missed messages are lost
-  ordering: none across missed connections
+This broker-neutral topology shows two durable subscriptions receiving the same `order.placed` routing key through a topic exchange. It is a declarative manifest, not a single RabbitMQ Management API request; a deployment system would create the exchange, queues, and bindings with separate API calls:
+
+```json
+[
+  {
+    "exchange": "order.events",
+    "type": "topic",
+    "durable": true
+  },
+  {
+    "queue": "inventory.order-events",
+    "durable": true
+  },
+  {
+    "queue": "notifications.order-events",
+    "durable": true
+  },
+  {
+    "binding": "order.events",
+    "destination": "inventory.order-events",
+    "routing_key": "order.placed"
+  },
+  {
+    "binding": "order.events",
+    "destination": "notifications.order-events",
+    "routing_key": "order.placed"
+  }
+]
 ```
+
+The common fan-out designs differ in where the independent copies live:
+
+| Design | Routing rule | Failure behavior |
+| --- | --- | --- |
+| Fanout exchange | Every bound queue receives a copy | A queue's retry and acknowledgment policy is independent |
+| Topic exchange | Each subscription selects a routing-key pattern | A missed binding is a routing error, not a delivery guarantee |
+| Kafka consumer groups | Every group reads the topic; one member per group handles each partition | A group can replay its retained records by changing its offset |
+| Redis Pub/Sub | Every currently connected subscriber receives the channel message | Disconnected subscribers miss messages; there is no durable backlog |
+| Webhook fan-out | The provider posts to registered HTTPS endpoints | The provider owns retry and delivery status; the endpoint owns idempotency |
 
 ## Tradeoffs
 
-| Engine | Strengths | Costs |
+| Engine or pattern | Gain | Cost |
 | --- | --- | --- |
-| Kafka | Durable, replayable, high throughput, many groups | Operational weight; consumers must manage offsets and lag |
-| RabbitMQ | Flexible routing (topic/fanout/headers), mature ack model | Lower throughput than a log; no replay once consumed |
-| Redis Pub/Sub | Minimal latency, trivial to operate | No persistence, no replay, drops messages for disconnected clients |
-| Push (webhooks/websockets) | Near-real-time delivery, simple consumer | Backpressure and retry burden shifts to the publisher |
+| RabbitMQ exchanges | Rich routing, acknowledgments, priorities, and dead-letter policies | The application must design queue topology and retry behavior |
+| Kafka consumer groups | Durable history, replay, and independent downstream progress | Groups can lag, and every group adds network and storage cost |
+| Redis Pub/Sub | Very simple, low-latency live broadcast | No persistence, replay, or recovery for disconnected subscribers |
+| Webhooks | Integrates with ordinary HTTP endpoints and external systems | The provider and consumer must coordinate retries, signatures, and overload behavior |
 
 ## When to use
 
-- Use pub/sub to broadcast an event to many independent services — e.g. an "order placed" event consumed by inventory, email, and analytics.
-- Use Kafka-style fan-out when every subscriber must see every event and be able to replay history independently.
-- Use Redis Pub/Sub for ephemeral, in-memory fan-out where losing a message to a briefly disconnected client is acceptable (live notifications, presence updates).
+- One domain event must trigger independent reactions in inventory, billing, notifications, and analytics.
+- Subscribers need different routing rules or independent processing progress.
+- A live broadcast is sufficient and losing messages to disconnected clients is acceptable.
+- You need durable replay for new consumers, audits, or state reconstruction.
 
 ## Alternatives
 
-- **Point-to-point queue** — a message goes to exactly one consumer, which is simpler but cannot broadcast to many services at once.
-- **Database polling** — consumers read new rows from a table, avoiding a broker entirely, but adds latency, load, and no native fan-out or ordering.
+- **Point-to-point queue** — is simpler when only one worker should handle each work item, but it cannot provide independent copies to several consumers.
+- **Database polling** — avoids a broker and makes records queryable, but adds polling load, schema coupling, and usually more latency.
+- **Change-data capture** — propagates committed database changes to downstream systems, but the event contract follows the storage schema unless it is transformed.
+- **HTTP webhooks** — push events to external endpoints, but require endpoint security, retry handling, and duplicate protection.
 
 ## Related
 
 - [Queues vs Streams](01-queues-vs-streams.md)
 - [Delivery Guarantees](03-delivery-guarantees.md)
 - [Realtime Protocols](../02-realtime/02-realtime-protocols.md)
-- [System Design Fundamentals](../../02-system-design/01-system-design-fundamentals/01-fundamentals.md)
+- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)

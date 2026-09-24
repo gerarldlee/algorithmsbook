@@ -1,34 +1,76 @@
 ---
-title: "Notification Dispatchers"
+title: "Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture"
 weight: 1
 toc: true
 ---
 
 ## What it is
-A notification dispatcher is a service that routes outgoing messages to users across multiple delivery channels—push (APNs/FCM), email, SMS, and in-app—deciding per recipient which channel(s) to use, fanning out to potentially millions of targets, retrying failures, and de-duplicating repeated deliveries.
+
+A multi-channel notification dispatcher is an application service that turns one user-facing event into channel-specific deliveries through mobile push, SMS, email, and webhooks. It centralizes recipient preferences, routing, provider credentials, retries, idempotency, and delivery status so product services do not implement those controls independently.
 
 ## How it works
-An upstream event (message sent, payment cleared, comment liked) is normalized into a notification envelope containing the recipient, payload, priority, and channel preferences. The dispatcher fans out the envelope to every subscriber of the recipient, looks up each subscriber's device tokens and channel settings, then hands each message to a per-channel adapter. Push adapters speak to Apple Push Notification service (APNs) or Firebase Cloud Messaging (FCM); email adapters use SMTP or a provider API; SMS adapters use carriers or aggregators like Twilio. Each adapter enforces provider rate limits and handles transport errors. The dispatcher maintains a retry queue with exponential backoff for transient failures (rate-limited, temporarily unreachable) and a dead-letter queue for permanent failures (invalid token, unsubscribed). A de-duplication layer keyed by a stable notification ID (e.g. `userId:eventId`) prevents the same event from being delivered twice when retries overlap or events are replayed. Delivery receipts and open/click callbacks flow back to analytics.
+
+A producer submits an event such as `payment.cleared` with a stable event identifier. The dispatcher records that request before accepting downstream work, builds a notification envelope, and sends channel work to a durable queue. Separating intake from delivery prevents a slow provider from blocking the event producer and lets workers scale independently.
+
+The normalized envelope is independent of a provider's payload:
+
+```json
+{
+  "notification_id": "evt_01JZ7Y2H3S4M5N6P7Q8R9T0U1V",
+  "recipient_id": "user_142",
+  "event_type": "payment.cleared",
+  "template_id": "payment_cleared_v3",
+  "channels": ["push", "email"],
+  "priority": "high",
+  "data": {
+    "order_id": "order_5831"
+  },
+  "expires_at": "2026-09-24T18:00:00Z"
+}
+```
+
+A routing worker reads the recipient's consent, channel preferences, locale, time zone, quiet hours, and device registrations. It selects one primary channel or a fallback chain and materializes a channel attempt. This step prevents a system event from bypassing an unsubscribe or a mandatory-consent decision.
+
+Channel adapters then render provider-specific payloads:
+
+- **APNs and FCM** — mobile push adapters resolve current device tokens, validate payload limits, and map the application's priority to provider priority. The service removes registrations rejected as invalid instead of retrying them forever.
+- **SMS** — an aggregator such as Twilio receives a normalized message and handles carrier routing. The dispatcher respects destination consent, quiet hours, and provider throttling.
+- **Email** — a provider API or SMTP relay receives rendered, localized content. Bounce, complaint, and unsubscribe callbacks update the recipient's delivery state.
+- **Webhook** — the dispatcher signs a JSON request, sets a short timeout, and treats a non-success status as retryable only according to an explicit policy. Some `4xx` responses are permanent configuration errors, while `429` and most `5xx` responses can be retried.
+
+Each attempt has a stable key such as `notification_id:channel:recipient_id:destination_id`, where the destination identifies a device registration, phone number, email address, or webhook endpoint. Workers persist that key with the attempt state to suppress repeated queue deliveries within the dispatcher's retention window. A worker can still fail after the provider accepts a request but before the response is recorded, so this check reduces duplicates without claiming exactly-once delivery. The application still needs a duplicate-tolerant consumer contract.
+
+Transient errors use a retry schedule with jitter and an expiration deadline. Invalid credentials, malformed templates, suppressed consent, and permanently invalid device tokens do not consume the same retry budget. Exhausted work moves to a dead-letter queue for inspection and controlled replay. Provider acceptance records that the upstream service accepted a request; an open or click event is stronger evidence of user interaction, and neither should be described as proof that a human read the message.
 
 ## Tradeoffs
-- **Fan-out model**: database-driven fan-out (query subscribers per event) is storage-cheap but slow at send time; inbox/precomputed fan-out (write to each recipient's inbox on event) is fast to send but multiplies writes by the fan-out factor.
-- **Channel guarantees**: push and SMS are best-effort with no delivery receipt in some paths; email has richer bounce/receipt semantics. Cross-channel consistency is only eventual.
-- **Ordering vs. throughput**: global per-recipient ordering adds a serialization bottleneck; most dispatchers relax to per-channel best-effort ordering.
-- **Dedup vs. storage**: exact-once dedup requires persisting delivery state, trading storage/reads for idempotency.
-- **Vendor coupling**: routing through APNs/FCM/twilio locks the system to provider APIs and rate limits; a provider outage degrades one channel independently.
+
+| Choice | Gain | Cost or risk |
+| --- | --- | --- |
+| Persist on send | Preserves history, supports audit, and enables offline fallback | Adds storage, retention, and deletion obligations |
+| Fan out at send time | Avoids unused inbox writes and keeps preferences current | Adds read latency during bursts and can overload the preference store |
+| Precompute recipient inboxes | Makes per-recipient delivery fast and replayable | Multiplies writes by fan-out and requires expiration policy |
+| Synchronous provider calls | Immediate status and simpler control flow | Couples request latency and availability to the provider |
+| Asynchronous channel workers | Absorbs provider bursts and isolates failures | Adds queues, delayed delivery, and operational state |
+| Provider abstraction | Keeps products independent of APNs, FCM, Twilio, and email APIs | The lowest common denominator can hide provider-specific capabilities |
+| Strict cross-channel ordering | Produces a consistent escalation sequence | Serializes independent channels and reduces throughput |
+| Independent channel delivery | Improves throughput and fault isolation | A user can receive an SMS before an earlier email or push attempt completes |
 
 ## When to use
-- Sending push notifications to mobile/web users at scale (APNs for iOS, FCM for Android).
-- Multi-channel fan-out where a single event must reach email, SMS, and push subscribers with per-user preferences.
-- Scenarios requiring retries with backoff, dead-letter handling for invalid tokens, and dedup of replayed events.
+
+- You need one product event to reach recipients through more than one delivery channel.
+- APNs, FCM, email, SMS, or webhook credentials and retry policies must remain outside feature services.
+- Recipients need channel preferences, quiet hours, localization, fallback delivery, or offline notification history.
+- Replayed events and worker retries require stable notification identifiers and duplicate suppression.
 
 ## Alternatives
-- **Direct provider integration per service**: each service calls APNs/FCM itself—simpler to start, but fragments retry/dedup logic and rate-limit handling across the codebase.
-- **Third-party notification APIs (OneSignal, Courier)**: rapid adoption and cross-provider abstraction, but adds a vendor dependency and per-message cost at scale.
-- **Email/SMTP-only delivery**: trivial and reliable for low urgency, but no realtime push and poor mobile engagement.
+
+- **Direct provider SDKs in feature services** — reduce initial platform work, but duplicate token management, consent enforcement, retries, and provider observability.
+- **A managed notification platform** — accelerates multi-provider integration, but adds per-message cost, provider abstractions, and vendor dependency.
+- **A durable event stream with application-owned consumers** — preserves replay and independent processing, but leaves channel policy and provider integration in the consuming services.
 
 ## Related
-- [Queues vs. Streams](../01-messaging/01-queues-vs-streams.md)
-- [Pub/Sub Systems](../01-messaging/02-pub-sub.md)
-- [Delivery Guarantees](../01-messaging/03-delivery-guarantees.md)
-- [Backpressure & Dead Letter Queues](../01-messaging/04-backpressure-dlq.md)
+
+- [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](02-realtime-protocols.md)
+- [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../01-messaging/01-queues-vs-streams.md)
+- [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
+- [Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)](../01-messaging/03-delivery-guarantees.md)

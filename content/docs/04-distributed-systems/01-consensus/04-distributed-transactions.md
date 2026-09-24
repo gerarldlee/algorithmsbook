@@ -1,69 +1,73 @@
 ---
-title: "Distributed Transactions"
+title: "Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern"
 weight: 4
 toc: true
 ---
 
 ## What it is
 
-A distributed transaction is a unit of work that spans multiple independent resources — several databases, a database plus a message queue, or services on different machines — and must either commit atomically on all of them or roll back on all of them. The classic atomic-commit protocols are **two-phase commit (2PC)** and **three-phase commit (3PC)**, coordinated via the **XA** standard. Because blocking atomicity is expensive and fragile, modern systems often prefer compensation-based **Sagas** with the **outbox pattern** for reliable messaging, plus **idempotency** to make retries safe.
+A distributed transaction coordinates work across independent databases, queues, or services. **Two-phase commit (2PC)** and **three-phase commit (3PC)** are atomic-commit protocols in which a coordinator drives participant decisions; **XA** is a standard interface for connecting transactional resource managers to such a coordinator. A **Saga** takes a different approach: it splits work into local transactions and defines compensating actions for completed steps, so it avoids one atomic commit across independent services but does not provide a single all-or-nothing boundary.
 
 ## How it works
 
-**2PC** elects a coordinator: phase 1 asks every participant to *prepare* (persist the changes and reply "ready"), and phase 2 tells everyone to *commit* once all are ready, or *abort* if any fails. It is atomic but blocks if the coordinator dies between phases (a participant holding locks must wait). **3PC** adds a pre-commit phase to reduce that blocking window, but at the cost of extra round-trips and no safety guarantee against network partitions. **XA** is the standard interface exposing 2PC to databases and message brokers. A **Saga** instead breaks the work into a sequence of local transactions, each with a compensating action, so a failure triggers the compensations of already-committed steps rather than a rollback. The **outbox pattern** writes the business change and the outbound event in the *same* local transaction to an outbox table, then a relay publishes it — guaranteeing "change made iff message sent". **Idempotency** (idempotency keys, deduplication) makes retries and redeliveries safe to repeat.
+For 2PC, the coordinator first asks each participant to **prepare**. A participant validates and durably records the transaction, votes yes or no, and retains enough state to obey the coordinator's final decision. After collecting the votes, the coordinator durably records `commit` if all participants vote yes and `abort` otherwise, then sends that decision to every participant. A participant cannot unilaterally abort after a yes vote if the global decision is commit; if the coordinator fails before participants learn the decision, recovery must discover the durable decision, otherwise the participant remains **in-doubt** and may hold locks while waiting.
 
-The patterns are described below:
+3PC inserts a pre-commit state between voting and commit. Under its bounded-delay network assumption, participants can use the pre-commit state to reduce the blocking window, but a network partition can still leave a participant unable to distinguish a committed transaction from one that should be blocked. 3PC is therefore not a general partition-safe replacement for 2PC. XA standardizes the coordinator/resource interface but inherits 2PC's blocking and recovery costs.
+
+A Saga executes a sequence of local transactions. In an orchestrated Saga, a coordinator sends commands and records progress; in a choreography, services react to events. If a later step fails, compensating actions run for completed steps, usually in reverse order. Compensation cannot erase an external side effect, so business operations must define an actual reversal, such as refunding a payment or releasing a reservation. The **outbox pattern** writes the business change and an event record in one local transaction; a relay publishes that record, giving at-least-once delivery without losing the event when the local transaction commits. Consumers use **idempotency keys** or deduplication records so retries do not apply an effect twice.
 
 ```yaml
-# Distributed transaction toolbox
 two_phase_commit:
-  phases: [prepare, commit]
-  guarantee: atomic across participants
-  failure: blocks if coordinator dies after prepare (in-doubt transaction)
+  phase_1: [coordinator asks, participant validates and durably prepares, participant votes]
+  phase_2: [coordinator records commit or abort, participants obey the decision]
+  recovery: [new coordinator reads durable decision, resolves in-doubt participants]
+  cost: prepared participants can block when the decision is unavailable
 three_phase_commit:
   phases: [can_commit, pre_commit, do_commit]
-  gain: narrower blocking window
-  cost: extra round-trip; no safety under network partition
+  benefit: can reduce blocking under a synchrony assumption
+  partition_limit: timing assumptions do not provide general partition safety
 xa:
-  role: standard 2PC interface (databases, brokers)
+  role: standard interface between a coordinator and transactional resource managers
 saga:
-  model: sequence of local transactions + compensating actions
-  guarantee: eventual consistency, no distributed locks
+  unit: local transaction with a compensating action
   styles: [choreography, orchestration]
+  failure: run compensations for completed steps
+  limit: compensation cannot undo an irreversible external effect
 outbox_pattern:
-  steps: [write change + event in one local tx, relay publishes event]
-  guarantee: at-least-once delivery, change and event atomic
+  local_transaction: [business change, event record]
+  relay: publish committed outbox records
+  delivery: at least once
 idempotency:
-  mechanism: idempotency key, dedup on receiver
-  purpose: make retries/redeliveries safe
+  receiver: [accept an operation key, persist its result, return the result for duplicates]
 ```
 
 ## Tradeoffs
 
 | Pattern | Gain | Cost |
 | --- | --- | --- |
-| 2PC / XA | Strong atomicity across resources; simple mental model | Blocking on coordinator failure; poor availability; slow under contention |
-| 3PC | Smaller blocking window than 2PC | Extra round-trips; still unsafe under partitions; rarely used in practice |
-| Saga | High availability, no long-held distributed locks | Eventual consistency; requires compensating actions for every step |
-| Outbox pattern | Reliable, atomic change-plus-event publication | Needs a relay/poller and at-least-once delivery handling |
-| Idempotency | Safe retries and exactly-once *effect* | Requires keys and dedup storage on every receiver |
+| 2PC / XA | Strong atomic commit across resources with a single decision | Coordinator recovery, in-doubt transactions, blocking, and lower availability |
+| 3PC | Can reduce the blocking window under bounded network delay | Extra round trips and a synchrony assumption that partitions violate |
+| Saga | Keeps each step local and avoids long-held distributed locks | Eventual business completion, compensation design, and recovery of partially completed work |
+| Transactional outbox | Makes the business change and event record atomic in one local database transaction | A relay, at-least-once delivery, duplicate handling, and publication delay |
+| Idempotency | Makes retries and redeliveries safe to repeat | Persistent keys, deduplication storage, and a defined retention policy |
 
 ## When to use
 
-- Use 2PC/XA when strong atomicity across a few tightly-coupled databases is truly required (e.g. a bank transfer spanning two ledgers) and failure is rare.
-- Use Sagas for long-running business processes across microservices where locks and blocking are unacceptable.
-- Use the outbox pattern whenever a local write must reliably publish an event to a queue or broker, to avoid dual-write problems.
+- You need atomic commit across a small set of resources that already participate in XA and can tolerate 2PC's blocking and recovery model.
+- You need a long-running business workflow across services where holding distributed locks is unacceptable and every completed step has a meaningful compensation.
+- You need a reliable database-to-broker change and can run a relay plus idempotent consumers.
+- You need a protocol description or state machine that makes prepare, commit, abort, and in-doubt recovery explicit.
 
 ## Alternatives
 
-- **Local transaction + eventual reconciliation** — simplest and highly available, but the application must detect and repair inconsistency on its own.
-- **2PC/XA via database** — strong guarantees, but blocks and lowers availability, so only for small, low-failure scope.
-- **Transactional outbox + message relay (Debezium/change-data-capture)** — reliable publication without the app polling, but adds infrastructure and latency.
+- **Local transactions plus reconciliation** — maximizes availability and keeps services independent, but the application must detect and repair cross-resource inconsistency.
+- **Try-confirm/cancel** — gives each service explicit preparation, confirmation, and cancellation operations, but requires business-specific coordination and does not remove partial failure handling.
+- **Change-data capture (Debezium)** — publishes database changes from the transaction log and avoids application polling, but adds infrastructure, schema-change handling, and delivery latency.
 
 ## Related
 
-- [Consensus Algorithms](02-consensus.md)
-- [Clocks and Ordering](03-clocks-ordering.md)
+- [Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)](02-consensus.md)
+- [Clocks & Ordering](03-clocks-ordering.md)
 - [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
 - [Replication](../02-databases/05-replication.md)
-- [Delivery Guarantees](../../03-messaging/01-messaging/03-delivery-guarantees.md)
+- [Message Delivery Guarantees](../../03-messaging/01-messaging/03-delivery-guarantees.md)

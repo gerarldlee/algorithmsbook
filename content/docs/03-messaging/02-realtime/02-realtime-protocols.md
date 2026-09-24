@@ -1,35 +1,70 @@
 ---
-title: "Realtime Protocols"
+title: "Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling"
 weight: 2
 toc: true
 ---
 
 ## What it is
-Realtime protocols are the transport mechanisms that push server-originated events to clients with low latency: WebSocket (bidirectional), Server-Sent Events (one-way server push), long-polling (emulated push over HTTP), and WebRTC (peer-to-peer media and data channels).
+
+Real-time protocols maintain a server-to-client event path so a client receives updates without repeatedly asking whether data exists. WebSockets support bidirectional messaging over one upgraded connection, Server-Sent Events (SSE) stream one-way events over HTTP, and long polling has the server hold each HTTP request open while waiting for an event or timeout.
 
 ## How it works
-**WebSocket** upgrades an HTTP connection to a full-duplex TCP channel, letting either side send frames at any time; a persistent connection avoids repeated handshakes. **Server-Sent Events (SSE)** keep a long-lived HTTP response open and stream `text/event-stream` frames server-to-client only, with automatic reconnection and event IDs. **Long-polling** has the client open a request the server holds until data is available or a timeout, then immediately re-request—simulating push while working through intermediaries. **WebRTC** negotiates a direct peer-to-peer connection (via ICE/STUN/TURN) carrying encrypted audio, video, or arbitrary data channels, bypassing the server for media transport. In practice an architecture often layers them: WebSocket or SSE for signaling and control, WebRTC for media, and long-polling as a fallback where proxies block upgrades.
+
+A transport selection determines the connection model, message direction, failure behavior, and server resource cost. The three mechanisms expose different choices rather than different guarantees for the same application event:
+
+```yaml
+websocket:
+  establishment: HTTP upgrade to a full-duplex connection
+  direction: client-to-server and server-to-client
+  framing: text or binary frames over TCP
+  reconnect: application and client policy
+sse:
+  establishment: long-lived HTTP response
+  direction: server-to-client
+  encoding: text/event-stream
+  reconnect: EventSource with Last-Event-ID support
+long_poll:
+  establishment: ordinary HTTP request
+  direction: request-response with server-side waiting
+  reconnect: immediate next request after each response
+```
+
+**WebSockets** begin with an HTTP/1.1 upgrade request containing `Connection: Upgrade`, `Upgrade: websocket`, and `Sec-WebSocket-Key`. After the server accepts the handshake, the connection carries WebSocket frames rather than a sequence of HTTP requests. Control frames handle close and ping/pong, while application heartbeats and sequence numbers detect a stale or interrupted session. WebSocket preserves the ordered TCP byte stream, but it does not define event replay, durable delivery, or automatic reconnection.
+
+**Server-Sent Events** return an HTTP response with `Content-Type: text/event-stream`. The server writes `id`, `event`, and `data` fields, and a browser's `EventSource` reconnects when the stream ends. After a supported reconnection, the client sends the last received event ID in `Last-Event-ID`; the server can use that identifier to resume. Client-to-server events use separate HTTP requests because the SSE response is one-way. Token refresh, connection limits, proxy buffering, and response lifetime still require explicit configuration.
+
+**Long polling** sends an ordinary request that identifies the client's last event or wait deadline. The server holds the request until a matching event arrives or its own timeout expires, then responds. The client sends another request immediately. This works through intermediaries that support ordinary HTTP but block streaming responses or connection upgrades, at the cost of repeated requests and connection churn across successive waits.
+
+A scalable service normally separates connection handling from message routing. Stateless or mostly stateless gateways authenticate sessions and publish events to a shared broker; gateway nodes subscribe for the users connected to them. This removes a mandatory need for sticky sessions, although local routing state, device updates, or non-replayable requests can still benefit from affinity. Shared subscription placement, heartbeats, backpressure, and replay are the actual scaling concerns.
 
 ## Tradeoffs
-- **WebSocket**: lowest bidirectional latency and overhead per message, but needs sticky sessions or a connection-aware load balancer, has no built-in reconnection/backoff, and holds a server socket per client.
-- **SSE**: simple, HTTP-native, auto-reconnects, and works with standard load balancers, but is unidirectional (client sends via separate POST) and has proxy/timeout quirks; fewer client libraries than WebSocket.
-- **Long-polling**: maximal compatibility through any proxy/firewall, but adds request overhead and higher average latency; connection churn stresses servers at scale.
-- **WebRTC**: sub-second peer media with no server relay for data, but needs TURN/STUN infrastructure for NAT traversal, signaling for setup, and is complex to operate.
-- **Connection scaling**: persistent connections consume server memory/ports; horizontal scaling requires connection affinity or a pub/sub fan-out behind the transport.
+
+| Protocol | Gain | Cost or limitation |
+| --- | --- | --- |
+| WebSockets | Full-duplex interaction with one upgraded connection and compact message framing | Application owns heartbeat, replay, resumption, and proxy behavior; one server socket per connection |
+| SSE | HTTP-native server push, event IDs, and browser-managed reconnection | One-way stream; browser and proxy connection limits still apply |
+| Long polling | Broad HTTP compatibility; the server holds the request open until an event or timeout | Repeated requests, extra handshakes, and more load than a persistent stream |
+| Broker-backed fan-out | Gateways remain horizontally scalable and independent of event origin | Broker ordering, backpressure, and availability affect every connected gateway |
+| Connection affinity | Keeps local state on one gateway and can avoid a broker read | A failed node disconnects its clients and reduces routing flexibility |
+| Stateless gateways | Clients reconnect to any healthy gateway after externalized state | Session restoration and fan-out require shared state or a broker |
 
 ## When to use
-- WebSocket for interactive bidirectional apps: chat, live collaboration, games, realtime dashboards.
-- SSE for one-way feeds—notifications, stock ticks, log tails—where simplicity and auto-reconnect matter.
-- Long-polling as a fallback for old clients or restrictive networks that block WebSocket/SSE.
-- WebRTC for voice/video calls, screen sharing, and low-latency peer data (file transfer).
+
+- You need client-to-server and server-to-client messages over one connection, which points to WebSockets.
+- You need a browser to consume a one-way event feed with standard HTTP and event-ID resumption, which points to SSE.
+- You need server push through restrictive proxies or clients without upgraded or streaming responses, which points to long polling.
+- You operate long-lived sessions and need to budget sockets, gateway capacity, heartbeats, and reconnection behavior.
 
 ## Alternatives
-- **Periodic client polling (fixed interval)**: trivial to implement and cache-friendly, but wastes bandwidth and adds up-to-a-poll-interval latency.
-- **WebTransport (HTTP/3)**: lower-latency multiplexed bidirectional transport, but newer and less widely supported than WebSocket.
-- **MQTT**: lightweight pub/sub over TCP designed for constrained IoT devices, but heavier broker infra for general web apps.
+
+- **Fixed-interval HTTP polling** — uses simple cacheable requests, but adds idle traffic and latency bounded by the polling interval.
+- **WebTransport** — multiplexes unreliable and reliable streams over HTTP/3, but requires newer clients, servers, and network support.
+- **WebRTC data channels** — support peer-to-peer or relayed bidirectional data after signaling and NAT traversal, but add substantially more connection setup.
+- **MQTT** — fits constrained devices and brokered publish/subscribe clients, but requires a broker model different from browser-native HTTP streaming.
 
 ## Related
-- [Notification Dispatchers](01-notification-dispatchers.md)
-- [Presence Engines](03-presence-engines.md)
-- [Realtime Chat](04-realtime-chat.md)
-- [Load Balancing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
+
+- [Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, and WebSockets](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
+- [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
+- [Distributed Presence Engines, User State Tracking, and Heartbeat Protocols](03-presence-engines.md)
+- [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)

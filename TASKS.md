@@ -111,36 +111,36 @@ For every algorithm chapter:
 
 ### Chapter 7 — Asynchronous Messaging & Pub/Sub Systems
 
-- [ ] 7.1 Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)
-- [ ] 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
-- [ ] 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
-- [ ] 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
+- [x] 7.1 Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)
+- [x] 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
+- [x] 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
+- [x] 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
 
 ### Chapter 8 — Real-Time Communication & Notification Systems
 
-- [ ] 8.1 Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture
-- [ ] 8.2 Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling
-- [ ] 8.3 Distributed Presence Engines, User State Tracking, and Heartbeat Protocols
-- [ ] 8.4 Scalable Real-Time Chat & Collaboration Systems Architecture
+- [x] 8.1 Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture
+- [x] 8.2 Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling
+- [x] 8.3 Distributed Presence Engines, User State Tracking, and Heartbeat Protocols
+- [x] 8.4 Scalable Real-Time Chat & Collaboration Systems Architecture
 
 ## Part IV — Distributed Systems & Database Architecture
 
 ### Chapter 9 — Distributed Systems Principles & Consensus
 
-- [ ] 9.1 The CAP Theorem, PACELC, and Architectural Trade-offs
-- [ ] 9.2 Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)
-- [ ] 9.3 Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks
-- [ ] 9.4 Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern
+- [x] 9.1 The CAP Theorem, PACELC, and Architectural Trade-offs
+- [x] 9.2 Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)
+- [x] 9.3 Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks
+- [x] 9.4 Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern
 
 ### Chapter 10 — Database Engineering, Replication & Scaling
 
-- [ ] 10.1 Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)
-- [ ] 10.2 NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)
-- [ ] 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)
-- [ ] 10.4 ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)
-- [ ] 10.5 Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)
-- [ ] 10.6 Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding
-- [ ] 10.7 Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)
+- [x] 10.1 Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)
+- [x] 10.2 NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)
+- [x] 10.3 Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)
+- [x] 10.4 ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)
+- [x] 10.5 Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)
+- [x] 10.6 Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding
+- [x] 10.7 Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)
 
 ## Part V — Cloud Architecture, Deployment Engineering & DevOps
 

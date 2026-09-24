@@ -1,34 +1,76 @@
 ---
-title: "Presence Engines"
+title: "Distributed Presence Engines, User State Tracking, and Heartbeat Protocols"
 weight: 3
 toc: true
 ---
 
 ## What it is
-A presence engine tracks which users are currently online or offline, and often their richer state (away, busy, in a call), distributing that state to interested peers in near-real time so applications can show status indicators and route messages appropriately.
+
+A distributed presence engine tracks which user sessions are active across gateway nodes and publishes their current status. User state adds attributes such as available, busy, or away, while heartbeat and expiry rules turn silent network failures into observable offline transitions.
 
 ## How it works
-Clients announce presence when they connect and periodically emit heartbeats (e.g. every 30 seconds) while connected. The engine stores presence in a fast key-value store with short TTLs—a record `presence:{userId} = {status, last_seen, node}` with a TTL slightly longer than the heartbeat interval, so an expired key means the user silently dropped. On connect/heartbeat the engine refreshes the TTL; on explicit disconnect it deletes the key. State changes are broadcast to subscribers (friends, channel members) via pub/sub. Two dominant architectures exist: **Redis pub/sub** where each gateway node subscribes to per-user channels and tracks who is connected to it, periodically reporting aggregates; and a **gossip protocol** where nodes exchange membership state directly, eventually converging without a central coordinator. Reads for "who is online in this group" fan out to the nodes or to a maintained group-level presence set.
+
+Each authenticated client opens a real-time session through a gateway. The gateway creates a unique **session epoch** for that connection, records which node owns it, and starts a heartbeat deadline. A client heartbeat refreshes the deadline; a clean disconnect marks the epoch offline immediately. If no heartbeat arrives by the deadline, the gateway or presence store expires the session.
+
+The session state machine makes the lifecycle explicit:
+
+```yaml
+session:
+  states: [active, expired, disconnected]
+  fields:
+    user_id: user_142
+    session_id: ses_8a4f
+    epoch: 17
+    gateway_id: gateway-eu-2
+    status: available
+    expires_at: 2026-09-24T17:45:30Z
+  transitions:
+    heartbeat: active_with_same_epoch
+    timeout: active_to_expired
+    disconnect: active_to_disconnected
+    reconnect: new_session_epoch
+```
+
+The epoch prevents a delayed heartbeat or disconnect from an old connection from overwriting a newer session for the same user. A reconnect therefore creates a new session rather than reviving an expired record by user ID alone.
+
+A common implementation stores short-lived records in Redis with a TTL slightly longer than the heartbeat timeout. Gateway heartbeats use `SET` with expiry, while a keyspace notification or a Redis Stream can publish state changes to interested gateway nodes. Expired records represent a detected failure, not proof that the client closed cleanly. The exact timeout must exceed expected heartbeat jitter and network delay, while still meeting the product's acceptable offline-detection delay.
+
+A user can connect from several devices. The engine aggregates those sessions into an account-level state: online when at least one session is active, busy when the user's chosen precedence makes any active busy session authoritative, and away when the user has set a timed state that has not expired. The aggregate carries the source session set so a status change can be explained and reconciled.
+
+For group views, the engine can query active records, maintain a materialized set, or subscribe to changes and maintain a local projection. Per-user records answer direct lookups efficiently; group projections make roster counts cheap but introduce cleanup and consistency work. Presence events include a version or session epoch so subscribers can reject stale updates.
+
+Redis-backed presence is centralized and operationally simple. Gossiped node membership removes the central store but converges only after multiple exchanges and can retain stale observations until timeout. A replicated state store is another option when the presence service already needs durability and cross-region reads. The storage choice changes consistency and failure behavior; the session, heartbeat, and aggregate rules remain the core protocol.
 
 ## Tradeoffs
-- **Redis pub/sub**: simple, fast, and battle-tested, but Redis becomes a scalability and availability chokepoint; per-channel subscriptions scale with connections.
-- **Gossip**: no central bottleneck and good fault tolerance, but convergence is only eventual and transiently inconsistent; state propagation adds chatter.
-- **Heartbeat frequency**: shorter intervals give faster offline detection at the cost of more traffic; longer intervals save bandwidth but delay detecting dead connections.
-- **Accuracy vs. load**: presence is inherently approximate—crashed clients are detected only after TTL expiry—so the engine trades detection latency against server load.
-- **Ephemerality**: storing presence in volatile memory/TTL keys favors speed over durability; presence is rebuilt on reconnect.
+
+| Choice | Gain | Cost or risk |
+| --- | --- | --- |
+| Short heartbeat interval | Detects failed sessions sooner | Increases gateway, network, and store write volume |
+| Longer heartbeat interval | Reduces refresh traffic | Extends the interval in which a dead session appears online |
+| TTL-backed records | Makes abandoned sessions expire without a cleanup sweep | Detects failure only at expiry and makes immediate disconnect races possible |
+| Central presence store | Gives one queryable state model | Creates a shared availability and scaling dependency |
+| Gossip between gateways | Avoids a central bottleneck and tolerates partition loss | Converges slowly and permits temporary disagreement |
+| Per-session state | Distinguishes multiple devices and supports accurate aggregation | Requires aggregation and session cleanup |
+| Materialized group sets | Makes large roster reads inexpensive | Adds derived-state repair and expiration logic |
+| Polling presence snapshots | Keeps clients and stores simple | Delays updates and increases repeated read traffic |
 
 ## When to use
-- Chat and collaboration apps showing online/offline, typing, and "active now" indicators.
-- Routing calls or messages only to online nodes, or falling back to offline delivery when a user is absent.
-- Multi-node deployments where you must know which gateway server holds a given user's connection.
+
+- A product needs online, away, or busy indicators across multiple clients and gateway nodes.
+- Message routing needs to know which gateway currently owns an active user session.
+- Connection failures must become visible without relying on a graceful disconnect.
+- User state must be aggregated across phones, browsers, desktop clients, or temporary sessions.
 
 ## Alternatives
-- **Polling-based status checks**: clients periodically request peer status—dead simple but high latency and load compared to push.
-- **Central presence table in a database**: durable and easy to query, but slow writes and no natural TTL expiry, hurting realtime status.
-- **Managed presence services (Pusher, Ably)**: turnkey scalable presence channels with less ops burden, but add cost and vendor lock-in.
+
+- **HTTP status polling** — is simple and works with ordinary infrastructure, but adds stale state and repeated request load.
+- **A durable relational presence table** — supports historical queries and transactions, but TTL cleanup and high-frequency heartbeat writes require separate care.
+- **Managed real-time presence services** — provide channel membership and connection recovery with less operational work, but add provider dependency and cost.
+- **Gossip-only membership** — removes a central presence authority, but accepts eventual convergence and requires versioned state to resolve stale updates.
 
 ## Related
-- [Realtime Protocols](02-realtime-protocols.md)
-- [Realtime Chat](04-realtime-chat.md)
-- [Pub/Sub Systems](../01-messaging/02-pub-sub.md)
-- [Consensus & Clocks](../../04-distributed-systems/01-consensus/03-clocks-ordering.md)
+
+- [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](02-realtime-protocols.md)
+- [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)
+- [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
+- [Clocks and Ordering](../../04-distributed-systems/01-consensus/03-clocks-ordering.md)

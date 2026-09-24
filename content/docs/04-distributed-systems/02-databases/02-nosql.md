@@ -1,58 +1,73 @@
 ---
-title: "NoSQL Databases"
+title: "NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)"
 weight: 2
 toc: true
 ---
 
 ## What it is
-NoSQL is a family of non-relational databases that relax the relational model — flexible schemas, no fixed joins, and horizontal scalability — in exchange for weaker consistency guarantees. The main families are key-value, document, wide-column (columnar/column-family), and graph stores.
+
+NoSQL databases are non-relational stores organized around access patterns rather than a fixed multi-table schema. The major families are key-value, document, wide-column, and graph stores, with different models for keys, values, relationships, consistency, and horizontal partitioning.
 
 ## How it works
-Each family optimizes a different access pattern. Key-value stores map a single key to an opaque value for point lookups. Document stores persist self-contained JSON-like documents, queryable by embedded fields. Wide-column stores model rows with many sparse columns grouped into column families, tuned for high write throughput and range scans across a row. Graph stores store nodes and edges natively so multi-hop relationship traversal avoids repeated joins. Most achieve scale by sharding on a key and settling for eventual consistency instead of distributed transactions.
+
+A key-value store maps a unique key to an opaque value. The database can resolve a key quickly, but the application interprets the value and performs any secondary lookups. Redis commonly serves this role for cache-like data, while DynamoDB adds a durable, partitioned key-value service with configurable durability and read consistency.
+
+A document store persists an independently addressable JSON-like document. The document model supports nested attributes and flexible schemas, but updates that span documents usually need application coordination. MongoDB and CouchDB use this model, and Firestore provides a document-oriented service with server-side rules and transactions.
+
+A wide-column store represents rows with sparse columns grouped into column families. Cassandra partitions rows by a distribution key and orders the rows within a partition, so its strongest designs align writes and queries with that partition and clustering order. It avoids a general-purpose join engine in favor of bounded access paths.
+
+A graph store represents entities as nodes and relationships as edges. Neo4j and Neptune can traverse multi-hop paths directly, which is useful for recommendations, fraud analysis, and dependency graphs. The application still chooses the identifiers and properties that keep traversals bounded.
 
 ```yaml
 families:
-  key-value:
-    model: "key -> opaque value"
-    examples: [Redis, DynamoDB, Etcd]
-    best_for: point lookups, caching, low-latency counters
+  key_value:
+    examples: [Redis, DynamoDB, etcd]
+    access: exact_key
+    consistency: configurable_by_service
   document:
-    model: "self-contained JSON documents"
     examples: [MongoDB, CouchDB, Firestore]
-    best_for: flexible nested entities, single-entity reads/writes
-  wide-column:
-    model: "rows x sparse column families"
+    access: key_plus_document_fields
+    consistency: document_or_transaction_scope
+  wide_column:
     examples: [Cassandra, HBase, Bigtable]
-    best_for: high write volume, time-series, range scans by row key
+    access: partition_plus_clustering_range
+    consistency: quorum_or_local
   graph:
-    model: "nodes + edges"
     examples: [Neo4j, Neptune, JanusGraph]
-    best_for: deep relationship traversal, recommendation, fraud
-  search/columnar (adjacent):
-    examples: [Elasticsearch, ClickHouse]
-    best_for: full-text search / OLAP aggregation
+    access: relationship_traversal
+    consistency: transaction_or_application_defined
+partitioning:
+  common_key: explicit_distribution_key
+  replication: usually_physical_and_automatic
 ```
 
 ## Tradeoffs
-| Property | Characteristic |
-| --- | --- |
-| Consistency | Often eventual or tunable (quorum), not serializable-by-default; no multi-record ACID across shards. |
-| Schema | Flexible, evolve independently; burden of validation shifts to the application. |
-| Scale-out | Excellent: shard by key, add nodes, no cross-shard joins to break. |
-| Query power | Restricted to the chosen model; ad-hoc joins and cross-entity analytics are weak or absent. |
-| Operational complexity | Schema-on-read, denormalization, and data duplication push logic and consistency into app code. |
+
+| Property | Gain | Cost |
+| --- | --- | --- |
+| Flexible model | The application can evolve records without changing every table | Validation and cross-record invariants move into application code |
+| Partition-local access | A request can be routed to one shard by its key | Queries spanning partitions need fan-out or separate indexes |
+| Specialized model | The engine can optimize one workload instead of every relational operation | A different model is required for unrelated access patterns |
+| Configurable consistency | You can choose latency or stronger coordination per operation | Predicting anomalies and conflict resolution requires explicit design |
+| Automatic scale-out | Nodes can be added when partitions or replication factors require them | Capacity, compaction, and topology still need operational care |
 
 ## When to use
-- High-volume, low-latency workloads where data shape varies per item (user profiles, session data, catalogs).
-- Workloads that outgrow a single relational node and need horizontal scale with relaxed consistency.
-- Access patterns dominated by key lookups, single-entity reads, or relationship traversal rather than joins.
+
+- You need high-throughput key lookups or caches with a simple value model.
+- The primary aggregate is a document whose shape changes with the application.
+- You can express the workload as partition-local reads, writes, or relationship traversals.
+- You can state the consistency and conflict behavior that each operation requires.
 
 ## Alternatives
-- Relational (PostgreSQL/MySQL) — ACID and rich joins, but harder to scale horizontally and less schema-flexible.
-- NewSQL (CockroachDB, Spanner) — distributed SQL with strong consistency, at higher operational/complexity cost than a simple key-value store.
+
+- **Relational databases** — strong constraints and expressive joins, with more coupling between schema and workload.
+- **NewSQL databases** — distributed SQL with transactions and familiar query semantics, but more coordination and operational complexity.
+- **Search engines** — inverted indexes and relevance ranking, with a document-oriented model but different durability and transaction guarantees.
+- **Columnar analytical databases** — efficient scans and aggregation, with a less natural fit for transactional point updates.
 
 ## Related
-- [Relational Modeling](01-relational-modeling.md)
-- [Storage Engines](03-storage-engines.md)
-- [Replication](05-replication.md)
-- [Sharding](06-sharding.md)
+
+- [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
+- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
+- [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)

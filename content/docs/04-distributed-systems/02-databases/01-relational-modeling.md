@@ -1,55 +1,85 @@
 ---
-title: "Relational Modeling"
+title: "Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)"
 weight: 1
 toc: true
 ---
 
 ## What it is
-Relational modeling organizes data into normalized tables (relations) of rows and columns, linked by primary/foreign keys and queried with declarative SQL. The schema is fixed up front and enforced by the database, favoring consistency and integrity over schema flexibility.
+
+Relational modeling is the practice of representing business entities as tables with explicit keys, relationships, and constraints, then choosing indexes that match measured query patterns. Normalization reduces duplicated facts, while a carefully designed index restores efficient access without sacrificing write behavior.
 
 ## How it works
-A logical entity model is decomposed into tables to remove redundancy through normalization (1NF/2NF/3NF, optionally BCNF). Each table declares a primary key that uniquely identifies a row; relationships are represented by foreign keys referencing another table's primary key. Queries join tables on those keys, and secondary indexes are added on columns used in frequent `WHERE`, `ORDER BY`, and join predicates to avoid full scans. The physical design — index choice, denormalization for read-heavy paths — is tuned after the logical model stabilizes.
+
+Start with the entities and invariants in the domain. Give each entity a primary key, move repeating attributes into child tables, and remove partial and transitive dependencies through normalization. Represent relationships with foreign keys, then identify the predicates, joins, and ordering patterns used by the application. Choose a B-tree index for equality, sorting, and range predicates; use a hash index when only exact-key lookup matters. PostgreSQL GIN indexes accelerate searches over arrays, full-text vectors, and other values that can contain many matches, while GiST indexes support approximate and geometric predicates such as overlap and nearest-neighbor search.
+
+A physical schema can denormalize a stable read model after the source model is understood. The duplicate data must then have an explicit owner and refresh or transaction rule.
+
+```sql
+CREATE TABLE customers (
+  customer_id BIGINT PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE orders (
+  order_id BIGINT PRIMARY KEY,
+  customer_id BIGINT NOT NULL REFERENCES customers(customer_id),
+  created_at TIMESTAMPTZ NOT NULL,
+  total NUMERIC(12, 2) NOT NULL
+);
+
+CREATE INDEX orders_customer_created_idx
+  ON orders (customer_id, created_at DESC);
+```
 
 ```yaml
-# Logical design, then physical tuning
-entities:
+logical_model:
   orders:
     primary_key: order_id
-    foreign_keys: [customer_id -> customers.id]
-    indexes: [order_date, customer_id]
+    foreign_keys:
+      - customer_id -> customers.customer_id
   order_items:
     primary_key: [order_id, line_no]
-    foreign_keys: [order_id -> orders.id, product_id -> products.id]
-    indexes: [product_id]
+    foreign_keys:
+      - order_id -> orders.order_id
+      - product_id -> products.product_id
 normalization:
-  level: 3NF           # eliminate transitive & partial dependencies
-  exceptions:          # deliberate denormalization for hot reads
-    - cached_total_on_order
-joins:
-  - orders join order_items on order_id   # index-backed nested loop / hash join
+  target: 3NF
+  exceptions: deliberate_read_models
+indexes:
+  orders_customer_created_idx: b_tree
+  customer_email_hash: hash
+  article_search: gin
+  location_search: gist
 ```
 
 ## Tradeoffs
-| Property | Characteristic |
-| --- | --- |
-| Consistency & integrity | Strong: constraints, unique/foreign keys, and transactions enforce invariants centrally. |
-| Schema evolution | Rigid; migrations (DDL) are costly on large tables and require lock/in-place rebuild care. |
-| Horizontal scaling | Harder: joins and foreign keys do not partition naturally; sharding breaks cross-row constraints. |
-| Query flexibility | High for the known schema (rich SQL), low for heterogeneous/rapidly changing shapes. |
-| Read/write latency | Predictable via indexes, but join and index-maintenance overhead grows with write volume. |
+
+| Property | Gain | Cost |
+| --- | --- | --- |
+| Normalized schema | One authoritative fact and straightforward integrity checks | More joins and foreign-key work for wide reads |
+| Denormalized read model | Fewer joins and predictable hot-read latency | Duplicate storage and a required update or rebuild path |
+| B-tree index | Ordered equality, range scans, sorting, and composite predicates | Additional writes, page splits, cache pressure, and storage |
+| Hash index | Expected or average O(1) exact-key lookup with good hashing | Worst-case O(n) with hash collisions or pathological workloads; no ordering or range scans |
+| GIN index | Efficient membership, full-text, and array search | Expensive updates, larger indexes, and pending-list behavior in PostgreSQL |
+| GiST index | Flexible predicate and nearest-neighbor support | Lossy or slower than a specialized exact index for some workloads |
 
 ## When to use
-- Data with stable, well-understood structure and strong relationships (orders, accounts, inventory).
-- Workloads needing multi-table joins, aggregate analytics over structured data, and referential integrity.
-- Systems where correctness of cross-row invariants (unique constraints, foreign keys) matters more than write throughput.
+
+- You need joins, transactions, foreign keys, and constraints that protect cross-row invariants.
+- The entity relationships are stable enough to define and migrate a shared schema.
+- You need both ordered range queries and exact lookups over structured data.
+- You can measure query plans and remove indexes that do not support important access paths.
 
 ## Alternatives
-- Document databases (MongoDB) — schema-flexible, fast for single-entity reads, but weak cross-document joins/constraints.
-- Key-value stores (Redis) — lowest latency for point lookups, no relational queries or integrity checks.
-- Graph databases (Neo4j) — efficient deep-relationship traversal, weaker general-purpose aggregation.
+
+- **Document databases** — flexible nested records fit changing aggregates, but application code must maintain relationships and validation.
+- **Wide-column stores** — high write throughput and predictable partition keys, with weaker general-purpose join ergonomics.
+- **Columnar analytical stores** — fast scans and aggregates over large datasets, but unnecessary overhead for small point updates.
+- **Graph databases** — direct traversal of relationships, with a narrower query model and different operational tradeoffs.
 
 ## Related
-- [NoSQL Databases](02-nosql.md)
-- [Storage Engines](03-storage-engines.md)
-- [ACID and Isolation Levels](04-acid-isolation.md)
-- [Replication](05-replication.md)
+
+- [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
+- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
+- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
