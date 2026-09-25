@@ -16,7 +16,6 @@
 
 .level-selector {
   max-width: 7rem;
-  border: 1px solid currentColor;
 }
 
 .language-selector:hover,

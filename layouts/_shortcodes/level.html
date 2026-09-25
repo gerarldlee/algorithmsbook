@@ -1,0 +1,4 @@
+{{- $level := .Get 0 | default "normal" -}}
+<div data-level="{{ $level }}">
+  {{- .Inner | .Page.RenderString -}}
+</div>

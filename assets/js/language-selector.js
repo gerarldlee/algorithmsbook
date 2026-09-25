@@ -1,5 +1,6 @@
 (() => {
   const storageKey = "preferred-language";
+  const levelStorageKey = "preferred-level";
   const languages = [
     ["java", "Java"],
     ["c", "C"],
@@ -53,6 +54,23 @@
     return languages.some(([value]) => value === saved) ? saved : "java";
   }
 
+  function savedLevel() {
+    const saved = window.localStorage.getItem(levelStorageKey);
+    return levels.some(([value]) => value === saved) ? saved : "all";
+  }
+
+  function applyLevel(level) {
+    const pageContent = document.querySelector("[data-page-level]");
+    const pageLevel = pageContent?.dataset.pageLevel;
+    const pageVisible = level === "all" || !pageLevel || pageLevel === level;
+    if (pageContent) pageContent.hidden = !pageVisible;
+
+    document.querySelectorAll("[data-level]").forEach((section) => {
+      const sectionLevel = section.dataset.level;
+      section.hidden = !pageVisible || (level !== "all" && sectionLevel !== level);
+    });
+  }
+
   function createSelector() {
     const docsLink = document.querySelector(
       '.hextra-nav-container nav a[href$="/docs"], .hextra-nav-container nav a[href$="/docs/"]',
@@ -88,10 +106,16 @@
       option.textContent = label;
       levelSelector.appendChild(option);
     });
+    levelSelector.value = savedLevel();
+    levelSelector.addEventListener("change", () => {
+      window.localStorage.setItem(levelStorageKey, levelSelector.value);
+      applyLevel(levelSelector.value);
+    });
 
     docsLink.before(selector);
     docsLink.before(levelSelector);
     applyLanguage(selector.value);
+    applyLevel(levelSelector.value);
   }
 
   if (document.readyState === "loading") {

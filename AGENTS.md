@@ -222,7 +222,7 @@ plain text or a code block unless the notation genuinely helps.
 ## 8. Shortcodes
 
 Hextra v0.12.3 shortcodes available: `cards`/`card` (used on the home page), `callout`, `details`,
-`tabs`/`tab`, `steps`, `filetree`, `badge`, `icon`, `include`, `jupyter`, `pdf`, `term`, `asciinema`.
+`tabs`/`tab`, `steps`, `filetree`, `badge`, `icon`, `include`, `jupyter`, `pdf`, `term`, `level`, `asciinema`.
 
 ```markdown
 {{< callout type="info" >}}
