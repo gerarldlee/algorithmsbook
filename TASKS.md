@@ -64,6 +64,7 @@ For every algorithm chapter:
 - [x] 1.3 Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)
 - [x] 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
 - [x] 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
+- [ ] 1.6 Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators
 
 ### Chapter 2 — Hierarchical Data Structures, Search Trees & Spatial Indexing
 
@@ -74,6 +75,7 @@ For every algorithm chapter:
 - [x] 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
 - [x] 2.6 Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)
 - [x] 2.7 Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing
+- [ ] 2.8 Language Parsing Data Structures: Abstract Syntax Trees (AST), Parse Trees, and Symbol Tables
 
 ### Chapter 3 — Core Algorithmic Paradigms & Parallel Computing
 
@@ -84,10 +86,14 @@ For every algorithm chapter:
 - [x] 3.5 Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)
 - [x] 3.6 Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization
 
+### Chapter 3B — Decision Theory, Game Theory & Bayesian Systems
+
+- [ ] 3B.1 Game Theory & Combinatorial Search: Minimax, Alpha-Beta Pruning, MCTS, Game Tree Probing, Exhaustion, Nash Equilibrium
+- [ ] 3B.2 Bayesian Decision Theory & Probabilistic Inference: Bayes' Theorem, Naive Bayes, Bayesian Networks, Belief Updating
+
 ### Chapter 4 — Graph Theory & Network Algorithms
 
 - [x] 4.1 Graph Representations (Adjacency Matrix, Adjacency List, Edge List, Sparsity Representations, Graph Neural Network Data Structures)
-  - [x] Graph Neural Network Data Structures & Sparsity
 - [x] 4.2 Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)
 - [x] 4.3 Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)
 - [x] 4.4 Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)
@@ -107,17 +113,24 @@ For every algorithm chapter:
 
 - [x] 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
 - [x] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)
+  - [ ] Transport mechanics: RPC, SSE, Broadcast, Server Pull vs Server Push
 - [x] 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
 - [x] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
-- [x] 5.5 API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications
+- [x] 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
+  - [ ] Modern API contracts: tRPC, OpenAPI, and AsyncAPI Specifications
 - [x] 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
-- [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security
+- [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (Vault), and Supply-Chain Security
 
 ### Chapter 5B — Software Architecture Patterns
 
 - [x] 5B.1 Enterprise Architecture Patterns: Monolith vs Microservices, Service Mesh (Istio/Linkerd), Backend-for-Frontend (BFF), Strangler Fig, and Cell-Based Architecture (CBA)
 - [x] 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
 - [x] 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
+
+### Chapter 5C — Object-Oriented Programming & Software Design Principles
+
+- [ ] 5C.1 OOP Foundations & SOLID Principles
+- [ ] 5C.2 Classic Software Design Patterns (Creational, Structural, Behavioral)
 
 ### Chapter 6 — Caching Strategies & Edge Acceleration
 
@@ -188,9 +201,13 @@ For every algorithm chapter:
 
 ### Chapter 12A — Operating Systems & Kernel Mechanics
 
-- [x] 12A.1 Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms (Preemption, MLFQ, Real-Time)
-- [x] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, Translation Lookaside Buffer (TLB), Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals
-- [x] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring` Asynchronous Ring Buffers
+- [x] 12A.1 Processes & Threads: Execution Contexts, IPC, Thread Pools, Concurrency Bugs, CPU Scheduling
+- [x] 12A.2 Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Mode
+- [x] 12A.3 High-Performance File Systems & Low-Level I/O: Inodes, POSIX I/O, Page Cache, `epoll` vs `kqueue`, `io_uring`
+
+### Chapter 12B — Version Control Systems & Software Workflows
+
+- [ ] 12B.1 Distributed Version Control Mechanics: Git Internals, Branching Strategies, Merging, Rebasing, Conflict Resolution
 
 ## Part VI — Machine Learning Systems & Scalable AI Infrastructure
 
@@ -208,10 +225,11 @@ For every algorithm chapter:
 - [x] 14.2 Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)
 - [x] 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
 - [x] 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
+- [ ] 14.5 Self-Improving Machine Learning Systems: External Data -> Process -> Decision -> Feedback -> Recalibration Loops
 
 ### Chapter 15 — Generative AI Infrastructure & Large Scale LLM Orchestration
 
-- [x] 15.1 Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search
+- [x] 15.1 Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics, ANN (HNSW, IVF-PQ), ScaNN, and DiskANN
 - [x] 15.2 Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking
 - [x] 15.3 Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)
 - [x] 15.4 High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching
@@ -224,8 +242,8 @@ For every algorithm chapter:
 
 - [ ] 16.1 Core Banking Systems: Account Structures, General Ledger, Core Banking Vendors
 - [ ] 16.2 Double-Entry Bookkeeping: Ledger Design, Journal Entries, Chart of Accounts, Multi-Currency Ledgers
-- [ ] 16.3 Payment Rails & Messaging Standards: ACH, SWIFT/SEPA, Wire Transfers, Card Networks, Real-Time Payments (RTP, FedNow), and ISO 20022 Integration
-- [ ] 16.4 Payment Processing Architecture: Authorization/Capture/Settlement Flow, Payment Orchestration, Idempotency Keys & Idempotent Request Handling
+- [ ] 16.3 Payment Rails & Messaging Standards: ACH, SWIFT/SEPA, Wire Transfers, Card Networks, Real-Time Payments, ISO 20022
+- [ ] 16.4 Payment Processing Architecture: Authorization/Capture/Settlement Flow, Payment Orchestration, Idempotency Keys
 - [ ] 16.5 Reconciliation Systems: Statement Matching, Break Detection, Automated Clearing, Ledger-to-Bank Reconciliation
 - [ ] 16.6 Ledger Consistency: Event-Sourced Ledgers, Immutable Audit Trails, Double-Spend Prevention, Eventual Consistency
 - [ ] 16.7 Fraud Detection: Rule Engines, Velocity Checks, Device Fingerprinting, ML-Based Anomaly Scoring
@@ -307,3 +325,57 @@ For every algorithm chapter:
 
 - [ ] 26.1 Embedded Architecture: Microcontroller Constraints, BLE Sync Patterns
 - [ ] 26.2 Offline-First / Local-First Sync: Conflict Resolution, Conflict-Free Replicated Data Types (CRDT Deep Dive)
+
+## Part IX — High-Scale System Design Case Studies & Applied Infrastructure
+
+### Chapter 27 — Fundamental Distributed Utilities
+
+- [ ] 27.1 System Design: Distributed URL Shortener (TinyURL Architecture, Hashing, Base62 Encoding, KGS)
+- [ ] 27.2 System Design: Distributed Unique ID Generator (Snowflake ID, ULID, UUIDv4 vs UUIDv7)
+
+### Chapter 28 — Content Ingestion, Search & Storage Engines
+
+- [ ] 28.1 System Design: Web Crawler at Scale (Robots.txt Parsing, Politeness Policy, URL Frontier, Deduplication)
+- [ ] 28.2 System Design: Distributed Search Engine & Google PageRank (Inverted Index Sharding, Web Indexer, Link Graph Analysis)
+- [ ] 28.3 System Design: Distributed Message Queue (Kafka-Like Log-Centric Engine, Partitioning, Replication, Consumer Groups)
+- [ ] 28.4 System Design: Distributed S3-Like Object Storage (Metadata Cluster, Chunk Servers, Erasure Coding, Multipart Uploads)
+
+### Chapter 29 — Feeds, Notifications & Real-Time Messaging
+
+- [ ] 29.1 System Design: Multi-Channel Notification System (Rate Limiting, Dispatchers, Delivery Tracking)
+- [ ] 29.2 System Design: High-Scale Newsfeed System (Fan-Out on Write vs Fan-Out on Read, Aggregation from Multiple Sources)
+- [ ] 29.3 System Design: Global Real-Time Chat System (WebSocket Clusters, Message Sync, Room Routing, Presence Tracking)
+- [ ] 29.4 System Design: Search Autocomplete System (Trie Indexing, Frequency Ranking, Real-Time Cache Update)
+
+### Chapter 30 — Geospatial & Location Services
+
+- [ ] 30.1 System Design: Proximity Service (Spatial Indexing, Geohash Grid Searching, Nearest Neighbor Queries)
+- [ ] 30.2 System Design: Nearby Friends Service (Location Tracking, Pub/Sub Mesh, Cell-Based WebSocket Routing)
+- [ ] 30.3 System Design: Google Maps Infrastructure (Tile Rendering Graph Processing, Routing Engine, A* Pathfinding at Scale)
+
+### Chapter 31 — Event Processing, Analytics & Gaming Engines
+
+- [ ] 31.1 System Design: Ad Click Event Aggregation Pipeline (At-Least-Once Streaming, Deduplication, Sliding Window Aggregations)
+- [ ] 31.2 System Design: Real-Time Gaming Leaderboard (Redis Sorted Sets, Distributed Rank Partitioning)
+- [ ] 31.3 System Design: Distributed Gaming Server Bots & State Orchestration (State Machine Synchronization, Bot AI Pool Management)
+
+### Chapter 32 — High-Concurrency Financial & Transactional Systems
+
+- [ ] 32.1 System Design: Distributed Hotel Reservation & Booking System (Inventory Locking, Overbooking Prevention, Two-Phase Holds)
+- [ ] 32.2 System Design: High-Scale Payment Processing System (Payment Gateway Integration, Idempotent Processing, Ledger Reconciliation)
+- [ ] 32.3 System Design: Digital Wallet Architecture (Double-Entry Ledger Engine, Multi-Currency Balance Tracking, Zero-Loss Durability)
+- [ ] 32.4 System Design: Ultra-Low Latency Stock Exchange Engine (Order Book Matching, Deterministic Sequencing, Multicast Broadcast)
+
+### Chapter 33 — Enterprise Operations & Monitoring Infrastructure
+
+- [ ] 33.1 System Design: Metrics Monitoring & Alerting System (Time-Series Database, Pull vs Push Ingestion, Alert Rule Engines)
+- [ ] 33.2 System Design: Distributed Email System (SMTP Ingestion, Storage Engine Sharding, MIME Parsing, Webmail Sync)
+
+### Chapter 34 — Media Streaming & Cloud Storage Systems
+
+- [ ] 34.1 System Design: YouTube Streaming Platform (Video Transcoding Pipeline, Adaptive Bitrate Streaming - HLS/DASH, CDN Storage)
+- [ ] 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
+
+### Chapter 35 — Modular Systems & Plugin Architecture
+
+- [ ] 35.1 System Design: Dynamic & Multi-Module Loading Systems (Plugin Architecture, Dynamic Linking, Module Sandboxing, Runtime Hot-Swapping)
