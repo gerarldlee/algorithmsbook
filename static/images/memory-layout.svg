@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title description" style="width: 100%; height: auto; color: currentColor;">
+  <title id="title">Program memory layout</title>
+  <desc id="description">A vertical process memory layout showing stack, heap, static data, literals, and instructions, with a stack pointer referencing heap memory.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <g stroke="currentColor" stroke-width="2">
+    <rect x="276" y="34" width="320" height="540" fill="none" />
+    <rect x="278" y="36" width="316" height="112" fill="currentColor" fill-opacity="0.18" />
+    <rect x="278" y="148" width="316" height="136" fill="currentColor" fill-opacity="0.28" />
+    <rect x="278" y="284" width="316" height="92" fill="currentColor" fill-opacity="0.22" />
+    <rect x="278" y="376" width="316" height="82" fill="currentColor" fill-opacity="0.14" />
+    <rect x="278" y="458" width="316" height="114" fill="currentColor" fill-opacity="0.10" />
+  </g>
+  <g fill="currentColor" font-family="system-ui, sans-serif" text-anchor="middle">
+    <text x="436" y="101" font-size="27" font-weight="700">Stack</text>
+    <text x="436" y="206" font-size="25" font-weight="700">Dynamic Data</text>
+    <text x="436" y="235" font-size="25" font-weight="700">(Heap)</text>
+    <text x="436" y="338" font-size="25" font-weight="700">Static Data</text>
+    <text x="436" y="426" font-size="25" font-weight="700">Literals</text>
+    <text x="436" y="521" font-size="25" font-weight="700">Instructions</text>
+  </g>
+  <g fill="currentColor" font-family="system-ui, sans-serif" font-size="16" font-weight="600">
+    <text x="20" y="101">writable; not executable</text>
+    <text x="20" y="220">writable; not executable</text>
+    <text x="20" y="338">writable; not executable</text>
+    <text x="20" y="426">read-only; not executable</text>
+    <text x="20" y="521">read-only; executable</text>
+  </g>
+  <g fill="currentColor" font-family="system-ui, sans-serif" font-size="16">
+    <text x="624" y="78">Managed “automatically”</text>
+    <text x="624" y="101">by the compiler</text>
+    <text x="624" y="208">Managed by the programmer</text>
+    <text x="624" y="338">Initialized when process starts</text>
+    <text x="624" y="426">Initialized when process starts</text>
+    <text x="624" y="521">Initialized when process starts</text>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M 436 60 V 95" marker-end="url(#arrow)" />
+    <path d="M 520 116 V 165" marker-end="url(#arrow)" />
+    <path d="M 520 165 V 116" marker-end="url(#arrow)" />
+    <path d="M 436 190 C 380 190, 340 220, 340 246" stroke-dasharray="6 5" marker-end="url(#arrow)" />
+  </g>
+  <g fill="currentColor" font-family="system-ui, sans-serif" font-size="14">
+    <text x="348" y="276">stack pointer / reference → heap address 0x2000</text>
+  </g>
+  <g fill="currentColor" font-family="ui-monospace, monospace" font-size="13">
+    <text x="294" y="128">stack address 0x1000</text>
+    <text x="294" y="264">heap address 0x2000</text>
+  </g>
+</svg>

@@ -15,6 +15,8 @@ Think of memory as numbered byte locations. An [array](../01-algorithms/01-linea
 element can be calculated from its start address and index. A [linked list](../01-algorithms/01-linear-data-structures/02-linked-lists.md) stores nodes wherever space
 is available and follows references from one node to the next.
 
+![Vertical process memory layout showing stack, heap, static data, literals, instructions, and a stack pointer referencing heap memory](/images/memory-layout.svg)
+
 | Power of 2 | Size |
 | --- | --- |
 | \(2^1\) | 2 |
@@ -52,6 +54,83 @@ For example, \(2^{10}=1024\) bytes and \(2^{20}=1,048,576\) bytes.
 
 Primitive sizes describe the value representation, not necessarily the full memory consumed by an
 object. Object headers, references, alignment, and the garbage collector add runtime overhead.
+
+## Common value types by language
+
+```java
+boolean flag    = true;    // JVM-dependent size, true to false
+byte    small   = 1;       // 1 byte, -128 to 127
+short   medium  = 100;     // 2 bytes, -32,768 to 32,767
+int     whole   = 1000;    // 4 bytes, -2,147,483,648 to 2,147,483,647
+long    large   = 100000L; // 8 bytes, -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+float   ratio   = 0.5f;    // 4 bytes, about -3.4e38 to 3.4e38
+double  precise = 0.5;     // 8 bytes, about -1.8e308 to 1.8e308
+char    letter  = 'A';     // 2 bytes, 0 to 65,535 UTF-16 code units
+
+Boolean    flagObject    = Boolean.TRUE;             // wrapper object, true to false; total size runtime-dependent
+Byte       smallObject   = Byte.valueOf((byte) 1);    // 1-byte value, -128 to 127; object overhead runtime-dependent
+Short      mediumObject  = Short.valueOf((short) 100); // 2-byte value, -32,768 to 32,767; object overhead runtime-dependent
+Integer    wholeObject   = Integer.valueOf(1000);    // 4-byte value, -2,147,483,648 to 2,147,483,647; object overhead runtime-dependent
+Long       largeObject   = Long.valueOf(100000L);    // 8-byte value, -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807; object overhead runtime-dependent
+Float      ratioObject   = Float.valueOf(0.5f);     // 4-byte value, about -3.4e38 to 3.4e38; object overhead runtime-dependent
+Double     preciseObject = Double.valueOf(0.5);      // 8-byte value, about -1.8e308 to 1.8e308; object overhead runtime-dependent
+Character  letterObject  = Character.valueOf('A');  // 2-byte value, 0 to 65,535 UTF-16 code units; object overhead runtime-dependent
+String     textObject    = "value";                  // object, implementation-dependent size; not a numeric wrapper
+```
+
+```c
+#include <stdbool.h>
+#include <stdint.h>
+
+bool          flag    = true;    // 1 byte, false to true
+int8_t        small   = 1;       // 1 byte, -128 to 127
+int16_t       medium  = 100;     // 2 bytes, -32,768 to 32,767
+int32_t       whole   = 1000;    // 4 bytes, -2,147,483,648 to 2,147,483,647
+int64_t       large   = 100000;   // 8 bytes, -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+float         ratio   = 0.5f;    // 4 bytes, about -3.4e38 to 3.4e38
+double        precise = 0.5;     // 8 bytes, about -1.8e308 to 1.8e308
+unsigned char letter  = 'A';     // 1 byte, 0 to 255
+```
+
+```python
+flag: bool     = True    # runtime-dependent size, False to True
+small: int     = 1       # runtime-dependent size, unbounded integer
+whole: int     = 1000    # runtime-dependent size, unbounded integer
+ratio: float   = 0.5     # usually 24 bytes, about -1.8e308 to 1.8e308
+precise: float = 0.5     # usually 24 bytes, about -1.8e308 to 1.8e308
+text: str      = "value" # runtime-dependent size, no numeric range
+```
+
+```rust
+let flag: bool    = true;    // 1 byte, false to true
+let small: i8     = 1;       // 1 byte, -128 to 127
+let medium: i16   = 100;     // 2 bytes, -32,768 to 32,767
+let whole: i32    = 1000;    // 4 bytes, -2,147,483,648 to 2,147,483,647
+let large: i64    = 100000;  // 8 bytes, -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+let ratio: f32    = 0.5;     // 4 bytes, about -3.4e38 to 3.4e38
+let precise: f64  = 0.5;     // 8 bytes, about -1.8e308 to 1.8e308
+let letter: char  = 'A';     // 4 bytes, 0 to 1,114,111 Unicode scalar values
+```
+
+```typescript
+const flag: boolean    = true;     // runtime-dependent size, false to true
+const small: number    = 1;        // usually 8 bytes, safe integer -9,007,199,254,740,991 to 9,007,199,254,740,991
+const whole: number    = 1000;     // usually 8 bytes, safe integer -9,007,199,254,740,991 to 9,007,199,254,740,991
+const large: bigint    = 100000n;  // runtime-dependent size, arbitrary signed integer
+const ratio: number    = 0.5;      // usually 8 bytes, about -1.8e308 to 1.8e308
+const text: string     = "value";  // runtime-dependent size, no numeric range
+```
+
+```go
+var flag    bool    = true     // 1 byte, false to true
+var small   int8    = 1        // 1 byte, -128 to 127
+var medium  int16   = 100      // 2 bytes, -32,768 to 32,767
+var whole   int32   = 1000     // 4 bytes, -2,147,483,648 to 2,147,483,647
+var large   int64   = 100000   // 8 bytes, -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+var ratio   float32 = 0.5      // 4 bytes, about -3.4e38 to 3.4e38
+var precise float64 = 0.5      // 8 bytes, about -1.8e308 to 1.8e308
+var letter  rune    = 'A'      // 4 bytes, 0 to 1,114,111 Unicode scalar values
+```
 
 ## Allocation and access
 

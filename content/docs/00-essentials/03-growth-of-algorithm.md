@@ -102,6 +102,36 @@ performs no swaps, so it takes \(O(n)\) time. Without that optimization, the bes
 With or without early exit, a reverse-sorted array is a worst case and takes \(O(n^2)\) time. Bubble
 sort uses \(O(1)\) extra space because it sorts in place.
 
+
+### Compute time growth
+
+Bubble sort's compute time is `T(n) = O(n^2)` relative to others. The plotted values are representative because Big-O describes growth, not exact operation counts.
+
+```mermaid
+xychart-beta
+    title "Common Big-O time complexity growth rates"
+    x-axis "Input size n" 1 --> 32
+    y-axis "Time complexity T(n)" 0 --> 400
+    line "O(1)" [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    line "O(log n)" [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5]
+    line "O(n)" [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 32]
+    line "O(n log n)" [0, 3, 10, 19, 28, 38, 48, 58, 70, 80, 92, 104, 116, 128, 142, 154, 160]
+    line "Bubble sort O(n^2)" [1, 9, 25, 49, 81, 121, 169, 225, 289, 361, 400, 400, 400, 400, 400, 400, 400]
+    line "O(2^n) capped" [2, 8, 32, 128, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
+```
+
+### Memory growth
+
+Bubble sort's memory use is `S(n) = O(1)`. Bubble sort uses only a small fixed amount of working space.
+
+```mermaid
+xychart-beta
+    title "Bubble sort extra memory"
+    x-axis "Input size n" 1 --> 32
+    y-axis "S(n)" 0 --> 1
+    line "S(n) = O(1)" [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+```
+
 ## Related chapters
 
 - [Divide-and-Conquer & Advanced Sorting](../01-algorithms/03-paradigms/01-divide-and-conquer-sorting.md)

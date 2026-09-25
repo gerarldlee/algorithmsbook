@@ -103,9 +103,10 @@ Keep to these sections, in this order, with these exact names:
 | `## Tradeoffs` | optional, mutually exclusive with `Complexity` | Only when there is a genuine design tradeoff. `- **Option** — gain, then cost.` bullets or a `\| Property \| Gain \| Cost \|` table. |
 | `## When to use` | yes | 3–6 bullets, each phrased as a condition the reader can check ("You need X …"). |
 | `## Alternatives` | yes | Bullets: `**Named alternative** — when it wins, and what it costs.` |
-| `## Related` | yes | Relative links to neighbouring pages. Always the **last** section. |
+| `## Related` | yes | Relative links to neighbouring pages. Place it immediately before `References`. |
+| `## References` | yes | Source material, citations, and external links used by the chapter. Always the **last** section, with `### Books` and `### Websites` subsections. |
 
-All 93 chapters have the five required sections in this order, `Related` last. `Complexity` (39
+Every chapter must end with `## References`; `## Related` comes immediately before it. `Complexity` (39
 chapters) and `Tradeoffs` (54) are mutually exclusive in today's content and sit immediately after
 `How it works`; pick the one that fits the topic. Extra `##` sections are not used in the current
 outline, and `###` sub-headings are used sparingly (15 in the whole book) — prefer folding material
@@ -163,6 +164,9 @@ implementation code only when the chapter teaches an algorithm (then use the six
 
 **Diagrams** use ```` ```mermaid ````; Hextra renders it, loads Mermaid from the CDN, and switches
 the diagram theme with the reader's light/dark choice, so never bake colours into diagram nodes.
+Every algorithm chapter should include at least one Mermaid illustration that shows the core data
+flow, state transition, or execution path. Keep the diagram focused on one idea, use the same
+theme-neutral conventions as the rest of the book, and place it near the mechanism it explains.
 
 **`00-essentials`** is reference material, not algorithm chapters. It uses the fixed six-language
 groups where it teaches implementation detail; do not add ad hoc language mixes there.
@@ -252,7 +256,8 @@ as described in §6; do not wrap them in tab shortcodes.
    names, same operation set, in the fixed order — instead of a single-language snippet.
 5. Add the page to the parent `_index.md` bullet list at the right position — until you do, the page
    is unreachable from the sidebar and `tools/check_links.py` reports it.
-6. Add `Related` links to the 2–4 nearest pages, and add reciprocal links from those pages' `Related`.
+6. Add `Related` links to the 2–4 nearest pages, then add the required `References` section as the final section.
+   Include `### Books` and `### Websites` subsections, then add reciprocal links from those pages' `Related`.
 7. Mirror the new section in `TOC.md`.
 8. Remove `draft: true`.
 9. `hugo --gc --minify` → must build with no warnings; then `python tools/check_links.py`.
