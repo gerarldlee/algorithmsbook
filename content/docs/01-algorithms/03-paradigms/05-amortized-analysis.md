@@ -2,6 +2,7 @@
 title: "Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,11 +15,23 @@ A dynamic array starts with capacity 1 and doubles it when full. Ordinary pushes
 
 The **aggregate method** sums costs across a sequence. The copying costs form the geometric series 1 + 2 + 4 + ... + n/2, which is O(n), so n pushes plus their resizes cost O(n) in total.
 
-The **accounting method** charges 3 units for each push and stores unused charge in an account. The initial capacity contributes 1 unit of starting credit. When an array with size `m` grows, the accumulated credit pays for the O(m) copy and leaves the account with enough credit to cover the next expansion.
+The **accounting method** charges 3 units for each push and stores unused charge in an account. The first push costs 1 unit and leaves 2 units of credit. When a full array of size `m` expands, the `2m` accumulated credits pay for copying `1 + 2 + ... + m/2` elements and leave credit for later expansions.
 
-The **potential method** assigns a potential to the object and charges an operation its actual cost plus the change in potential. Choosing Φ = 2 × size − capacity + 1 keeps Φ nonnegative and makes the amortized cost of push constant. The stored credit in accounting analysis and the potential in potential analysis play the same mathematical role.
+The **potential method** assigns a potential to the object and charges an operation its actual cost plus the change in potential. Choosing Φ = 2 × size − capacity gives an amortized cost of 3 for every push: an ordinary push spends one unit and raises the potential by two, while a resize of a full array lowers the potential enough to pay for copying. The potential is bounded below by −1 for the empty array, which is sufficient for the bound. The stored credit in accounting analysis and the potential in potential analysis play the same mathematical role.
 
 The implementations expose the same `DynamicArray` operations: `new`, `push`, `get`, and `len`. The C result is owned by the caller and must be released with `da_free`.
+
+```mermaid
+flowchart TD
+    A[Push a value] --> B{Array full?}
+    B -->|No| C[Write at size]
+    C --> D[Increase size]
+    B -->|Yes| E[Allocate twice the capacity]
+    E --> F[Copy existing values]
+    F --> G[Release old storage]
+    G --> C
+    D --> H[Charge constant amortized cost]
+```
 
 ```java
 public class DynamicArray {
@@ -248,5 +261,4 @@ func (array *DynamicArray) Len() int {
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](../01-linear-data-structures/01-dynamic-arrays.md)
 - [Union-Find (Disjoint Set Union)](../02-search-trees/05-union-find.md)
 - [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
-- [Concurrency & Parallel Computing](06-concurrency-parallel-computing.md)
-- [Tries, Radix Trees, and Suffix Trees/Arrays](../02-search-trees/06-tries-suffix.md)
+- [Chapter 3 References](07-references.md)

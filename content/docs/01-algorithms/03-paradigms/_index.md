@@ -11,3 +11,4 @@ The recurring strategies behind efficient algorithms: divide and conquer, greedy
 - [Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems](04-backtracking.md)
 - [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](05-amortized-analysis.md)
 - [Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization](06-concurrency-parallel-computing.md)
+- [Chapter 3 References](07-references.md)

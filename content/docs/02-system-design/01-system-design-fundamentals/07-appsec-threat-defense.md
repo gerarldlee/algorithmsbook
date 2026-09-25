@@ -2,6 +2,7 @@
 title: "AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security"
 weight: 7
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,20 @@ Application security protects software from the mistakes and attacks that compro
 ## How it works
 
 A threat model makes security decisions reviewable. Start with a data-flow diagram, then ask four questions: what are we building, what can go wrong, what will we do about it, and did we do a good enough job? For a checkout service, the assets might include payment instructions, customer data, authorization tokens, and audit records. The threats might include a stolen session, an attacker changing a quantity after validation, a compromised dependency, or an administrator exposing a production secret.
+
+The supply-chain artifact flow makes the required inspection boundaries explicit:
+
+```mermaid
+flowchart LR
+    Source[Reviewed source] --> Build[Isolated build]
+    Dependencies[Locked dependencies] --> Build
+    Actions[Pinned build actions] --> Build
+    Build --> Image[Container image]
+    Image --> Scanner[Vulnerability scan and SBOM]
+    Scanner -->|pass| Registry[(Registry)]
+    Registry -->|immutable digest| Deploy[Deployment admission]
+    Deploy --> Runtime[Running workload]
+```
 
 The OWASP Top 10 gives teams a common vocabulary for reviewing common risks:
 
@@ -66,7 +81,7 @@ path "kv/data/orders-api" {
 
 Supply-chain security starts with a software bill of materials, or **SBOM**, a machine-readable inventory of components and relationships detected in a shipped artifact. Its completeness depends on the build tools and scanning coverage, so an SBOM is evidence for investigation rather than proof that every dependency is present or safe. The build must use reviewed source revisions, locked dependencies, verified third-party actions, isolated runners, and short-lived credentials. The resulting image can be scanned, signed, attested, and deployed by immutable digest. Rejecting a known-vulnerable image also requires a current vulnerability feed and a defined severity policy; signature verification must bind the signature to the expected repository, workflow, source reference, and digest rather than accept any valid signature.
 
-This release workflow assumes a Gradle wrapper and Dockerfile. It pins the two GitHub actions by commit, uses the checked-in Gradle verification metadata, publishes before resolving the registry digest, and refuses to sign an image that fails its vulnerability threshold:
+This release workflow assumes a Gradle wrapper and Dockerfile. It pins both GitHub actions by commit, uses checked-in Gradle verification metadata, scans the local image before publication, resolves the exact registry manifest digest after push, and signs only the digest that the repository returns:
 
 ```yaml
 name: supply-chain
@@ -88,25 +103,31 @@ jobs:
         with:
           persist-credentials: false
       - run: ./gradlew --no-daemon --dependency-verification strict assemble
-      - run: docker build --tag "${IMAGE_NAME,,}:${GITHUB_SHA}" .
-      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          image_tag="${IMAGE_NAME,,}:${GITHUB_SHA}"
-          docker push "$image_tag"
+          image_ref="ghcr.io/${IMAGE_NAME,,}:${GITHUB_SHA}"
+          docker build --tag "$image_ref" .
       - run: |
           mkdir -p "$RUNNER_TEMP/supply-chain-bin"
           GOBIN="$RUNNER_TEMP/supply-chain-bin" go install github.com/anchore/syft/cmd/syft@v1.2.0
           GOBIN="$RUNNER_TEMP/supply-chain-bin" go install github.com/aquasecurity/trivy/cmd/trivy@v0.58.1
           GOBIN="$RUNNER_TEMP/supply-chain-bin" go install github.com/sigstore/cosign/v2/cmd/cosign@v2.4.1
       - run: |
-          image_tag="${IMAGE_NAME,,}:${GITHUB_SHA}"
-          image_digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$image_tag")"
-          "$RUNNER_TEMP/supply-chain-bin/syft" "$image_digest" -o spdx-json=sbom.spdx.json
-          "$RUNNER_TEMP/supply-chain-bin/trivy" image --exit-code 1 --severity HIGH,CRITICAL "$image_digest"
+          image_ref="ghcr.io/${IMAGE_NAME,,}:${GITHUB_SHA}"
+          "$RUNNER_TEMP/supply-chain-bin/syft" "$image_ref" -o spdx-json=sbom.spdx.json
+          "$RUNNER_TEMP/supply-chain-bin/trivy" image --exit-code 1 --severity HIGH,CRITICAL "$image_ref"
+      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          image_ref="ghcr.io/${IMAGE_NAME,,}:${GITHUB_SHA}"
+          docker push "$image_ref"
+      - run: |
+          image_ref="ghcr.io/${IMAGE_NAME,,}:${GITHUB_SHA}"
+          registry_digest="$(docker buildx imagetools inspect "$image_ref" --format '{{.Manifest.Digest}}')"
+          test -n "$registry_digest"
+          image_digest="ghcr.io/${IMAGE_NAME,,}@${registry_digest}"
           "$RUNNER_TEMP/supply-chain-bin/cosign" sign --yes "$image_digest"
           "$RUNNER_TEMP/supply-chain-bin/cosign" attest --yes --predicate sbom.spdx.json --type spdxjson "$image_digest"
           echo "digest=$image_digest" >> "$GITHUB_OUTPUT"

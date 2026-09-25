@@ -2,6 +2,7 @@
 title: "Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -32,7 +33,7 @@ filter:
         denominator: HUNDRED
 ```
 
-The filter's default bucket is shared across the Envoy process, while matching descriptor overrides can select other bucket policies. The filter reads the selected bucket state, refills it from elapsed time, and consumes one token per admitted request. A rejection returns `429 Too Many Requests` by default; clients should also receive retry guidance from the deployment.
+The filter's default bucket is shared by all requests handled by one Envoy process by default, so this fragment describes a process-local limit rather than a global or cross-process limit. The `local_rate_limit_per_downstream_connection` setting can change the scope to a downstream connection, but this fragment does not set that field. If request descriptors are configured, matching route actions can select separate bucket policies; this fragment does not configure those overrides. The filter reads the selected bucket state, refills it from elapsed time, and consumes one token per admitted request. A rejection returns `429 Too Many Requests` by default; clients should also receive retry guidance from the deployment.
 
 A **token bucket** stores a token balance and refill time. It admits a short burst up to capacity, then admits traffic at the refill rate. A **leaky bucket** admits requests at a fixed output rate and either queues excess work or drops it when a bounded queue is full. A **sliding window log** stores one timestamp per request, removes timestamps older than the window, and rejects when the remaining count reaches the limit; it evaluates every request in the current window exactly. A **counter** stores a count for a window. A fixed counter is O(1) state but has a boundary discontinuity between adjacent windows; a sliding counter combines the current and previous window to approximate a sliding limit with constant state.
 
@@ -45,6 +46,16 @@ Choose an algorithm from the behavior and state budget, not from the algorithm n
 | Sliding window log | One timestamp per request in the window | Enforces the exact recent count | Low-limit or compliance-sensitive paths |
 | Fixed or sliding counter | Constant numeric state | Cheap approximate count; fixed windows reset at boundaries | High-cardinality, high-throughput limits |
 
+```mermaid
+flowchart TD
+    R[Incoming request] --> K[Resolve limiter key]
+    K --> E[Read elapsed time]
+    E --> T[Refill token balance up to capacity]
+    T --> D{Balance is at least one token?}
+    D -->|Yes| A[Consume token and admit request]
+    D -->|No| X[Reject with retry guidance]
+```
+
 Local state is fast but applies independently to every process. A distributed limit stores the selected state in Redis or another coordination service and performs refill, membership, and increment operations atomically. The caller must then choose a deliberate dependency policy: fail open preserves availability but removes protection, while fail closed preserves the limit but can turn a store outage into an application outage.
 
 ```java
@@ -55,6 +66,10 @@ class TokenBucket {
     private long lastRefill;
 
     TokenBucket(double capacity, double refillRate) {
+        if (!Double.isFinite(capacity) || capacity <= 0 ||
+            !Double.isFinite(refillRate) || refillRate <= 0) {
+            throw new IllegalArgumentException("capacity and refill rate must be positive finite values");
+        }
         this.capacity = capacity;
         this.refillRate = refillRate;
         this.tokens = capacity;
@@ -75,6 +90,7 @@ class TokenBucket {
 
 ```c
 #include <stdbool.h>
+#include <math.h>
 #include <time.h>
 
 typedef struct {
@@ -90,11 +106,14 @@ static double now_seconds(void) {
     return ts.tv_sec + ts.tv_nsec / 1e9;
 }
 
-void token_bucket_init(TokenBucket *b, double capacity, double refill_rate) {
+bool token_bucket_init(TokenBucket *b, double capacity, double refill_rate) {
+    if (!isfinite(capacity) || capacity <= 0 ||
+        !isfinite(refill_rate) || refill_rate <= 0) return false;
     b->capacity = capacity;
     b->refill_rate = refill_rate;
     b->tokens = capacity;
     b->last_refill = now_seconds();
+    return true;
 }
 
 bool token_bucket_allow(TokenBucket *b) {
@@ -110,10 +129,15 @@ bool token_bucket_allow(TokenBucket *b) {
 ```
 
 ```python
+import math
 import time
 
 class TokenBucket:
     def __init__(self, capacity: float, refill_rate: float):
+        if not math.isfinite(capacity) or capacity <= 0:
+            raise ValueError("capacity must be a positive finite value")
+        if not math.isfinite(refill_rate) or refill_rate <= 0:
+            raise ValueError("refill rate must be a positive finite value")
         self.capacity = capacity
         self.refill_rate = refill_rate
         self.tokens = capacity
@@ -141,13 +165,17 @@ struct TokenBucket {
 }
 
 impl TokenBucket {
-    fn new(capacity: f64, refill_rate: f64) -> Self {
-        TokenBucket {
+    fn new(capacity: f64, refill_rate: f64) -> Option<Self> {
+        if !capacity.is_finite() || capacity <= 0.0 ||
+            !refill_rate.is_finite() || refill_rate <= 0.0 {
+            return None;
+        }
+        Some(TokenBucket {
             capacity,
             refill_rate,
             tokens: capacity,
             last_refill: Instant::now(),
-        }
+        })
     }
 
     fn allow(&mut self) -> bool {
@@ -172,6 +200,10 @@ class TokenBucket {
     private lastRefill: number;
 
     constructor(capacity: number, refillRate: number) {
+        if (!Number.isFinite(capacity) || capacity <= 0 ||
+            !Number.isFinite(refillRate) || refillRate <= 0) {
+            throw new Error("capacity and refill rate must be positive finite values");
+        }
         this.capacity = capacity;
         this.refillRate = refillRate;
         this.tokens = capacity;
@@ -193,7 +225,10 @@ class TokenBucket {
 ```go
 package ratelimit
 
-import "time"
+import (
+    "math"
+    "time"
+)
 
 type TokenBucket struct {
 	capacity   float64
@@ -203,6 +238,12 @@ type TokenBucket struct {
 }
 
 func NewTokenBucket(capacity, refillRate float64) *TokenBucket {
+	if math.IsNaN(capacity) || math.IsInf(capacity, 0) || capacity <= 0 {
+		return nil
+	}
+	if math.IsNaN(refillRate) || math.IsInf(refillRate, 0) || refillRate <= 0 {
+		return nil
+	}
 	return &TokenBucket{capacity: capacity, refillRate: refillRate, tokens: capacity, lastRefill: time.Now()}
 }
 
@@ -228,7 +269,7 @@ func (b *TokenBucket) Allow() bool {
 | --- | --- | --- |
 | Token-bucket allow | O(1) expected | O(1) |
 | Leaky-bucket dequeue | O(1) with a queue | O(q), where `q` is queued work |
-| Sliding-window-log admit | O(log n) with an ordered set, or O(n) with a scanned timestamp list | O(n), where `n` is requests in the window |
+| Sliding-window-log admit | O(log n) with an ordered-set insert and removal, plus amortized O(1) pruning per expired timestamp; O(n) when each admission scans a timestamp list | O(n), where `n` is the number of requests retained in the window |
 | Counter increment and read | O(1) expected | O(1) |
 
 The six implementations above use local token-bucket state, so their expected decision work and space are O(1). A shared Redis implementation adds a network round trip and must execute each decision atomically, normally with a server-side Lua function or an equivalent transaction.
@@ -246,8 +287,7 @@ The six implementations above use local token-bucket state, so their expected de
 - **Calendar or billing quota** — limits long-period usage, but is too coarse to protect an individual request burst.
 
 ## Related
-- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [In-Memory Caching Engines (Redis, Memcached), Data Structures, and Eviction Policies](01-in-memory-caching.md)
+- [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](02-caching-patterns.md)
 - [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](03-cdns-edge.md)
-- [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../01-system-design-fundamentals/03-load-balancing.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../01-system-design-fundamentals/05-api-paradigms.md)
-- [Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks](../../03-messaging/01-messaging/04-backpressure-dlq.md)
+- [Chapter 6 References](05-references.md)

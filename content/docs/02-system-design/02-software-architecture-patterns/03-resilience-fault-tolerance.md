@@ -2,11 +2,12 @@
 title: "Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
 
-Resilience and fault-tolerance patterns keep a system useful when a dependency is slow, unavailable, or overloaded. A **circuit breaker** stops sending requests to a failing dependency for a period, a **bulkhead** partitions resources so one workload cannot consume every connection or worker, **exponential backoff with jitter** spaces retries without synchronized retry storms, and a **timeout budget** gives each nested call a deadline that fits the caller's remaining time.
+Resilience and fault-tolerance patterns keep a system useful when a dependency is slow, unavailable, or overloaded. A **circuit breaker** stops sending requests to a failing dependency for a period, a **bulkhead** partitions resources so one workload cannot consume every connection or worker, a **retry strategy** repeats selected safe failures, **exponential backoff with jitter** spaces those retries without synchronized retry storms, and a **timeout budget** gives each nested call a deadline that fits the caller's remaining time.
 
 ## How it works
 
@@ -18,31 +19,73 @@ Exponential backoff increases the delay after each failed attempt, such as 100 m
 
 A **circuit breaker** has three states. **Closed** permits calls and measures failures. **Open** fails fast without contacting the dependency. **Half-open** permits a limited number of trial calls; success closes the circuit, while failure opens it again. The failure threshold and open interval must fit the dependency's recovery behavior. A circuit breaker protects a caller, but it does not repair the dependency or make a partial result correct.
 
+```mermaid
+stateDiagram-v2
+  state "Closed: calls allowed" as Closed
+  state "Open: calls fail fast" as Open
+  state "Half-open: trial calls allowed" as HalfOpen
+
+  [*] --> Closed
+  Closed --> Open: failure threshold reached
+  Open --> HalfOpen: open interval expires
+  HalfOpen --> Closed: trial calls succeed
+  HalfOpen --> Open: trial call fails
+```
+
 A **bulkhead** is a separate resource limit for each dependency, customer tier, region, or operation. Each partition gets a bounded connection pool, queue, or worker count. One tenant exhausting its own quota then fails predictably instead of starving every other tenant. Bulkheads can be implemented in a gateway, service-mesh policy, thread pool, or application queue, but the limit must be observable.
 
 ```yaml
 resilience_policy:
   orders_to_payments:
-    timeout: 350ms
+    timeout_per_attempt: 300ms
     circuit_breaker:
       failure_ratio: 0.5
       minimum_requests: 20
       open_for: 30s
       half_open_requests: 3
     retry:
-      attempts: 2
+      total_deadline: 350ms
+      maximum_retries: 2
+      idempotency_key_required: true
       eligible: [connection_reset, temporary_overload]
       not_eligible: [invalid_request, authorization_failure]
       backoff: exponential_full_jitter
       base_delay: 100ms
       maximum_delay: 1s
   bulkheads:
-    payments_default: 80
-    payments_premium: 20
-    orders_default: 120
+    payments_default:
+      connection_limit: 80
+    payments_premium:
+      connection_limit: 20
+    orders_default:
+      connection_limit: 120
 ```
 
-The execution order matters. A gateway can reject excessive traffic before it reaches the service. The service applies its own deadline and bulkhead. The client library applies the circuit breaker and retry policy. The dependency can apply admission control and shed load. When every layer retries independently, a slow dependency can receive more traffic than it originally received, so the system needs a shared retry budget or an explicit propagation rule.
+The execution order matters. A gateway can reject excessive traffic before it reaches the service. The service applies its own deadline and bulkhead, then calls the dependency through a circuit breaker. The client library retries an eligible failure only while the total deadline has time remaining. The dependency can apply admission control and shed load. When callers and layers add retries independently, a slow dependency can receive more traffic than it originally received, so the system needs a shared retry budget or an explicit propagation rule.
+
+```mermaid
+stateDiagram-v2
+  state "Gateway" as Gateway {
+    [*] --> Admit: receive request
+    Admit --> Rejected: shed overload
+    Admit --> Accepted: admit request
+  }
+
+  state "Circuit" as Circuit
+  state "Closed" as Closed
+  state "Open" as Open
+  state "Half-open" as HalfOpen
+
+  Gateway --> Closed: dependency permits call
+  Closed --> Open: failure threshold
+  Open --> HalfOpen: open interval expires
+  HalfOpen --> Closed: trial calls succeed
+  HalfOpen --> Open: trial call fails
+  Closed --> Gateway: response
+  HalfOpen --> Gateway: response
+  Rejected --> [*]
+  Gateway --> [*]: response
+```
 
 A timeout policy should be observable. Record the dependency, caller operation, deadline, outcome, retry count, and circuit state without logging credentials or sensitive payloads. Alert on error-budget burn, saturation, and breaker state, not merely on a single failed request. Resilience patterns are controls around failure; they do not remove the need for capacity planning, idempotency, or an incident runbook.
 
@@ -76,5 +119,3 @@ A timeout policy should be observable. Record the dependency, caller operation, 
 
 - [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](01-enterprise-architecture-patterns.md)
 - [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](02-domain-driven-event-architectures.md)
-- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](../01-system-design-fundamentals/01-fundamentals.md)
-- [Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)](../../03-messaging/01-messaging/03-delivery-guarantees.md)

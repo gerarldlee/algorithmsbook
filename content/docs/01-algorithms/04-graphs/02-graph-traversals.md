@@ -2,6 +2,7 @@
 title: "Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -9,6 +10,17 @@ toc: true
 
 ## How it works
 BFS marks the source, enqueues it, and repeatedly removes the oldest vertex before marking and enqueueing its undiscovered neighbors. DFS marks each vertex when it is removed from an explicit stack, then adds its undiscovered neighbors. The examples use the same explicit-stack DFS across languages; adjacency order can change the traversal order without changing its reachability or cycle-detection semantics.
+
+```mermaid
+flowchart TD
+    S[Choose start vertex] --> Q[Enqueue or push start]
+    Q --> D{Frontier has a vertex?}
+    D -->|No| O[Return visit order]
+    D -->|Yes| M[Mark vertex discovered]
+    M --> N[Read undiscovered neighbors]
+    N --> Q
+    Q -.-> C[Cycle and component checks]
+```
 
 ```java
 import java.util.ArrayDeque;
@@ -206,8 +218,9 @@ export class GraphTraversals {
     const visited = new Array<boolean>(adjacency.length).fill(false);
     const queue: number[] = [start];
     visited[start] = true;
-    while (queue.length > 0) {
-      const vertex = queue.shift()!;
+    let head = 0;
+    while (head < queue.length) {
+      const vertex = queue[head++];
       order.push(vertex);
       for (const neighbor of adjacency[vertex]) {
         if (!visited[neighbor]) {
@@ -247,9 +260,10 @@ func (GraphTraversals) BFS(adjacency [][]int, start int) []int {
 	visited := make([]bool, len(adjacency))
 	queue := []int{start}
 	visited[start] = true
-	for len(queue) > 0 {
-		vertex := queue[0]
-		queue = queue[1:]
+	head := 0
+	for head < len(queue) {
+		vertex := queue[head]
+		head++
 		order = append(order, vertex)
 		for _, neighbor := range adjacency[vertex] {
 			if !visited[neighbor] {
@@ -283,6 +297,10 @@ func (GraphTraversals) DFS(adjacency [][]int, start int) []int {
 }
 ```
 
+### Components, cycles, and bipartite checks
+
+BFS finds connected components by starting a new traversal whenever an unvisited vertex remains. DFS detects a back edge to a vertex on the active path and can also record finish times for cycle and topological reasoning. A graph is bipartite when a two-color assignment can be maintained: every discovered neighbor must receive the opposite color, and a same-color edge proves a conflict.
+
 ## Complexity
 For \(V\) vertices and \(E\) edges:
 
@@ -307,7 +325,6 @@ For \(V\) vertices and \(E\) edges:
 ## Related
 - [Graph Representations (Adjacency Matrix, Adjacency List, Edge List)](01-graph-representations.md)
 - [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)
-- [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)
-- [Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions](../04a-computational-theory/01-complexity-theory.md)
 - [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)
+- [Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions](../04a-computational-theory/01-complexity-theory.md)

@@ -2,6 +2,7 @@
 title: "In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams, Bitmaps, HyperLogLog), & Eviction Policies (LRU, LFU, ARC)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -18,9 +19,28 @@ engines:
     command: memcached -m 4096
 ```
 
-Redis accepts strings, hashes, lists, sets, sorted sets, and streams, so one service can serve caches, counters, locks, and queues. Memcached stores opaque key-value objects and is suitable for simple page, session, and query-result caches. Both keep a key index in memory; when Redis reaches `maxmemory`, its selected policy evicts keys, while Memcached evicts least-recently-used items within reclaimable memory.
+Redis accepts strings, hashes, lists, sets, sorted sets, and streams, so one service can serve caches, counters, locks, and queues. **Sorted sets** associate unique members with scores and support rank and range queries; **streams** provide an append-only log with consumer groups and pending-entry tracking; **bitmaps** store compact per-bit flags; and **HyperLogLog** estimates set cardinality with bounded memory. Memcached stores opaque key-value objects and is suitable for simple page, session, and query-result caches, so it does not provide these Redis data-structure operations unless the application serializes them itself. Both keep a key index in memory; when Redis reaches `maxmemory`, its selected policy evicts keys, while Memcached evicts least-recently-used items within reclaimable memory.
 
-Redis's `allkeys-lfu` policy uses an approximate frequency counter rather than an exact LFU implementation. The **LRU** policy instead uses recency. The **LRU** implementation below keeps a hash table from keys to nodes and a doubly-linked list ordered from most to least recently used; a hit moves its node to the front, and insertion beyond capacity removes the back. Both operations take expected O(1) time. LFU retains a per-key count, and ARC balances recent and frequent entries while keeping a bounded list of keys evicted recently from either partition. Google Caffeine implements ARC; Redis and Memcached do not expose ARC as a native policy.
+```mermaid
+classDiagram
+    class LRUCache {
+        -int capacity
+        -HashMap map
+        -Node head
+        -Node tail
+        +get(key)
+        +put(key, value)
+    }
+    class Node {
+        -int key
+        -int value
+        -Node previous
+        -Node next
+    }
+    LRUCache "1" o-- "*" Node : owns
+```
+
+Redis's `allkeys-lfu` policy uses an approximate frequency counter rather than an exact LFU implementation. The **LRU** policy instead uses recency. The **LRU** implementation below keeps a hash table from keys to nodes and a doubly-linked list ordered from most to least recently used; a hit moves its node to the front, and insertion beyond capacity removes the back. Both operations take expected O(1) time. LFU retains a per-key count, and **ARC** balances recent and frequent entries with resident and ghost lists: ghost entries record recently evicted keys without retaining their values. Google Caffeine implements ARC; Redis and Memcached do not expose ARC as a native policy.
 
 ```java
 import java.util.HashMap;
@@ -496,7 +516,4 @@ Cached values can remain stale until a write invalidates them or their TTL expir
 ## Related
 - [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](02-caching-patterns.md)
 - [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](03-cdns-edge.md)
-- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
-- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](../01-system-design-fundamentals/01-fundamentals.md)
-- [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)
-- [Bitwise Operations and Bloom Filters](../../01-algorithms/01-linear-data-structures/05-bitwise-bloom-filters.md)
+- [Chapter 6 References](05-references.md)

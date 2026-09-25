@@ -2,35 +2,51 @@
 title: "Enterprise Architecture Patterns: Monolith vs Microservices, Service Mesh (Istio/Linkerd), Backend-for-Frontend (BFF), Strangler Fig, and Cell-Based Architecture (CBA)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
 
-Enterprise architecture patterns organize a large application around explicit ownership and failure boundaries. A **monolith** deploys components together, **microservices** deploy business capabilities independently, a **service mesh** manages service-to-service networking, a **backend-for-frontend (BFF)** creates an API tailored to one client experience, the **Strangler Fig** pattern gradually replaces an old system, and **cell-based architecture (CBA)** repeats a bounded slice of the system to limit blast radius.
+Enterprise architecture patterns organize a large application around explicit ownership and failure boundaries. A **monolith-versus-microservices choice** sets the deployment unit, a **service mesh** manages service-to-service networking, a **backend-for-frontend (BFF)** creates an API tailored to one client experience, the **Strangler Fig** pattern gradually replaces an old system, and **cell-based architecture (CBA)** repeats a bounded slice of the system to limit blast radius.
 
 ## How it works
 
 Choose a deployment boundary from the way the business changes, not from a diagram alone. A modular monolith keeps orders, billing, and notifications in one deployable unit but isolates their code and data behind modules. It gives a small team one build, one release, and one operational unit. Microservices split those capabilities into independently deployable processes, which improve team autonomy and fault isolation but add network calls, contract evolution, distributed tracing, and more deployment coordination.
 
-A **BFF** sits between a client and downstream services. A web BFF can aggregate a page's data and shape it for a browser, while a mobile BFF can optimize for bandwidth and offline-friendly responses. A BFF owns client-specific behavior, but it does not become a place for every business rule. Domain services remain the source of truth. This split is useful when a web and mobile client need different aggregates or release cycles.
+A **BFF** sits between a client and downstream services. A web BFF can aggregate a page's data and shape it for a browser, while a mobile BFF can optimize for bandwidth and intermittent connectivity. A BFF owns client-specific behavior, but it does not become a place for every business rule. Domain services remain the source of truth. This split is useful when a web and mobile client need different aggregates or release cycles.
 
 ```mermaid
 flowchart LR
-  Web[Web client] --> WebBFF[Web BFF]
-  Mobile[Mobile client] --> MobileBFF[Mobile BFF]
-  WebBFF --> Orders[Orders service]
-  MobileBFF --> Orders
-  WebBFF --> Catalog[Catalog service]
-  MobileBFF --> Catalog
-  Orders --> Outbox[(Event stream)]
-  Catalog --> Outbox
+  subgraph Clients[Client applications]
+    Web[Web application]
+    Mobile[Mobile application]
+  end
+  subgraph Edge[Client-specific edge]
+    WebBFF[Web BFF]
+    MobileBFF[Mobile BFF]
+  end
+  subgraph Mesh[Service mesh data plane]
+    Routing[Service routing and mTLS]
+  end
+  subgraph Domain[Domain capabilities]
+    Orders[Orders service]
+    Catalog[Catalog service]
+    Payments[Payments service]
+  end
+  Web --> WebBFF
+  Mobile --> MobileBFF
+  WebBFF --> Routing
+  MobileBFF --> Routing
+  Routing --> Orders
+  Routing --> Catalog
+  Routing --> Payments
 ```
 
-A service mesh such as Istio or Linkerd places a proxy beside each workload or uses an ambient data plane. The proxies establish mTLS, discover eligible destinations, apply traffic policy, and emit telemetry. The application still owns domain behavior. The mesh is valuable when many services need the same east-west security and resilience policy, but it adds data-plane CPU, configuration, certificate rotation, and a new operational layer.
+A service mesh such as Istio or Linkerd places a proxy or node proxy in each workload's data path. Istio can use sidecars or ambient mode, while Linkerd uses lightweight proxies. The proxies establish mTLS, discover eligible destinations, apply traffic policy, and emit telemetry. The application still owns domain behavior. The mesh is valuable when many services need the same east-west security and resilience policy, but it adds data-plane CPU, configuration, certificate rotation, and a new operational layer.
 
 A Strangler Fig places a new interface in front of a legacy system and routes selected capabilities to the replacement. As each capability moves, traffic shifts from the old implementation to the new one. The facade prevents clients from depending on internal migration state and gives rollback a route. It works best with observable boundaries such as a table, API, or business capability that can migrate independently.
 
-Cell-based architecture divides the system into cells, each with its own traffic entry, data, and dependent capacity. A router sends a user or tenant to one cell. A cell can fail without taking down every other cell, and capacity can scale by adding cells. It requires a deliberate cell key, a router with a complete cell map, and operations that can repair or rebuild one cell. A cell is not just a Kubernetes cluster; it is an operational slice with bounded responsibilities.
+Cell-based architecture divides the system into cells, each with its own traffic entry, data, and dependent capacity. A router sends a user or tenant to one cell. A cell can fail without taking down every other cell, and capacity can scale by adding cells. It requires a deliberate cell key, a router with an accurate cell map, and operations that can repair or rebuild one cell. A cell is not just a Kubernetes cluster; it is an operational slice with bounded responsibilities.
 
 ```yaml
 architecture_decision:
@@ -78,8 +94,3 @@ These patterns compose. A company can use a modular monolith for billing, servic
 
 - [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](02-domain-driven-event-architectures.md)
 - [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Backoff, Retries, and Timeout Budgets](03-resilience-fault-tolerance.md)
-- [Reverse Proxies, API Gateways, and Edge Routing](../01-system-design-fundamentals/04-proxies-gateways.md)
-- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](../01-system-design-fundamentals/06-cryptography-system-security.md)
-- [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security](../01-system-design-fundamentals/07-appsec-threat-defense.md)
-- [Network Protocols](../01-system-design-fundamentals/02-network-protocols.md)
-- [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)

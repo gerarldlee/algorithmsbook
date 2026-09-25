@@ -1,7 +1,10 @@
 # Hugo configuration file
 title: Learn Algorithms & System Design
-baseURL: "https://gerarldlee.github.io/algorithmsbook.fociilabs.com/"
+baseURL: "/"
 languageCode: "en-us"
+
+relativeURLs: true
+
 
 # import hextra as module
 module:

@@ -2,6 +2,7 @@
 title: "Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,21 @@ Load balancing distributes requests across backend instances and removes unhealt
 ## How it works
 
 A load balancer receives traffic, selects an eligible backend, forwards the request, and observes the result. Health checks determine eligibility; a connection failure or unhealthy response removes a target until it recovers. The scheduler then applies a distribution strategy. **Round-robin** advances through targets in order. **Least connections** favors the target with the fewest active connections, which often handles uneven connection lifetimes better. **Consistent hashing** maps a selected key to a position on a hash ring, so adding or removing a target remaps only keys near that target; virtual nodes reduce skew caused by an uneven physical ring. None of these strategies can create capacity, so load tests must cover both the scheduler and the backend's bottleneck.
+
+The component flow keeps health state separate from request selection:
+
+```mermaid
+flowchart LR
+    Client[Clients] --> Balancer[Load balancer]
+    Probe[Health probes] --> Checker[Health checker]
+    Checker -->|eligible target set| Balancer
+    Balancer --> Orders[Orders instance A]
+    Balancer --> Payments[Payments instance B]
+    Balancer --> Web[Web instance C]
+    Orders -->|unhealthy signal| Checker
+    Payments -->|unhealthy signal| Checker
+    Web -->|unhealthy signal| Checker
+```
 
 This Envoy configuration selects an L7 route and uses active health checks with least-request scheduling:
 
@@ -102,8 +118,7 @@ Match the balancer layer and scheduling policy to the workload:
 
 ## Related
 
-- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](01-fundamentals.md)
-- [Network Protocols](02-network-protocols.md)
+- [Fundamentals of System Design](01-fundamentals.md)
+- [Network Protocols & Transport Mechanics](02-network-protocols.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
-- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](../02-caching/04-rate-limiting.md)
-- [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)
+- [Rate Limiting & Traffic Shaping](../02-caching/04-rate-limiting.md)

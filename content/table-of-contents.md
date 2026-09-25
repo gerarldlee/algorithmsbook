@@ -20,6 +20,7 @@ The book is organized into Parts, Chapters, and Topics. This index lists the cha
 - [Chapter 1: Linear Data Structures & Memory Models](docs/01-algorithms/01-linear-data-structures/)
 - [Chapter 2: Hierarchical Data Structures, Search Trees & Spatial Indexing](docs/01-algorithms/02-search-trees/)
 - [Chapter 3: Core Algorithmic Paradigms & Parallel Computing](docs/01-algorithms/03-paradigms/)
+- [Chapter 3B: Decision Theory, Game Theory & Bayesian Systems](docs/01-algorithms/03b-decision-theory-game-bayesian/)
 - [Chapter 4: Graph Theory & Network Algorithms](docs/01-algorithms/04-graphs/)
 - [Chapter 4A: Computational Theory & Advanced Algorithms](docs/01-algorithms/04a-computational-theory/)
 
@@ -27,6 +28,7 @@ The book is organized into Parts, Chapters, and Topics. This index lists the cha
 
 - [Chapter 5: System Design Fundamentals & Infrastructure Security](docs/02-system-design/01-system-design-fundamentals/)
 - [Chapter 5B: Software Architecture Patterns](docs/02-system-design/02-software-architecture-patterns/)
+- [Chapter 5C: Object-Oriented Design, Refactoring & Software Craftsmanship](docs/02-system-design/03-object-oriented-design/)
 - [Chapter 6: Caching Strategies & Edge Acceleration](docs/02-system-design/02-caching/)
 
 ## Part III: Messaging, Notifications & Real-Time Communication

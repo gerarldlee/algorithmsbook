@@ -2,6 +2,7 @@
 title: "Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -27,6 +28,21 @@ patterns:
 ```
 
 In **cache-aside**, the application owns both sides of the cache. It returns a hit directly, loads and populates after a miss, and updates the source of truth before invalidating the cache. In **write-through**, the cache updates the source synchronously before acknowledging the write, which keeps the two stores aligned if the operation succeeds but adds source latency to every write. In **write-around**, a write goes only to the source, so a one-off write does not evict a hot cached value; the next cache-aside read repopulates it. In **write-behind**, the cache acknowledges a write and later forwards it to the source, reducing request-path latency at the cost of buffered data loss and ordering unless the queue has suitable durability.
+
+```mermaid
+flowchart LR
+    R[Read request] --> H{Cache hit?}
+    H -->|Yes| C[Return cached value]
+    H -->|No| S[Read source of truth]
+    S --> P[Populate cache]
+    P --> C
+    W[Write request] --> Q{Selected pattern}
+    Q -->|Cache-aside or write-around| T[Update source]
+    T --> I[Invalidate or skip cache]
+    Q -->|Write-through| U[Update cache and source]
+    Q -->|Write-behind| D[Update cache]
+    D --> B[Enqueue source write]
+```
 
 A cache miss can become a **cache stampede** when many callers load the same expired key together. A per-key lock, request coalescing, or early recomputation for popular keys limits the duplicate work. LFU eviction is a separate capacity policy: it stores each key's access count, groups keys by count, and evicts the least popular group. Every implementation below accepts only a positive integer capacity. Hash-table lookups and direct key removal are expected O(1) in all six implementations. The C implementation's ordered frequency-list insertion is O(b), where `b` is the number of active frequency buckets, and the Rust implementation's `VecDeque::retain` removal is O(w), where `w` is the width of the current frequency bucket.
 
@@ -533,7 +549,6 @@ func (c *LFUCache) Put(key, value int) {
 - **Backing-store reads** — remove cache coherence concerns, but increase source load and place database latency on the request path.
 
 ## Related
-- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [In-Memory Caching Engines (Redis, Memcached), Data Structures, and Eviction Policies](01-in-memory-caching.md)
 - [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](03-cdns-edge.md)
-- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
-- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](../01-system-design-fundamentals/01-fundamentals.md)
+- [Chapter 6 References](05-references.md)

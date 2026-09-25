@@ -2,6 +2,7 @@
 title: "Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,7 +13,24 @@ System design turns product requirements into cooperating components and measura
 
 A design starts with a workload model: request rates, arrival patterns, data sizes, latency targets, and the consequences of failure. A **goodput** target distinguishes useful completed requests from merely completed attempts, while percentile latency describes the slow tail that users experience. An SLI needs a precise numerator, denominator, observation window, and eligible traffic; "99.9% uptime" is incomplete until those boundaries define which failures count.
 
-Prometheus rules can turn those definitions into continuously evaluated SLIs:
+The component and data-flow view separates request-path work from asynchronous work:
+
+```mermaid
+flowchart LR
+    Client[Client] --> Edge[CDN or edge router]
+    Edge --> Balancer[Load balancer]
+    Balancer --> App[Stateless application replicas]
+    App --> Cache[(Cache)]
+    App --> Database[(Primary datastore)]
+    App --> Queue[(Queue)]
+    Queue --> Worker[Asynchronous workers]
+    Worker --> Database
+    App -. response .-> Client
+```
+
+For this example, eligible checkout traffic is a request that reaches the authenticated production checkout handler. Health checks, synthetic probes, and requests rejected at the edge before the handler are excluded. A 5xx response from the handler is a bad event; if 4xx responses represent failed user journeys, define that explicitly rather than silently including or excluding them.
+
+Prometheus rules can turn those definitions into continuously evaluated SLIs and multi-window error-budget alerts:
 
 ```yaml
 groups:
@@ -21,27 +39,35 @@ groups:
     rules:
       - record: checkout_api:request_rate:5m
         expr: sum(rate(http_requests_total{service="checkout-api"}[5m]))
-      - record: checkout_api:goodput:5m
-        expr: sum(rate(http_requests_total{service="checkout-api",status!~"5.."}[5m]))
-      - record: checkout_api:availability:5m
+      - record: checkout_api:goodput:1h
+        expr: sum(rate(http_requests_total{service="checkout-api",sl_class="eligible",status!~"5.."}[1h]))
+      - record: checkout_api:availability:1h
         expr: |
-          sum(rate(http_requests_total{service="checkout-api",status!~"5.."}[5m]))
+          sum(rate(http_requests_total{service="checkout-api",sl_class="eligible",status!~"5.."}[1h]))
           /
-          sum(rate(http_requests_total{service="checkout-api"}[5m]))
+          sum(rate(http_requests_total{service="checkout-api",sl_class="eligible"}[1h]))
+      - record: checkout_api:availability:6h
+        expr: |
+          sum(rate(http_requests_total{service="checkout-api",sl_class="eligible",status!~"5.."}[6h]))
+          /
+          sum(rate(http_requests_total{service="checkout-api",sl_class="eligible"}[6h]))
       - record: checkout_api:request_duration:p99_5m
         expr: |
           histogram_quantile(
             0.99,
             sum by (le) (
-              rate(http_request_duration_seconds_bucket{service="checkout-api"}[5m])
+              rate(http_request_duration_seconds_bucket{service="checkout-api",sl_class="eligible"}[5m])
             )
           )
-      - alert: CheckoutApiAvailabilityBudgetBurn
-        expr: checkout_api:availability:5m < 0.999
+      - alert: CheckoutApiAvailabilityFastBudgetBurn
+        expr: (1 - checkout_api:availability:1h) / (1 - 0.999) > 14.4
         for: 5m
+      - alert: CheckoutApiAvailabilitySlowBudgetBurn
+        expr: (1 - checkout_api:availability:6h) / (1 - 0.999) > 6
+        for: 30m
 ```
 
-The SLO sets targets such as a minimum availability ratio or maximum p99 latency. The SLA states external consequences and remedies when the provider misses the committed SLO, such as service credits. During capacity planning, you allocate a latency budget across DNS, connection setup, the edge, the application, each datastore call, and the client. During operations, you compare measured SLIs with the SLO, preserve raw indicators, and alert on error-budget burn rather than treating isolated infrastructure alerts as user-visible failures.
+The 0.1% error budget comes from the 99.9% availability SLO. A 14.4-times burn rate exhausts that 30-day budget in about two days, while a 6-times rate exhausts it in about five days. The SLA states external consequences and remedies when the provider misses the committed SLO, such as service credits. During capacity planning, you allocate a latency budget across DNS, connection setup, the edge, the application, each datastore call, and the client. During operations, you compare measured SLIs with the SLO, preserve raw indicators, and alert on error-budget burn rather than treating isolated infrastructure alerts as user-visible failures.
 
 A request path commonly crosses DNS or an anycast address, a CDN, a load balancer, stateless application replicas, and a stateful tier. You scale stateless replicas horizontally; you scale databases and caches through replication, partitioning, or both; and you use queues to absorb work that does not need to finish in the request. Each hop must have bounded timeouts, and retries require a retry budget so one failed dependency does not multiply traffic.
 
@@ -75,9 +101,7 @@ Availability, latency, and consistency are separate choices rather than a single
 
 ## Related
 
-- [Network Protocols](02-network-protocols.md)
+- [Network Protocols & Transport Mechanics](02-network-protocols.md)
 - [Load Balancing Strategies](03-load-balancing.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
-- [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Exponential Backoff, Retry Strategies, and Timeout Budgets](../02-software-architecture-patterns/03-resilience-fault-tolerance.md)
-- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](../02-caching/01-in-memory-caching.md)
-- [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](../02-caching/02-caching-patterns.md)
+- [API Paradigms & Contracts](05-api-paradigms.md)
+- [Resilience & Fault Tolerance Patterns](../02-software-architecture-patterns/03-resilience-fault-tolerance.md)

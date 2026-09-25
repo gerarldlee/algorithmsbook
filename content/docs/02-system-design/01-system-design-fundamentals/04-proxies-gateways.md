@@ -2,6 +2,7 @@
 title: "Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,7 +13,21 @@ Proxies and gateways are intermediaries that accept traffic and route or transfo
 
 An ingress request first reaches an edge router, then a reverse proxy or API gateway, and finally a backend service. The reverse proxy terminates TLS, selects a healthy pool, forwards headers, and may cache responses. The API gateway adds authentication, quotas, request validation, protocol transformation, and routing across services. In the opposite direction, a forward proxy applies egress allowlists, inspection, and audit policy before opening an outbound connection. A service mesh extends proxy-mediated control to service-to-service calls through sidecars or ambient data-plane components.
 
-Traefik's dynamic file configuration expresses edge routing as host rules that terminate TLS and select backend services:
+The component and data-flow view separates client ingress, policy enforcement, and controlled egress:
+
+```mermaid
+flowchart LR
+    Client[Client] --> Edge[Edge router]
+    Edge --> Gateway[API gateway]
+    Gateway --> Policy[Authentication, quota, and validation policy]
+    Policy -->|allowed request| Orders[Orders service]
+    Policy -->|allowed request| Web[Web service]
+    Edge --> Cache[(Edge cache)]
+    Client --> Forward[Forward proxy]
+    Forward --> External[Approved external service]
+```
+
+Traefik's dynamic file configuration below is a routing fragment, not a complete TLS configuration. It assumes that the `websecure` entry point and certificate storage are already configured outside the fragment:
 
 ```yaml
 http:
@@ -76,9 +91,7 @@ Separate routing from business logic. A gateway should validate and route reques
 
 ## Related
 
+- [Network Protocols & Transport Mechanics](02-network-protocols.md)
 - [Load Balancing Strategies](03-load-balancing.md)
-- [Network Protocols](02-network-protocols.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](05-api-paradigms.md)
-- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
-- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
-- [Content Delivery Networks (CDNs), Edge Computing, and Static/Dynamic Content Acceleration](../02-caching/03-cdns-edge.md)
+- [API Paradigms & Contracts](05-api-paradigms.md)
+- [Cryptography & System Security](06-cryptography-system-security.md)

@@ -2,6 +2,7 @@
 title: "Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -17,6 +18,20 @@ A regex compiler parses precedence from lowest to highest: `|`, then concatenati
 This is how regular-expression engines such as RE2 use finite-automaton execution instead of backtracking. Avoiding general backtracking gives predictable work for supported regular syntax. Exponentiation and backreferences are not regular features; supporting them requires a different engine model. Catastrophic backtracking is therefore avoided for the language implemented here.
 
 All six implementations deliberately use the same restricted alphabet: patterns contain at most 63 printable ASCII characters, and the engine reports a match only when the input is also printable ASCII. This avoids silently treating a multibyte UTF-8 sequence as several regex symbols. The C implementation additionally reserves capacity for 256 NFA states, 512 NFA transitions, 128 alphabet symbols, and 256 reachable DFA states. It rejects null or oversized inputs, invalid patterns, invalid NFA state references, and subsets that exceed the fixed DFA capacity; callers can distinguish these failures only by the returned `false` value.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Start
+    Start --> NonAccepting: consume symbol
+    Start --> Accepting: consume symbol
+    NonAccepting --> NonAccepting: consume symbol
+    NonAccepting --> Accepting: consume symbol
+    NonAccepting --> Rejected: missing transition
+    Accepting --> NonAccepting: consume symbol
+    Accepting --> Accepting: consume symbol
+    Accepting --> Rejected: missing transition
+    Accepting --> [*]: input ends
+```
 
 ```java
 import java.util.ArrayDeque;

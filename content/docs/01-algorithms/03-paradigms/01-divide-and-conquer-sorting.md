@@ -2,6 +2,7 @@
 title: "Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,7 +15,20 @@ Merge sort splits an array near its midpoint, recursively sorts each half, and l
 
 Radix sort processes one digit at a time. Starting at the least significant digit, it performs a **stable** counting-sort pass, so an earlier ordering is preserved when the next digit is processed. Counting sort counts each key, uses prefix sums to locate keys in an output array, and restores their input order for equal keys. Both radix sort and counting sort require nonnegative integer keys; counting sort also performs best when the key range is close to the input size.
 
-The implementations expose the same four operations. Each returns a sorted copy, leaves its input unchanged, and treats merge sort, radix sort, and counting sort as stable.
+The implementations expose the same four operations. Each returns a sorted copy, leaves its input unchanged, and treats merge sort, radix sort, and counting sort as stable. Merge sort and quicksort determine order through pairwise comparisons; radix sort distributes values into buckets by a digit; counting sort uses a frequency table over the key range. This distinction determines their asymptotic costs and required key preconditions.
+
+```mermaid
+flowchart TD
+    A[Integer keys] --> B{Key structure}
+    B -->|No known range or digit structure| C[Comparison sort]
+    C --> C1[Merge sort: split, sort, merge]
+    C --> C2[Quicksort: partition around pivot]
+    B -->|Nonnegative integer keys| D{Digit width or key range}
+    D -->|Small digit count| E[Radix sort]
+    E --> E1[Stable counting pass per digit]
+    D -->|Small value range| F[Counting sort]
+    F --> F1[Prefix sums place equal keys]
+```
 
 ```java
 import java.util.Arrays;
@@ -613,7 +627,6 @@ Here, `d` is the number of digits processed and `k` is the radix or key range. M
 ## Related
 
 - [Greedy Choice Paradigms & Interval Scheduling](02-greedy.md)
-- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](03-dynamic-programming.md)
-- [Concurrency & Parallel Computing](06-concurrency-parallel-computing.md)
+- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)](03-dynamic-programming.md)
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](../01-linear-data-structures/01-dynamic-arrays.md)
-- [Tries, Radix Trees, and Suffix Trees/Arrays](../02-search-trees/06-tries-suffix.md)
+- [Chapter 3 References](07-references.md)

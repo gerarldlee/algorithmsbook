@@ -10,4 +10,5 @@ strategies that make high-scale systems work.
 
 - [Chapter 5: System Design Fundamentals & Infrastructure Security](01-system-design-fundamentals/)
 - [Chapter 5B: Software Architecture Patterns](02-software-architecture-patterns/)
+- [Chapter 5C: Object-Oriented Design, Refactoring & Software Craftsmanship](03-object-oriented-design/)
 - [Chapter 6: Caching Strategies & Edge Acceleration](02-caching/)

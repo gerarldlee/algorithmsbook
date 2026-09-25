@@ -2,6 +2,7 @@
 title: "Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -9,6 +10,21 @@ toc: true
 
 ## How it works
 Kahn's algorithm repeatedly removes vertices with in-degree zero, and a short result reveals a cycle. Tarjan's DFS maintains discovery indices and low-link values, popping vertices from an active stack when a root is found. Kosaraju's algorithm records DFS finish order, traverses the transposed graph in reverse finish order, and assigns one SCC to each traversal. The examples implement all three operations with adjacency lists.
+
+```mermaid
+flowchart TD
+    G[Directed graph] --> Z[Compute in-degrees]
+    Z --> Q[In-degree-zero vertices]
+    Q --> E{More zero vertices?}
+    E -->|Yes| O[Append to order]
+    O --> Q
+    E -->|No| C{Cycle exists?}
+    C -->|Yes| X[Report cycle]
+    C -->|No| T[Topological order]
+    G --> S[DFS with low links]
+    S --> P[Pop strongly connected component]
+    P --> D[Condensation DAG]
+```
 
 ```java
 import java.util.ArrayDeque;
@@ -797,6 +813,10 @@ func (TopologicalSCC) Kosaraju(adjacency [][]int) [][]int {
     return components
 }
 ```
+
+### Condensation DAGs
+
+After SCCs are found, replace each component with one node and keep an edge when a directed edge crosses two components. The result is a directed acyclic graph, so topological sorting can order components, schedule dependent work, and expose the next independent tasks. Parallel systems often use the condensation graph to run unrelated components concurrently.
 
 ## Complexity
 For \(V\) vertices and \(E\) edges:

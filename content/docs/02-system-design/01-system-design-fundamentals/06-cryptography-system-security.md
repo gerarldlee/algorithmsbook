@@ -2,6 +2,7 @@
 title: "Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -17,6 +18,24 @@ The **public key infrastructure (PKI)** is the system of certificates, certifica
 Symmetric encryption uses one shared secret to encrypt and decrypt data. It is fast and suitable for bulk data, but both parties must obtain the secret securely. Asymmetric encryption uses a mathematically related key pair: a public key can be shared, while the private key remains protected. Public-key systems commonly establish a shared session secret, authenticate messages, or verify signatures. A common TLS design therefore combines asymmetric cryptography for identity and key establishment with symmetric cryptography for data transfer.
 
 A **key management service (KMS)** keeps master keys inside a protected service and exposes controlled operations such as encrypt, decrypt, sign, verify, and key rotation. Applications request cryptographic operations with a key identifier and an authorization context; they should not export raw key material. Hardware security modules, cloud KMS services, envelope encryption, audit logs, and separation of duties reduce the impact of an application credential leak.
+
+The KMS flow separates caller authorization from cryptographic work and audit evidence:
+
+```mermaid
+sequenceDiagram
+    participant App as Orders workload
+    participant IAM as Identity service
+    participant KMS as KMS
+    participant Audit as Audit log
+    App->>IAM: Assume approved workload role
+    IAM-->>App: Short-lived credentials
+    App->>KMS: Encrypt with key ID and context
+    KMS->>IAM: Evaluate principal and action
+    KMS-->>App: Ciphertext
+    App->>KMS: Decrypt with key ID and context
+    KMS-->>App: Plaintext application data
+    KMS->>Audit: Record key, caller, action, and result
+```
 
 OAuth 2.0 is an authorization framework. In the authorization-code flow with PKCE, a user authenticates at an authorization server, the client receives an authorization code, and the client exchanges that code plus its verifier for tokens. The access token authorizes an API call; it is not normally a user identity document. OIDC adds an ID token containing identity claims, a nonce for replay protection, a user-info endpoint, and discovery metadata. A resource server validates issuer, audience, signature, expiry, and scopes before acting on a token.
 
@@ -46,7 +65,7 @@ zero_trust_policy:
     log_payloads: false
 ```
 
-A KMS policy uses a principal, a cryptographic action, and a resource boundary rather than granting an application broad access to every key:
+The following AWS KMS key policy limits one application role to two cryptographic actions on one key:
 
 ```json
 {
@@ -60,6 +79,8 @@ A KMS policy uses a principal, a cryptographic action, and a resource boundary r
   }]
 }
 ```
+
+The encryption context is caller-supplied metadata, not proof of the caller's intent or an authorization boundary by itself. If the context separates permitted workloads or purposes, enforce the corresponding constraints in IAM and use separate encrypt and decrypt roles when the threat model warrants the added separation. Review both the key policy and the caller's effective IAM permissions.
 
 TLS protects the channel, OAuth and OIDC establish delegated identity, KMS protects key use, and zero-trust policy decides which workload may perform which action. These controls complement one another; none replaces authorization, logging, patching, or secure software development.
 
@@ -95,8 +116,7 @@ Security controls add latency, operational state, and failure modes. Choose cont
 
 ## Related
 
-- [Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols](02-network-protocols.md)
+- [Network Protocols & Transport Mechanics](02-network-protocols.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
-- [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management, and Supply-Chain Security](07-appsec-threat-defense.md)
-- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
+- [API Paradigms & Contracts](05-api-paradigms.md)
+- [AppSec & Threat Defense](07-appsec-threat-defense.md)

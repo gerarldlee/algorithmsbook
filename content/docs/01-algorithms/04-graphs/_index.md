@@ -1,6 +1,6 @@
 ---
 title: "Chapter 4: Graph Theory & Network Algorithms"
-weight: 4
+weight: 5
 ---
 
 Graphs and the algorithms that traverse and exploit them: representations, traversals, topological sort, spanning trees, shortest paths, and flow.
@@ -11,3 +11,4 @@ Graphs and the algorithms that traverse and exploit them: representations, trave
 - [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)
 - [Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall Space Optimizations, Johnson’s Algorithm, Matrix Multiplication Paths)](05-shortest-paths.md)
 - [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)
+- [Chapter 4 References](07-references.md)

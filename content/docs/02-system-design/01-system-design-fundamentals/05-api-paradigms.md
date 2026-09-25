@@ -2,6 +2,7 @@
 title: "API Paradigms & Contracts: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI Specifications"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,19 @@ API paradigms define the contract and direction of communication between compone
 ## How it works
 
 REST maps a domain operation to a resource URI and an HTTP method, then uses status codes, headers, and a representation such as JSON to exchange data. GraphQL clients send operations against a schema; the server resolves the selected fields and returns matching data, usually as JSON. gRPC code generators turn a schema into typed clients and servers, and Protocol Buffers provide a compact, language-neutral wire format. Event-driven systems instead publish a domain event to durable storage or a broker; consumers acknowledge progress and may replay the event to rebuild state or trigger follow-on work. **tRPC** keeps a TypeScript procedure definition as the source of truth and generates a typed client, router, and runtime validation from it. **OpenAPI** describes synchronous HTTP operations, while **AsyncAPI** describes event-driven channels, messages, and brokers.
+
+The runtime data flow below shows the boundaries those contracts describe: REST, tRPC, and gRPC choose direct request paths, while an event contract covers asynchronous fan-out through a broker.
+
+```mermaid
+flowchart LR
+    HttpClient[REST or GraphQL client] --> Service[Orders service]
+    TypeScriptClient[TypeScript client] -->|tRPC| Service
+    Service -->|gRPC| Accounts[Accounts service]
+    Service -->|domain event| Broker[(Event broker)]
+    Broker --> Fulfillment[Fulfillment consumer]
+    Broker --> Billing[Billing consumer]
+    Broker --> Analytics[Analytics consumer]
+```
 
 The GraphQL contract names resources as graph fields:
 
@@ -168,11 +182,7 @@ GraphQL and gRPC require explicit query and method limits. Event-driven systems 
 
 ## Related
 
-- [Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI](01-fundamentals.md)
-- [Network Protocols](02-network-protocols.md)
+- [Fundamentals of System Design](01-fundamentals.md)
+- [Network Protocols & Transport Mechanics](02-network-protocols.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
-- [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../02-software-architecture-patterns/02-domain-driven-event-architectures.md)
-- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
-- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](../02-caching/04-rate-limiting.md)
-- [Queues vs Streams](../../03-messaging/01-messaging/01-queues-vs-streams.md)
-- [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)
+- [Cryptography & System Security](06-cryptography-system-security.md)

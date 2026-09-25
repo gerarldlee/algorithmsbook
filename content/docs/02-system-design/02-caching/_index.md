@@ -1,6 +1,6 @@
 ---
 title: "Chapter 6: Caching Strategies & Edge Acceleration"
-weight: 3
+weight: 4
 ---
 
 Making reads fast: in-memory caches, caching patterns, CDNs and edge computing, and rate limiting.
@@ -9,3 +9,4 @@ Making reads fast: in-memory caches, caching patterns, CDNs and edge computing, 
 - [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](02-caching-patterns.md)
 - [Content Delivery Networks (CDNs), Edge Computing, Edge Runtimes (Wasm at Edge, eBPF), and Static/Dynamic Content Acceleration](03-cdns-edge.md)
 - [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
+- [Chapter 6 References](05-references.md)

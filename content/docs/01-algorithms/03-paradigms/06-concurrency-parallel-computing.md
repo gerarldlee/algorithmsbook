@@ -2,6 +2,7 @@
 title: "Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,13 +13,44 @@ toc: true
 
 A **mutex** gives one worker exclusive access to a protected section. A **semaphore** starts with a number of permits, and each worker must acquire a permit before proceeding and release it afterward. A one-permit semaphore has mutex-like behavior, while several permits allow a fixed number of workers into a resource pool. The `run_bounded` operation uses one permit, records the number of workers in the protected region, and returns both the total and the observed peak concurrency.
 
-**Compare-and-swap (CAS)** atomically replaces a memory value only when it still equals an expected value. The hardware-assisted counter examples repeatedly load the old value, prepare an increment, and retry when another worker has already won. A successful worker publishes the new value without taking a mutex. Lock freedom requires the algorithm to make progress without any individual worker being blocked forever; it does not promise that every increment succeeds on its first attempt, and heavy contention can waste work on retries. The portable Python and TypeScript examples instead serialize the read-and-replace operation with a short critical section because neither example supplies a portable cross-worker atomic CAS primitive. Conventional GIL-enabled CPython threads do not execute Python bytecode in parallel, and the GIL does not make a multi-step read-and-replace indivisible. Free-threaded CPython removes the GIL, but the shown mutex still preserves atomicity. The TypeScript serializer is confined to one event-loop instance; it provides no atomicity across worker threads or SharedArrayBuffer data.
+**Compare-and-swap (CAS)** atomically replaces a memory value only when it still equals an expected value. The hardware-assisted counter examples repeatedly load the old value, prepare an increment, and retry when another worker has already won. A successful worker publishes the new value without taking a mutex. Lock freedom requires the algorithm to make progress without any individual worker being blocked forever; it does not promise that every increment succeeds on its first attempt, and heavy contention can waste work on retries. The portable Python and TypeScript examples instead place the read-and-replace operation in a short critical section because neither example supplies a portable cross-worker atomic CAS primitive. Conventional GIL-enabled CPython threads do not execute Python bytecode in parallel, and the GIL does not make a multi-step read-and-replace indivisible. Free-threaded CPython removes the GIL, but the shown mutex still preserves atomicity. The TypeScript serializer is confined to one event-loop instance; it provides no atomicity across worker threads or SharedArrayBuffer data.
 
 An **event loop** runs a scheduler that dispatches ready callbacks and returns control when a task awaits I/O, a timer, or another promise. The `schedule_sum` operation submits two range reductions to each language's task mechanism and completes after both results arrive. A callback consumes no extra worker thread while it is waiting, but CPU work in a callback can delay other callbacks on the same loop. Java uses `CompletableFuture` worker tasks, Python and TypeScript use cooperative tasks, and Rust returns a future for an executor to poll. The C implementation uses two pthreads, while the Go implementation sends two jobs to a goroutine-backed queue. Those scheduling mechanisms need not overlap their two range reductions in the same way, and the example promises equivalent sums rather than identical parallelism. In the TypeScript example, `Promise.all` waits for two callbacks; it does not make their synchronous arithmetic run on multiple threads. Worker threads with a shared `SharedArrayBuffer` are a different model and require their own synchronized state.
 
 **SIMD** executes one instruction over several packed values. The `vectorizedSum` operation uses four independent lanes, combines them, and then handles the remaining tail values. This portable layout gives optimizing compilers and JIT runtimes a chance to emit SIMD instructions, but it does not guarantee that the hardware will do so. Explicit mechanisms such as the Java Vector API, C or Rust SIMD intrinsics, and vectorized runtimes give stronger control when the target and fallback paths are managed carefully. Alignment, width, overflow, short inputs, and memory bandwidth can make vector execution no faster than a scalar loop.
 
-The six programs expose the same operation set: `run_bounded` controls admission to a protected region, `cas_increment` performs two workers' increments on one counter, `schedule_sum` submits two range tasks and joins their results, and `vectorizedSum` reduces four lanes plus a tail. Java, C, Rust, and Go use native threads or atomic instructions for the two-worker counter; Python and TypeScript use portable serialized critical sections. Every implementation returns the same counter and range sums, but the synchronization guarantees and scheduling behavior are those stated above.
+The six programs expose the same operation set: `run_bounded` controls admission to a protected region, `cas_increment` performs two workers' increments on one counter, `schedule_sum` submits two range tasks and joins their results, and `vectorizedSum` reduces four lanes plus a tail. In every `run_bounded` implementation, the complete sequence that increments `active`, updates `peak`, adds to `total`, and decrements `active` is one **critical section**. The one-permit semaphore or its equivalent prevents a second worker from entering, so the reported peak is one. A **critical section** is an exclusion rule over several operations; an **atomic operation** is one indivisible operation. They are not interchangeable.
+
+Java, C, Rust, and Go use native threads or atomic instructions for the two-worker counter; Python and TypeScript use portable serialized critical sections. Every implementation returns the same counter and range sums, but the synchronization guarantees and scheduling behavior are those stated above.
+
+```mermaid
+flowchart TD
+    Start([Start]) --> Fork{ }
+
+    subgraph Worker A
+        A1[acquire permit] --> A2[enter critical section]
+        A2 --> A3[add value and update peak]
+        A3 --> A4[leave critical section]
+        A4 --> A5[release permit]
+    end
+
+    subgraph Worker B
+        B1[wait for permit] --> B2[enter critical section after A]
+        B2 --> B3[add value and update peak]
+        B3 --> B4[leave critical section]
+        B4 --> B5[release permit]
+    end
+
+    Fork --> A1
+    Fork --> B1
+
+    A5 --> Join{ }
+    B5 --> Join{ }
+
+    Join --> J[join workers]
+    J --> R[return total and peak]
+    R --> End([Stop])
+```
 
 ```java
 import java.util.concurrent.CompletableFuture;
@@ -111,7 +143,7 @@ public class ConcurrencyExample {
             lanes[2] += values[index + 2];
             lanes[3] += values[index + 3];
         }
-    int64_t total = lanes[0] + lanes[1] + lanes[2] + lanes[3];
+        long total = lanes[0] + lanes[1] + lanes[2] + lanes[3];
         for (int index = vectorEnd; index < values.length; index++) {
             total += values[index];
         }
@@ -295,7 +327,7 @@ int64_t cc_vectorized_sum(ConcurrencyExample *example) {
         lanes[2] += example->values[index + 2];
         lanes[3] += example->values[index + 3];
     }
-    long total = lanes[0] + lanes[1] + lanes[2] + lanes[3];
+    int64_t total = lanes[0] + lanes[1] + lanes[2] + lanes[3];
     for (size_t index = vector_end; index < example->length; index++) total += example->values[index];
     return total;
 }
@@ -610,7 +642,8 @@ export class ConcurrencyExample {
           await new Promise<void>((resolve) => waiters.push(resolve));
         }
         await Promise.resolve();
-        counter.value += 1;
+        const observed = counter.value;
+        counter.value = observed + 1;
         const next = waiters.shift();
         if (next) next();
         else available = true;
@@ -797,8 +830,9 @@ Amdahl's law explains why adding workers eventually stops helping: if a fraction
 - **GPU execution** — offers large data-parallel throughput for suitable arrays, but transfers and synchronization dominate small workloads.
 - **Task pools and work stealing** — reuse workers and balance irregular jobs, adding scheduler state and less direct control.
 - **File-descriptor readiness or async I/O runtimes** — scale many blocking operations efficiently, but they do not make synchronous CPU callbacks parallel.
-
 ## Related
+
 - [Graph Representations and Graph Neural Network Data Structures](../04-graphs/01-graph-representations.md)
-- [Amortized Analysis Techniques](05-amortized-analysis.md)
-- [Divide-and-Conquer & Advanced Sorting](01-divide-and-conquer-sorting.md)
+- [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](05-amortized-analysis.md)
+- [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
+- [Chapter 3 References](07-references.md)

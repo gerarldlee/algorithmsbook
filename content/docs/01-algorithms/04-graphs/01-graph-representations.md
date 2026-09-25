@@ -2,18 +2,39 @@
 title: "Graph Representations (Adjacency Matrix, Adjacency List, Edge List, Sparsity Representations, Graph Neural Network Data Structures)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
 A **graph representation** stores the same vertices and edges in a form optimized for different operations: an adjacency matrix for constant-time edge tests, an adjacency list for efficient neighbor iteration, and an edge list for compact edge processing.
 
 ## How it works
-A graph has a fixed vertex count and either directed or undirected edges. `addEdge` records the edge in all three representations. `hasEdge` uses the adjacency list, `neighbors` returns the vertices that adjacency-list traversal visits, and `edges` exposes the edge-list view.
+A graph has a fixed vertex count and either directed or undirected edges. `addEdge` records the edge in all three representations. `hasEdge` uses the matrix sentinel, so the examples assume nonzero edge weights; `neighbors` returns the vertices that adjacency-list traversal visits, and `edges` exposes the edge-list view.
 
 ### Graph Neural Network data structures
 A **graph neural network (GNN)** keeps the graph topology separate from the numerical features used by message passing. A node-feature matrix stores one vector of \(d\) values per vertex. An edge list stores the source and destination vertex IDs, while **compressed sparse row (CSR)** storage groups destination IDs by source vertex so neighbor gathering is a contiguous read. Edge features are an optional third matrix for relationship attributes such as distance, type, or time.
 
 For a layer, the GNN gathers each vertex's neighbor features, aggregates them with a permutation-invariant operation such as sum or mean, combines the result with the vertex's current state, and applies a neural-network update. A mini-batch can represent several graphs with one node table plus a batch-ID vector, avoiding a separate object for every graph. Sparse adjacency saves memory when \(E \ll V^2\), while a dense matrix makes tensor operations simpler but costs \(O(V^2)\) storage. Production frameworks such as PyTorch Geometric, DGL, and TensorFlow use combinations of edge lists, CSR-style indices, sampled neighborhoods, and contiguous feature buffers.
+
+```mermaid
+classDiagram
+    class Graph {
+        +addEdge(from, to, weight)
+        +hasEdge(from, to)
+        +neighbors(vertex)
+        +edges()
+    }
+    class AdjacencyMatrix
+    class AdjacencyList
+    class EdgeList
+    class NodeFeatures
+    class EdgeFeatures
+    Graph --> AdjacencyMatrix
+    Graph --> AdjacencyList
+    Graph --> EdgeList
+    Graph --> NodeFeatures
+    Graph --> EdgeFeatures
+```
 
 ```java
 import java.util.ArrayList;
@@ -48,7 +69,7 @@ public class Graph {
     }
 
     public boolean hasEdge(int from, int to) {
-        return adjacency.get(from).contains(to);
+        return matrix[from][to] != 0;
     }
 
     public List<Integer> neighbors(int vertex) {
@@ -119,10 +140,7 @@ void graph_add_edge(Graph* graph, int from, int to, int weight) {
 }
 
 bool graph_has_edge(const Graph* graph, int from, int to) {
-    for (Node* node = graph->adjacency[from]; node; node = node->next) {
-        if (node->vertex == to) return true;
-    }
-    return false;
+    return graph->matrix[from][to] != 0;
 }
 
 int graph_neighbors(const Graph* graph, int vertex, int* output) {
@@ -167,7 +185,7 @@ class Graph:
             self.matrix[to_vertex][from_vertex] = weight
 
     def has_edge(self, from_vertex: int, to_vertex: int) -> bool:
-        return to_vertex in self.adjacency[from_vertex]
+        return self.matrix[from_vertex][to_vertex] != 0
 
     def neighbors(self, vertex: int) -> list[int]:
         return self.adjacency[vertex].copy()
@@ -214,7 +232,7 @@ impl Graph {
     }
 
     pub fn has_edge(&self, from_vertex: usize, to_vertex: usize) -> bool {
-        self.adjacency[from_vertex].contains(&to_vertex)
+        self.matrix[from_vertex][to_vertex] != 0
     }
 
     pub fn neighbors(&self, vertex: usize) -> &[usize] {
@@ -260,7 +278,7 @@ export class Graph {
   }
 
   hasEdge(fromVertex: number, toVertex: number): boolean {
-    return this.adjacency[fromVertex].includes(toVertex);
+    return this.matrix[fromVertex][toVertex] !== 0;
   }
 
   neighbors(vertex: number): number[] {
@@ -311,12 +329,7 @@ func (g *Graph) AddEdge(fromVertex, toVertex, weight int) {
 }
 
 func (g *Graph) HasEdge(fromVertex, toVertex int) bool {
-	for _, vertex := range g.Adjacency[fromVertex] {
-		if vertex == toVertex {
-			return true
-		}
-	}
-	return false
+	return g.Matrix[fromVertex][toVertex] != 0
 }
 
 func (g *Graph) Neighbors(vertex int) []int {
@@ -327,6 +340,10 @@ func (g *Graph) EdgesSnapshot() []Edge {
     return append([]Edge(nil), g.Edges...)
 }
 ```
+
+### GNN message passing and CSR
+
+Message passing gathers each vertex's neighbor features, aggregates them, and updates the vertex state. CSR stores offsets and destination IDs in contiguous arrays, so one row's neighbors are gathered with sequential reads. The representation separates topology from node and edge features, allowing the same sparse index to feed a model without materializing a dense adjacency matrix.
 
 ## Complexity
 For \(V\) vertices, \(E\) edges, and maximum degree \(\Delta\), the storage includes one operation per representation.
@@ -353,10 +370,7 @@ For \(V\) vertices, \(E\) edges, and maximum degree \(\Delta\), the storage incl
 - **Implicit graph** — generates neighbors on demand and avoids storage when the full edge set is never materialized.
 
 ## Related
-- [Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing](../02-search-trees/07-spatial-indexing.md)
-- [Concurrency & Parallel Computing: Mutexes, Semaphores, Lock-Free CAS Operations, Async Event Loops, and SIMD/Vectorization](../03-paradigms/06-concurrency-parallel-computing.md)
 - [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
 - [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)
-- [Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)](04-minimum-spanning-trees.md)
 - [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)

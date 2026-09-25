@@ -2,6 +2,7 @@
 title: "Backtracking, Branch-and-Bound, and Constraint Satisfaction Problems"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -10,18 +11,37 @@ toc: true
 
 ## How it works
 
-The N-Queens solver places one queen in each row. It tries each unused column, rejects a position that attacks an earlier queen, recursively fills the next row, and backtracks when every column fails. Counting valid complete boards explores the same search while accumulating one for each complete assignment.
+The N-Queens solver places one queen in each row. It tries each unused column, rejects a position that attacks an earlier queen, recursively fills the next row, and backtracks when every column fails. Counting valid complete boards explores the same search while accumulating one for each complete assignment. A negative board size has zero solutions, while a zero-by-zero board has one empty assignment.
+
+A constraint satisfaction problem separates **variables**, their allowed **domains**, and **constraints**. N-Queens uses one row variable per row, a column domain for each row, and row, column, and diagonal constraints. The row-by-row implementation checks constraints only when a value is assigned, but three standard techniques make the same search scale better:
+
+- **Forward checking** removes an assigned column and its attacked diagonals from every unassigned row's domain. It fails the branch immediately when any domain becomes empty, instead of waiting for that row to be selected.
+- **Constraint propagation** repeatedly applies domain reductions until no value can be removed. Forward checking handles constraints from each newly assigned queen; stronger arc-consistency propagation also compares domains pairwise so a value is removed when no compatible value remains in a neighboring domain.
+- **Minimum remaining values (MRV)** selects the unassigned variable with the fewest remaining domain values. MRV changes which branch is explored first, not the set of solutions, and often reduces the search tree sharply. The least-constraining-value rule can break MRV ties by trying the value that removes the fewest options from other domains.
+
+```mermaid
+flowchart TD
+    A[Partial assignment] --> B[Propagate constraints]
+    B --> C{Any domain empty?}
+    C -->|Yes| Z[Reject branch and restore domains]
+    C -->|No| D{Every variable assigned?}
+    D -->|Yes| E[Record solution]
+    D -->|No| F[Select MRV variable]
+    F --> G[Try each domain value]
+    G --> A
+    E --> H{Another solution required?}
+    H -->|Yes| A
+    H -->|No| I[Return]
+```
 
 **Branch and bound** adds an optimistic cost estimate to backtracking. The assignment solver processes agents in order and tries every unused task. Its bound is the current cost plus, for each unassigned agent, the cheapest unused task that could be assigned to it. If that lower bound cannot improve the best complete assignment, the branch is pruned. The remaining-row minima make the bound admissible: they never overestimate the cheapest completion.
 
-The same two operations appear in every implementation: `NQueens.count` returns the number of valid boards, and `Assignment.solve` returns a minimum-cost one-to-one assignment and its cost. The assignment operation accepts a nonempty square cost matrix with nonnegative costs.
+The same two operations appear in every implementation: `NQueens.count` returns the number of valid boards, and `Assignment.solve` returns a minimum-cost one-to-one assignment and its cost. The assignment operation accepts a square cost matrix with nonnegative costs. An empty matrix returns an empty assignment with cost zero; negative costs are invalid because they invalidate the remaining-minimum lower bound.
 
 ```java
-import java.util.Arrays;
-
 public class NQueens {
     public static long count(int n) {
-        if (n < 0) throw new IllegalArgumentException();
+        if (n < 0) return 0;
         return search(n, 0, new int[n]);
     }
 
@@ -53,7 +73,11 @@ class Assignment {
         int n = costs.length;
         for (int[] row : costs) {
             if (row.length != n) throw new IllegalArgumentException();
+            for (int cost : row) {
+                if (cost < 0) throw new IllegalArgumentException();
+            }
         }
+        if (n == 0) return new Result(new int[0], 0);
         int[] current = new int[n];
         int[] best = new int[n];
         boolean[] used = new boolean[n];
@@ -176,6 +200,12 @@ static void assignment_search(int n, int row, AssignmentCost cost, const int *co
 
 AssignmentCost assignment_solve(int n, const int *costs, int *assignment) {
     if (n < 0) return -1;
+    for (int agent = 0; agent < n; agent++) {
+        for (int task = 0; task < n; task++) {
+            if (costs[agent * n + task] < 0) return -1;
+        }
+    }
+    if (n == 0) return 0;
     int *current = malloc((size_t)n * sizeof(int));
     bool *used = calloc((size_t)n, sizeof(bool));
     if (n > 0 && (current == NULL || used == NULL)) abort();
@@ -193,7 +223,7 @@ class NQueens:
     @staticmethod
     def count(n):
         if n < 0:
-            raise ValueError()
+            return 0
 
         def is_valid(queens, row, column):
             for previous in range(row):
@@ -221,6 +251,10 @@ class Assignment:
         n = len(costs)
         if any(len(row) != n for row in costs):
             raise ValueError()
+        if any(cost < 0 for row in costs for cost in row):
+            raise ValueError()
+        if n == 0:
+            return [], 0
         current = [-1] * n
         best = [-1] * n
         used = [False] * n
@@ -304,6 +338,7 @@ pub struct AssignmentResult {
 impl Assignment {
     pub fn solve(costs: &[Vec<i64>]) -> AssignmentResult {
         let n = costs.len();
+        assert!(costs.iter().all(|row| row.len() == n && row.iter().all(|&cost| cost >= 0)));
         let mut current = vec![0; n];
         let mut best = vec![usize::MAX; n];
         let mut used = vec![false; n];
@@ -383,7 +418,7 @@ impl Assignment {
 ```typescript
 export class NQueens {
   static count(n: number): number {
-    if (n < 0) throw new Error();
+    if (n < 0) return 0;
     const search = (row: number, queens: number[]): number => {
       if (row === n) return 1;
       let total = 0;
@@ -411,6 +446,8 @@ export class Assignment {
   static solve(costs: number[][]): { assignment: number[]; cost: number } {
     const n = costs.length;
     if (costs.some((row) => row.length !== n)) throw new Error();
+    if (costs.some((row) => row.some((cost) => cost < 0))) throw new Error();
+    if (n === 0) return { assignment: [], cost: 0 };
     const current = new Array<number>(n).fill(-1);
     const best = new Array<number>(n).fill(-1);
     const used = new Array<boolean>(n).fill(false);
@@ -491,6 +528,19 @@ type Assignment struct{}
 
 func (Assignment) Solve(costs [][]int) ([]int, int64) {
     n := len(costs)
+    for _, row := range costs {
+        if len(row) != n {
+            panic("cost matrix must be square")
+        }
+        for _, cost := range row {
+            if cost < 0 {
+                panic("costs must be nonnegative")
+            }
+        }
+    }
+    if n == 0 {
+        return []int{}, 0
+    }
     current := make([]int, n)
     best := make([]int, n)
     used := make([]bool, n)
@@ -572,6 +622,6 @@ A bound can reduce the practical search but cannot change the worst-case bound. 
 ## Related
 
 - [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
-- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](03-dynamic-programming.md)
+- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)](03-dynamic-programming.md)
 - [Greedy Choice Paradigms & Interval Scheduling](02-greedy.md)
-- [Memory Works (Templates)](../../00-essentials/06-memory-works-templates.md)
+- [Chapter 3 References](07-references.md)

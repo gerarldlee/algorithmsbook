@@ -90,8 +90,8 @@ For every algorithm chapter:
 
 ### Chapter 3B — Decision Theory, Game Theory & Bayesian Systems
 
-- [ ] 3B.1 Game Theory & Combinatorial Search: Minimax, Alpha-Beta Pruning, MCTS, Game Tree Probing, Exhaustion, Nash Equilibrium
-- [ ] 3B.2 Bayesian Decision Theory & Probabilistic Inference: Bayes' Theorem, Naive Bayes, Bayesian Networks, Belief Updating
+- [x] 3B.1 Game Theory & Combinatorial Search: Minimax, Alpha-Beta Pruning, Monte Carlo Tree Search (MCTS), Game Tree Probing, Exhaustion, Nash Equilibrium, and Payoff Matrices
+- [x] 3B.2 Bayesian Decision Theory & Probabilistic Inference: Bayes' Theorem, Naive Bayes, Bayesian Networks, Belief Updating, and Dynamic Decision Trees
 
 ### Chapter 4 — Graph Theory & Network Algorithms
 
@@ -115,11 +115,11 @@ For every algorithm chapter:
 
 - [x] 5.1 Fundamentals of System Design: Latency, Throughput, Availability, and SLA/SLO/SLI
 - [x] 5.2 Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)
-  - [ ] Transport mechanics: RPC, SSE, Broadcast, Server Pull vs Server Push
+  - [x] Transport mechanics: RPC, SSE, Broadcast, Server Pull vs Server Push
 - [x] 5.3 Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing
 - [x] 5.4 Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)
 - [x] 5.5 API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems
-  - [ ] Modern API contracts: tRPC, OpenAPI, and AsyncAPI Specifications
+  - [x] Modern API contracts: tRPC, OpenAPI, and AsyncAPI Specifications
 - [x] 5.6 Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture
 - [x] 5.7 AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (Vault), and Supply-Chain Security
 
@@ -131,11 +131,11 @@ For every algorithm chapter:
 
 ### Chapter 5C — Object-Oriented Design, Refactoring & Software Craftsmanship
 
-- [ ] 5C.1 OOP Foundations & SOLID Principles
-- [ ] 5C.2 Classic Software Design Patterns (Creational, Structural, Behavioral)
-- [ ] 5C.3 Refactoring Mechanics & Technical Debt Reduction (Red-Green-Refactor Cycle, Technical Debt Quadrants)
-- [ ] 5C.4 Code Smells Catalog (Bloaters, Object-Oriented Abusers, Change Preventers, Dispensables, Couplers)
-- [ ] 5C.5 Refactoring Techniques (Composing Methods, Moving Features, Organizing Data, Simplifying Conditionals & Method Calls, Dealing with Generalization)
+- [x] 5C.1 OOP Foundations & SOLID Principles: Encapsulation, Abstraction, Inheritance, Polymorphism, Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- [x] 5C.2 Classic Software Design Patterns: Creational (Factory, Abstract Factory, Builder, Singleton, Prototype), Structural (Adapter, Bridge, Composite, Decorator, Facade, Proxy), Behavioral (Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor)
+- [x] 5C.3 Refactoring Mechanics & Technical Debt Reduction: Definition, Technical Debt Quadrants, Clean Code Principles, Red-Green-Refactor Cycle, Safe Refactoring Workflows
+- [x] 5C.4 Code Smells Catalog: Bloaters (Long Method, Large Class, Long Parameter List), Object-Oriented Abusers (Switch Statements, Refused Bequest, Alternative Classes), Change Preventers (Divergent Change, Shotgun Surgery), Dispensables (Comments, Duplicate Code, Dead Code, Lazy Class), Couplers (Feature Envy, Inappropriate Intimacy, Message Chains, Middle Man)
+- [x] 5C.5 Refactoring Techniques: Composing Methods (Extract/Inline Method, Replace Temp with Query), Moving Features Between Objects (Move Method/Field, Extract Class), Organizing Data (Self Encapsulate Field, Replace Magic Number with Symbolic Constant), Simplifying Conditional Expressions (Decompose Conditional, Replace Conditional with Polymorphism), Simplifying Method Calls (Rename Method, Add/Remove Parameter), Dealing with Generalization (Pull Up/Push Down Field/Method, Extract Interface/Superclass)
 
 ### Chapter 6 — Caching Strategies & Edge Acceleration
 

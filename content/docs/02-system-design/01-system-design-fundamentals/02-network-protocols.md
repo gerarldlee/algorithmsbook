@@ -1,7 +1,8 @@
 ---
-title: "Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols (SSE vs WebSockets)"
+title: "Network Protocols & Transport Mechanics: OSI Model, TCP vs UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, RPC Mechanics, WebSockets, Server-Sent Events (SSE), Broadcast Patterns, Server Pull vs Server Push"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -40,9 +41,13 @@ The seven-layer OSI model organizes the stack by responsibility:
 
 TCP uses sequence numbers, acknowledgments, retransmission, and congestion control to create a reliable stream. This works well for ordinary request/response traffic, but a missing segment can delay later bytes on that same connection. HTTP/1.1 normally sends one request at a time on a connection unless clients use multiple connections. HTTP/2 frames multiple independent streams over one TCP connection and compresses headers, but loss of a TCP segment can still block delivery of every stream on that connection. HTTP/3 carries HTTP semantics over QUIC, whose independently managed streams avoid transport-level head-of-line blocking between requests; QUIC also integrates encrypted transport and connection establishment.
 
-gRPC uses HTTP/2 for unary or streaming calls and Protocol Buffers for typed, compact messages. WebSocket begins with an HTTP upgrade and then reuses the connection for full-duplex text or binary frames. Both suit long-lived service communication, but a stateful long-lived connection changes reconnection, load-balancing, and capacity management.
+**Remote procedure call (RPC)** presents a local-looking method call while preserving network boundaries. The client stub validates or serializes arguments, attaches a method name, request identity, metadata, and deadline, and writes the encoded request to a transport. A server framework decodes the message, authenticates the caller, applies authorization, dispatches to the registered method, and returns a typed result or structured status. A deadline bounds execution, cancellation propagates when possible, and retries require idempotency and a retry policy. Unary RPC returns one response; server streaming, client streaming, and bidirectional streaming keep an ordered call context open. gRPC instantiates these mechanics with HTTP/2, Protocol Buffers, metadata, deadlines, and status codes, but an RPC framework does not remove partial failure or make retries safe.
 
-Streaming protocols decide who may send messages and how a broken connection resumes. **Server-Sent Events (SSE)** keep one HTTP response open and send server-to-client text events with an event ID. A browser's `EventSource` can reconnect with `Last-Event-ID`, while client messages use ordinary HTTP requests on a separate path. **WebSockets** create a full-duplex channel after an HTTP upgrade, so both peers can send frames immediately. Neither protocol supplies durable event history, exactly-once delivery, or automatic business-level replay; the application must define those semantics.
+WebSocket begins with an HTTP upgrade and then reuses the connection for full-duplex text or binary frames. A stateful long-lived connection changes reconnection, load-balancing, and capacity management. **Server pull** gives the client control: ordinary polling repeatedly sends a conditional request with a version or event cursor, while long polling holds a response open until an event or timeout. Pull works through ordinary HTTP infrastructure and naturally resumes from a durable cursor, but polling adds avoidable requests and long polling consumes connection capacity.
+
+**Server push** lets the server send an update after it occurs. SSE keeps an HTTP response open for one-way browser events, WebSockets allow both peers to send frames, broker subscriptions deliver events to services, and webhooks send HTTP callbacks to registered endpoints. Push lowers idle polling latency but requires subscription state, authorization, backpressure, replay, and observability. Neither transport alone guarantees durable history, exactly-once processing, or business-level replay.
+
+**Broadcasting** describes fan-out, not a specific transport. Unicast targets one receiver. A pub/sub topic can deliver each record to every consumer group while members within a group divide the work, or a broadcast log can maintain a cursor for every logical subscriber. Consumer groups support work distribution; per-subscriber offsets support independent replay. IP multicast exists, but it does not provide the durable identity, authorization, and replay semantics that application broadcasts usually require.
 
 A minimal SSE response makes the one-way contract visible:
 
@@ -58,9 +63,23 @@ data: {"orderId":"order-123","status":"paid"}
 
 ```
 
-A proxy can buffer or time out an SSE response, so the edge and gateway must disable buffering for the route and set a connection lifetime compatible with heartbeats. A WebSocket gateway must instead track upgraded connections, forward close and ping/pong behavior, and reconnect clients after a node or network failure. For a chat or collaborative editor, WebSockets are usually the simpler fit. For a browser dashboard receiving server updates, SSE is often enough and preserves ordinary HTTP authentication and monitoring.
+The pull and push paths share a durable event position even when their transport differs:
 
-gRPC server streaming suits a controlled client that needs a typed sequence from one service, while SSE and WebSockets are useful when the consumer is a browser or a general HTTP client. Choose the protocol from message direction, client ecosystem, replay requirements, and connection capacity rather than treating every live update as a WebSocket.
+```mermaid
+sequenceDiagram
+    participant R as Subscription registry
+    participant S as Update service
+    participant C as Client
+    R-->>S: Authorized recipient and replay cursor
+    alt Client pulls
+        C->>S: GET updates since cursor
+        S-->>C: Current state or 304 Not Modified
+    else Server pushes
+        S-->>C: SSE, WebSocket, or broker event
+    end
+```
+
+A proxy can buffer or time out an SSE response, so the edge and gateway must disable buffering for the route and set a connection lifetime compatible with heartbeats. A WebSocket gateway must instead track upgraded connections, forward close and ping/pong behavior, and reconnect clients after a node or network failure. For a chat or collaborative editor, WebSockets are usually the simpler fit. For a browser dashboard receiving server updates, SSE is often enough and preserves ordinary HTTP authentication and monitoring. gRPC server streaming suits a controlled client that needs a typed sequence from one service.
 
 ## Tradeoffs
 
@@ -96,8 +115,4 @@ Choose a protocol by matching its guarantees to the operation rather than by tra
 - [Fundamentals of System Design](01-fundamentals.md)
 - [Load Balancing Strategies](03-load-balancing.md)
 - [Reverse Proxies, API Gateways, and Edge Routing](04-proxies-gateways.md)
-- [Cryptography & System Security: TLS/SSL, PKI, Symmetric/Asymmetric Encryption, KMS, OAuth 2.0/OIDC, and Zero-Trust Architecture](06-cryptography-system-security.md)
-- [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](../02-software-architecture-patterns/01-enterprise-architecture-patterns.md)
 - [Cloud Networking](../../05-cloud-devops/01-cloud-primitives/03-cloud-networking.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](05-api-paradigms.md)
-- [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](../../03-messaging/02-realtime/02-realtime-protocols.md)

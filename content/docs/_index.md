@@ -27,6 +27,7 @@ mindmap, and references.
 - [Chapter 1: Linear Data Structures & Memory Models](01-algorithms/01-linear-data-structures/)
 - [Chapter 2: Hierarchical Data Structures, Search Trees & Spatial Indexing](01-algorithms/02-search-trees/)
 - [Chapter 3: Core Algorithmic Paradigms & Parallel Computing](01-algorithms/03-paradigms/)
+- [Chapter 3B: Decision Theory, Game Theory & Bayesian Systems](01-algorithms/03b-decision-theory-game-bayesian/)
 - [Chapter 4: Graph Theory & Network Algorithms](01-algorithms/04-graphs/)
 - [Chapter 4A: Computational Theory & Advanced Algorithms](01-algorithms/04a-computational-theory/)
 

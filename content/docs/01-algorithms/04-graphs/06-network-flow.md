@@ -2,13 +2,27 @@
 title: "Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
 **Network flow** maximizes the amount sent through a directed, capacity-constrained graph from a source to a sink, while **bipartite matching** finds vertex-disjoint left-to-right pairs; Ford-Fulkerson, Edmonds-Karp, Dinic's, and Hopcroft-Karp are the corresponding classic algorithms.
 
 ## How it works
-A residual graph records unused forward capacity and cancellation capacity in opposite directions. Ford-Fulkerson repeatedly follows any source-to-sink residual path, Edmonds-Karp chooses a shortest such path with BFS, and Dinic's builds a **level graph** and sends a blocking flow before rebuilding levels. Hopcroft-Karp applies layered shortest augmenting paths to a bipartite graph and returns the left-to-right matching.
+A residual graph records unused forward capacity and cancellation capacity in opposite directions. Ford-Fulkerson repeatedly follows any source-to-sink residual path, Edmonds-Karp chooses a shortest such path with BFS, and Dinic's builds a **level graph** and sends a blocking flow before rebuilding levels. Hopcroft-Karp applies layered shortest augmenting paths to a bipartite graph and returns the left-to-right matching. The flow examples require distinct, valid source and sink vertices; callers must reject invalid endpoint pairs before augmentation.
+
+```mermaid
+flowchart TD
+    S[Source] --> R[Residual path search]
+    R --> B{Bottleneck capacity}
+    B -->|Positive| A[Augment flow]
+    A --> R
+    B -->|No path| M[Maximum flow reached]
+    M --> C[Minimum-cut extraction]
+    H[Left partition] --> K[Hopcroft-Karp layers]
+    K --> P[Augment shortest matching paths]
+    P --> K
+```
 
 ```java
 import java.util.ArrayDeque;
@@ -1127,6 +1141,12 @@ func (NetworkFlow) HopcroftKarp(adjacency [][]int, rightCount int) []int {
     }
 }
 ```
+
+### Minimum cuts and matching extraction
+
+The max-flow/min-cut theorem says that the maximum flow value equals the capacity of a minimum cut. After a maximum-flow algorithm finishes, vertices reachable from the source through positive residual capacity identify the source side of one such cut. The cut separates the network into the part that can still reach the sink and the part that cannot, which explains why no additional flow can be sent.
+
+A maximum bipartite matching can be read from the left-to-right mate array, and its cardinality is the number of matched left vertices. A complete flow API should also return edge flows or the residual network when an application needs the cut, cancellation decisions, or route assignments rather than only the maximum value.
 
 ## Complexity
 For \(V\) vertices and \(E\) edges, with maximum flow \(F\):

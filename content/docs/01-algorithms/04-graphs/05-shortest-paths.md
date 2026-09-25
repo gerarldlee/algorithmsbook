@@ -2,13 +2,29 @@
 title: "Shortest Path Algorithms & Heuristic Search: Single-Source (Dijkstra’s, Bellman-Ford, A*, IDA*), Bidirectional Search, & All-Pairs (Floyd-Warshall Space Optimizations, Johnson’s Algorithm, Matrix Multiplication Paths)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
-**Single-source shortest-path algorithms** compute distances from one vertex, while **all-pairs shortest-path algorithms** compute a distance matrix; Dijkstra's, Bellman-Ford, Floyd-Warshall, and Johnson's algorithms cover non-negative, negative-edge, dense, and sparse cases.
+**Single-source shortest-path algorithms** compute distances from one vertex, while **all-pairs shortest-path algorithms** compute a distance matrix; Dijkstra's, Bellman-Ford, Floyd-Warshall, and Johnson's algorithms cover non-negative, negative-edge, dense, and sparse cases. Johnson's algorithm requires a graph with no negative cycle.
 
 ## How it works
 Dijkstra's algorithm finalizes the smallest tentative distance and relaxes outgoing edges. Bellman-Ford relaxes every edge \(V-1\) times, then performs one more pass to detect a reachable negative cycle. Floyd-Warshall considers each vertex as an intermediate vertex. Johnson's algorithm first computes a feasible potential with Bellman-Ford, reweights edges to be non-negative, and runs Dijkstra from every vertex.
+
+```mermaid
+flowchart TD
+    S[Start or source vertex] --> H{Algorithm goal}
+    H -->|Non-negative edge| D[Dijkstra]
+    H -->|Negative edge| B[Bellman-Ford]
+    H -->|Heuristic goal| A[A* or IDA*]
+    H -->|All pairs dense| F[Floyd-Warshall]
+    H -->|All pairs sparse| J[Johnson]
+    D --> R[Distance or path]
+    B --> R
+    A --> R
+    F --> M[Distance matrix]
+    J --> M
+```
 
 ```java
 import java.util.ArrayList;
@@ -95,7 +111,9 @@ public final class ShortestPaths {
         for (int source = 0; source < vertexCount; source++) {
             long[] reduced = dijkstra(weighted, source);
             for (int target = 0; target < vertexCount; target++) {
-                distance[source][target] = reduced[target] - potential[source] + potential[target];
+                distance[source][target] = reduced[target] == INF
+                    ? INF
+                    : reduced[target] - potential[source] + potential[target];
             }
         }
         return distance;
@@ -238,7 +256,9 @@ void shortest_paths_johnson(int vertex_count, Edge* edges, int edge_count, long 
     for (int source = 0; source < vertex_count; source++) {
         shortest_paths_dijkstra(adjacency, vertex_count, source, reduced);
         for (int target = 0; target < vertex_count; target++) {
-            distance[source][target] = reduced[target] - potential[source] + potential[target];
+            distance[source][target] = reduced[target] == INF
+                ? INF
+                : reduced[target] - potential[source] + potential[target];
         }
     }
     for (int vertex = 0; vertex < vertex_count; vertex++) {
@@ -410,7 +430,13 @@ impl ShortestPaths {
             .map(|source| {
                 let reduced = Self::dijkstra(&weighted, source);
                 (0..vertex_count)
-                    .map(|target| reduced[target] - potential[source] + potential[target])
+                    .map(|target| {
+                        if reduced[target] == Self::INF {
+                            Self::INF
+                        } else {
+                            reduced[target] - potential[source] + potential[target]
+                        }
+                    })
                     .collect()
             })
             .collect()
@@ -486,7 +512,9 @@ export class ShortestPaths {
     }
     return Array.from({ length: vertexCount }, (_, source) => {
       const reduced = ShortestPaths.dijkstra(weighted, source);
-      return reduced.map((value, target) => value - potential[source] + potential[target]);
+      return reduced.map((value, target) => value === ShortestPaths.inf
+        ? ShortestPaths.inf
+        : value - potential[source] + potential[target]);
     });
   }
 }
@@ -614,12 +642,22 @@ func (ShortestPaths) Johnson(vertexCount int, edges []Edge) [][]int64 {
         reduced := (ShortestPaths{}).Dijkstra(weighted, source)
         distance[source] = make([]int64, vertexCount)
         for target := 0; target < vertexCount; target++ {
-            distance[source][target] = reduced[target] - potential[source] + potential[target]
+            if reduced[target] == shortestPathInfinity {
+                distance[source][target] = shortestPathInfinity
+            } else {
+                distance[source][target] = reduced[target] - potential[source] + potential[target]
+            }
         }
     }
     return distance
 }
 ```
+
+### Heuristic and all-pairs variants
+
+A* orders a best-first search by `g(n) + h(n)`, where `g(n)` is the cost already paid and `h(n)` estimates the remaining cost. An **admissible** heuristic never overestimates the remaining cost, so A* returns an optimal path. IDA* performs depth-first searches with increasing cost thresholds, trading repeated work for low memory.
+
+Bidirectional search maintains frontiers from the source and target and stops when the frontiers meet. Floyd-Warshall can reduce space by updating one source row at a time, or by applying min-plus matrix multiplication with repeated squaring. These variants choose between memory, repeated work, and dense matrix arithmetic rather than changing the basic path-relaxation model.
 
 ## Complexity
 For \(V\) vertices and \(E\) edges:
@@ -649,8 +687,3 @@ Dijkstra's implementation uses integer distances bounded well below its infinity
 - [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
 - [Minimum Spanning Trees (Kruskal's, Prim's Algorithms)](04-minimum-spanning-trees.md)
 - [Network Flow & Matching (Ford-Fulkerson, Edmonds-Karp, Dinic’s, Hopcroft-Karp)](06-network-flow.md)
-- [Heaps, Priority Queues, and Fibonacci Heaps](../02-search-trees/02-heaps-priority-queues.md)
-- [Disjoint-Set Data Structures (Union-Find with Path Compression)](../02-search-trees/05-union-find.md)
-- [Greedy Choice Paradigms & Interval Scheduling](../03-paradigms/02-greedy.md)
-- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](../03-paradigms/03-dynamic-programming.md)
-- [Topological Sorting & Strongly Connected Components (Tarjan’s, Kosaraju’s)](03-topological-sort-scc.md)

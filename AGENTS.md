@@ -19,9 +19,9 @@ enforces the parts that can be checked mechanically.
 | `.github/workflows/pages.yaml` | CI: build with Hugo `0.159.2` and deploy to GitHub Pages on push to `main`. |
 | `public/`, `resources/`, `.hugo_build.lock` | Generated output, gitignored. **Never edit or commit.** |
 
-Current content shape: 137 Markdown files — 95 chapters (Part I 30, II 14, III 11, IV 12, V 13,
-VI 15), 8 `00-essentials` reference pages, 27 `_index.md` navigation pages, `content/about.md`,
-`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 95 chapters open with the §5 sections in that order.
+Current content shape: 154 Markdown files — 102 chapters (Part I 32, II 19, III 11, IV 12, V 13,
+VI 15), 8 `00-essentials` reference pages, 29 `_index.md` navigation pages, `content/about.md`,
+`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 102 chapters open with the §5 sections in that order.
 
 ## 2. Book requirements → what they mean when you write
 
@@ -63,7 +63,7 @@ consistent with the language, theme, and content requirements they describe.
 
 ## 4. Front matter contract
 
-Every content file starts with **YAML** front matter delimited by `---`. All 137 files use YAML;
+Every content file starts with **YAML** front matter delimited by `---`. All 154 files use YAML;
 never use TOML `+++`.
 
 ```yaml
@@ -167,7 +167,7 @@ invisible to the language switcher and gets no syntax highlighting.
   the same API in a different dialect, not a different program.
 - Every language implements the **same operation set and the same algorithm** — no language gets a
   simplified version.
-- **Compliance today: complete.** All 30 Part I chapters carry one contiguous six-language group, and
+- **Compliance today: complete.** All 32 Part I chapters carry one contiguous six-language group, and
   so do the five algorithm-bearing chapters elsewhere (the three caching chapters, `06-sharding`,
   `01-vector-databases`). `01-dynamic-arrays.md` adds four extra complete six-language groups to
   illustrate array declaration, indexed access, iteration, and linear search — extra groups are fine,
@@ -266,7 +266,7 @@ as described in §6; do not wrap them in tab shortcodes.
   form for both, and page-bundle resources work as well.
 - Run `python tools/check_links.py` after any link or file move; it also reports missing front
   matter, `weight`/filename mismatches, duplicate weights, unlisted pages, and stray `# H1`s.
-  (Current state: 137 files checked, 0 problems.)
+  (Current state: 154 files checked, 0 problems.)
 
 ## 10. Prose style
 

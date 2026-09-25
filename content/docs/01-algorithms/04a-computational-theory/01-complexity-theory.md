@@ -2,6 +2,7 @@
 title: "Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,15 @@ A problem is in P when a correct algorithm runs in time bounded by a polynomial 
 A reduction \(A \le_p B\) means that a solver for \(B\) can solve \(A\) after a polynomial-time transformation. The direction matters. If a graph has a \(k\)-clique exactly when its complement has an independent set of size \(k\), transforming an undirected graph into its complement is polynomial. An independent-set solver applied to that complement therefore solves the original clique instance. Building all complement edges takes \(O(V^2)\) time and space with adjacency matrices, independent of whether a clique actually exists.
 
 The implementation below performs that reduction and represents the result as an adjacency matrix. Its `reduces` operation checks whether a candidate has every required edge in that complement, where a candidate is independent in the complement exactly when it is a clique in the original graph. All six APIs take the same vertex count and edge list for the reduction, then the complement matrix and candidate for verification. SAT-to-3-SAT, set-cover reductions, and Cook-Levin constructions establish other hardness results; none turns NP-completeness into a proof that every NP problem is intractable.
+
+```mermaid
+flowchart LR
+    G[Original graph] --> H[Build complement graph]
+    H --> S[Candidate vertex set]
+    S --> P{Every candidate pair has a complement edge?}
+    P -->|Yes| I[Independent set in complement]
+    I --> C[Clique in original graph]
+```
 
 ```java
 import java.util.List;
@@ -241,6 +251,6 @@ For an input with \(n\) bits, an \(O(n^k)\) algorithm is polynomial for fixed \(
 
 ## Related
 - [Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds](02-randomized-approximation-algorithms.md)
-- [Computational Geometry Algorithms](04-computational-geometry.md)
+- [Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection](04-computational-geometry.md)
 - [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](../04-graphs/02-graph-traversals.md)
 - [Finite Automata & Formal Languages: NFA/DFA Constructions, Thompson's Construction, and Regex Engine Compilation](03-automata-formal-languages.md)

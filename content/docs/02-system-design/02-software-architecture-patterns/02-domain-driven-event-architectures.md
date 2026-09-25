@@ -2,6 +2,7 @@
 title: "Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -21,7 +22,7 @@ Sales context
 
 Fulfillment context
   Shipment, Carrier, DeliveryAttempt
-  event consumed: OrderAccepted
+  translation: OrderPlaced maps to ShipmentRequested
   invariant: one shipment can have one active delivery attempt
 ```
 
@@ -44,6 +45,25 @@ commit;
 ```
 
 A consumer can apply the event and insert its event ID into a `processed_events` table in one transaction. A unique constraint on the event ID makes a redelivery a no-op. This design separates the fact that the business change committed from the fact that a broker accepted the resulting message; monitoring must expose the relay's lag and failed events.
+
+```mermaid
+flowchart LR
+  Command[PlaceOrder command] --> Aggregate[Order aggregate]
+  subgraph Tx[Local database transaction]
+    Aggregate --> State[(Order state)]
+    Aggregate --> Outbox[(Outbox row)]
+  end
+  Outbox --> Relay[Outbox relay]
+  Relay --> Broker[(Event broker)]
+  Broker --> Consumer[Idempotent consumer]
+  subgraph ConsumerTx[Local consumer transaction]
+    Consumer --> Effect[Consumer-side state change]
+    Consumer --> Processed[(Processed event ID)]
+  end
+  Consumer --> Projection[(Optional read-model projection)]
+```
+
+The state change and outbox row commit together inside the database. Publishing the outbox row to the broker occurs afterward, so relay failure leaves recoverable work rather than losing the event. Broker redelivery can apply the consumer's business effect and insert its processed-event record in one transaction without applying the effect twice.
 
 CQRS and event sourcing are independent choices. A system can use CQRS with ordinary tables, event sourcing without separate read projections, or both. The transactional outbox is useful whenever a reliable database change must eventually notify another component.
 
@@ -75,6 +95,3 @@ CQRS and event sourcing are independent choices. A system can use CQRS with ordi
 
 - [Enterprise Architecture Patterns: Monoliths, Microservices, Service Mesh, BFF, Strangler Fig, and Cell-Based Architecture](01-enterprise-architecture-patterns.md)
 - [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Backoff, Retries, and Timeout Budgets](03-resilience-fault-tolerance.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](../01-system-design-fundamentals/05-api-paradigms.md)
-- [Distributed Transactions: Two-Phase Commit, Three-Phase Commit, and the Saga Pattern](../../04-distributed-systems/01-consensus/04-distributed-transactions.md)
-- [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../../03-messaging/01-messaging/01-queues-vs-streams.md)

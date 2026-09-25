@@ -2,6 +2,7 @@
 title: "Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,17 @@ Fisher-Yates shuffle chooses an unbiased remaining index for each output positio
 MinHash assigns each set a small fingerprint. In the ideal random-hash model, the fingerprint is the minimum hash of the set's individual elements, and two sets collide with probability equal to their Jaccard similarity \(|A\cap B|/|A\cup B|\). In that model, averaging matching positions over \(k\) independent hash functions estimates similarity, with standard error at most \(1/(2\sqrt{k})\). This implementation uses deterministic seeded hash functions, so it is reproducible but does not itself establish independence or that error bound for a particular seed and data set.
 
 An **approximation ratio** or **additive error** states how far an answer can be from the best answer. A 2-approximation is useful only if being within a factor of two is acceptable. Randomized guarantees also specify success probability, such as “at least 99%,” rather than promising deterministic correctness.
+
+```mermaid
+flowchart TD
+    I[Input stream or set] --> T{Technique}
+    T -->|Reservoir sampling| R[Draw a reservoir slot]
+    T -->|Fisher-Yates| S[Draw a remaining index]
+    T -->|MinHash| H[Hash each element by round]
+    R --> O[Sample]
+    S --> P[Shuffle]
+    H --> M[Minimum-hash signature]
+```
 
 ```java
 import java.util.Arrays;

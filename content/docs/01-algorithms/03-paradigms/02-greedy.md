@@ -2,6 +2,7 @@
 title: "Greedy Choice Paradigms & Interval Scheduling"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,17 @@ Interval scheduling chooses the maximum number of non-overlapping intervals. The
 The same proof structure appears in other greedy paradigms. Fractional knapsack repeatedly takes the highest value-to-weight ratio because any fractional solution can exchange a smaller item for the remaining fraction of that item. Huffman coding repeatedly combines the two least frequent symbols, and Prim's and Kruskal's algorithms repeatedly add the cheapest edge that preserves a partial solution.
 
 The implementations expose one `select` operation that returns the chosen intervals in start-time order. They require intervals whose start is less than or equal to their finish, sort by finish time with start time as the tie-breaker, and allow touching endpoints. In C, `select` writes the result length through `selected_size`, and the returned array belongs to the caller.
+
+```mermaid
+flowchart TD
+    A[Intervals] --> B[Sort by end time, then start time]
+    B --> C{Unprocessed interval?}
+    C -->|No| D[Return selected intervals]
+    C -->|Yes| E[Starts at or after last selected end?]
+    E -->|No| C
+    E -->|Yes| F[Select interval and update last end]
+    F --> C
+```
 
 ```java
 import java.util.ArrayList;
@@ -203,6 +215,6 @@ func (ActivitySelection) Select(intervals []Interval) []Interval {
 ## Related
 
 - [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](01-divide-and-conquer-sorting.md)
-- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization)](03-dynamic-programming.md)
+- [Dynamic Programming (Memoization, Tabulation, State Compression, Space Optimization, Peak/Tail Optimization)](03-dynamic-programming.md)
 - [Minimum Spanning Trees](../04-graphs/04-minimum-spanning-trees.md)
-- [Shortest Paths](../04-graphs/05-shortest-paths.md)
+- [Chapter 3 References](07-references.md)

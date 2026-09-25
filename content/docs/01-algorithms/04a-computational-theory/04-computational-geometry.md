@@ -2,6 +2,7 @@
 title: "Computational Geometry Algorithms: Convex Hull (Graham Scan, Jarvis March), Closest-Pair of Points, Line Segment Intersection"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,18 @@ The **convex hull** is the smallest convex set containing every point; for a fin
 The closest-pair algorithm sorts by x-coordinate, splits the set into two halves, recursively finds each half's closest pair, and keeps the better distance. Only points within that distance of the dividing line can form a better cross-half pair. Sorting each half by y-coordinate after recursion lets the merge and strip checks take linear time at that level. Comparing the next seven strip points is safe because a packing argument limits how many close points fit in a \(2\delta\)-wide region.
 
 Two segments intersect when their endpoints alternate across the other segment's supporting line. Collinear endpoints and shared endpoints require a separate point-on-segment test using orientation and bounding boxes. A double-precision test also needs an application-level tolerance when measurements contain noise.
+
+```mermaid
+flowchart TD
+    C[Closest pair] --> S[Sort points by x]
+    S --> F[Call closestRange]
+    F -->|At most 3 points| B[Compare all pairs]
+    F -->|Split the range| L[Recurse into left half]
+    F -->|Split the range| R[Recurse into right half]
+    L -->|Return y-sorted points| M[Merge and scan strip]
+    R -->|Return y-sorted points| M
+    M --> P[Keep the nearest pair]
+```
 
 ```java
 import java.util.ArrayList;
@@ -1039,6 +1052,6 @@ For \(n\) points and hull size \(h\):
 - **Spatial indexes** — accelerate many nearby-object or intersection queries after a bulk algorithm has produced a global result.
 
 ## Related
-- [Computational Complexity Theory](01-complexity-theory.md)
-- [Randomized & Approximation Algorithms](02-randomized-approximation-algorithms.md)
+- [Computational Complexity Theory: P vs NP, NP-Completeness, NP-Hardness, and Polynomial-Time Reductions](01-complexity-theory.md)
+- [Randomized & Approximation Algorithms: Reservoir Sampling, Fisher-Yates, MinHash, and Approximation Bounds](02-randomized-approximation-algorithms.md)
 - [Spatial Indexing & Geospatial Data Structures](../02-search-trees/07-spatial-indexing.md)

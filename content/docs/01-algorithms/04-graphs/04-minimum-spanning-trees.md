@@ -2,6 +2,7 @@
 title: "Minimum Spanning Trees (Kruskal’s, Prim’s Algorithms)"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -9,6 +10,18 @@ A **minimum spanning tree (MST)** is a cycle-free subset of a connected, weighte
 
 ## How it works
 Kruskal's algorithm sorts edges and accepts the cheapest edge whose endpoints are in different **disjoint-set (DSU)** components. Prim's algorithm grows one tree from a start vertex and repeatedly accepts the cheapest edge crossing from that tree to the rest of the graph. The examples return total weight for a connected graph and use integer weights.
+
+```mermaid
+flowchart TD
+    G[Weighted undirected graph] --> K[Kruskal: sort edges]
+    K --> D[Reject edges inside one DSU component]
+    D --> K
+    G --> P[Prim: choose start vertex]
+    P --> C[Choose minimum crossing edge]
+    C --> P
+    K --> T[Minimum spanning tree]
+    P --> T
+```
 
 ```java
 import java.util.ArrayList;
@@ -525,6 +538,10 @@ func (MST) Prim(adjacency [][]Edge) int64 {
 }
 ```
 
+### Cut property, forests, and edge reconstruction
+
+The MST cut property says that a minimum-weight edge crossing any cut of the graph is safe to include. Kruskal applies this idea to globally sorted edges, while Prim applies it to the cut between the current tree and the remaining vertices. A disconnected graph produces a minimum spanning forest with one tree per component. Returning selected edges, not only their total weight, is necessary for applications that need the actual network.
+
 ## Complexity
 For \(V\) vertices, \(E\) edges, and an undirected connected graph:
 
@@ -551,7 +568,5 @@ The C and TypeScript Prim examples maintain sorted arrays rather than a binary h
 ## Related
 - [Graph Representations (Adjacency Matrix, Adjacency List, Edge List)](01-graph-representations.md)
 - [Graph Traversals: Breadth-First Search (BFS) and Depth-First Search (DFS)](02-graph-traversals.md)
-- [Shortest Path Algorithms: Single-Source (Dijkstra’s, Bellman-Ford) & All-Pairs (Floyd-Warshall, Johnson’s)](05-shortest-paths.md)
 - [Union-Find](../02-search-trees/05-union-find.md)
 - [Heaps, Priority Queues, and Fibonacci Heaps](../02-search-trees/02-heaps-priority-queues.md)
-- [Greedy Choice Paradigms & Interval Scheduling](../03-paradigms/02-greedy.md)

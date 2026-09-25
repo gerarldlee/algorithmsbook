@@ -2,13 +2,14 @@
 title: "Content Delivery Networks (CDNs), Edge Computing, Edge Runtimes (Wasm at Edge, eBPF), and Static/Dynamic Content Acceleration"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
 A content delivery network (CDN) is a distributed set of proxy servers that caches HTTP responses closer to clients than the origin. Edge computing adds request-time code to those proxies, so a CDN can route, rewrite, authenticate, or compute a response without first forwarding every request to a central application. Together they accelerate versioned static assets and selectively cache or compute dynamic responses while the origin remains the authoritative service.
 
 ## How it works
-A CDN-specific policy assigns edge and browser lifetimes to matching responses. This Cloudflare Cache Rules create request for the `http_request_cache_settings` phase makes the behavior for immutable assets and a dynamic API explicit:
+A CDN-specific policy assigns edge and browser lifetimes to matching responses. This Cloudflare Cache Rules artifact uses the `http_request_cache_settings` phase to make the behavior for versioned static assets and a dynamic API explicit. The 86,400-second edge TTL and 3,600-second browser TTL assume that every URL under `/assets/` is immutable because its path includes a content version or digest. If a deploy changes bytes without changing the key, use origin revalidation or a shorter policy instead. The API rule disables shared caching for that host; it does not imply that the API is cacheable in another path.
 
 ```json
 {
@@ -42,7 +43,25 @@ A CDN-specific policy assigns edge and browser lifetimes to matching responses. 
 }
 ```
 
-Anycast can announce one address from many points of presence, and BGP routes a client toward one of those locations; it does not guarantee that the selected location is geographically closest. A cache key separates otherwise different responses and commonly includes the hostname, path, selected query parameters, and selected request headers. On a hit, the PoP returns the stored response. On a miss, it validates or fetches from the origin, stores the response under its policy, and returns it. A **preload** uploads an object to edge storage before a request; ordinary **pull** caching fills it after a request.
+```mermaid
+flowchart LR
+    U[Client] --> E[Edge PoP]
+    E --> K{Cache key hit?}
+    K -->|Yes| R[Cached response]
+    K -->|No| O[Origin or application]
+    O --> V[Validate or fetch]
+    V --> S[(Shared edge cache)]
+    S --> R
+    E --> W[Edge runtime]
+    W -->|Local transformation| R
+    W -->|Dynamic request| O
+```
+
+Anycast can announce one address from many points of presence, and BGP routes a client toward one of those locations; it does not guarantee that the selected location is geographically closest.
+
+Edge runtimes differ in where they execute. **WebAssembly (Wasm) at the edge** runs a sandboxed module inside a provider-managed runtime, such as a WebAssembly module invoked by a Cloudflare Worker, and exposes only the host APIs that the runtime allows. **eBPF** attaches verified programs to Linux kernel hooks, so it can make early packet or flow decisions in a CDN node or service mesh, but it is not a general-purpose replacement for application request handlers. Choose Wasm for portable request logic and eBPF for low-level network policy where the operating environment supports it.
+
+A cache key separates otherwise different responses and commonly includes the hostname, path, selected query parameters, and selected request headers. On a hit, the PoP returns the stored response. On a miss, it validates or fetches from the origin, stores the response under its policy, and returns it. A **preload** uploads an object to edge storage before a request; ordinary **pull** caching fills it after a request.
 
 Shared caching suits content that is public, repeatable, and valid for many users. Private or personalized responses require a private cache policy and must not be stored in a shared cache. Dynamic acceleration can terminate TLS, apply authentication, rewrite a route, or call an origin API, but any remote data fetch still incurs a network round trip. Route the response according to its reuse and privacy properties:
 
@@ -80,7 +99,6 @@ A CDN also introduces a partial failure domain: an edge may hold stale or incorr
 - **Object storage with direct delivery** — handles immutable files simply, but provides limited per-request application logic and response composition.
 
 ## Related
-- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](01-in-memory-caching.md)
+- [In-Memory Caching Engines (Redis, Memcached), Data Structures, and Eviction Policies](01-in-memory-caching.md)
 - [Application Caching Patterns: Cache-Aside, Write-Through, Write-Around, Write-Behind](02-caching-patterns.md)
-- [Rate Limiting & Traffic Shaping: Token Bucket, Leaky Bucket, Sliding Window Log, and Counter](04-rate-limiting.md)
-- [Reverse Proxies, API Gateways, and Edge Routing (Nginx, Envoy, Traefik)](../01-system-design-fundamentals/04-proxies-gateways.md)
+- [Chapter 6 References](05-references.md)
