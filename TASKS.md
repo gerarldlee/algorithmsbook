@@ -339,53 +339,53 @@ For every algorithm chapter:
 
 ### Chapter 27 — Fundamental Distributed Utilities
 
-- [ ] 27.1 System Design: Distributed URL Shortener (TinyURL Architecture, Hashing, Base62 Encoding, KGS)
-- [ ] 27.2 System Design: Distributed Unique ID Generator (Snowflake ID, ULID, UUIDv4 vs UUIDv7)
+- [x] 27.1 System Design: Distributed URL Shortener (TinyURL Architecture, Hashing, Base62 Encoding, KGS)
+- [x] 27.2 System Design: Distributed Unique ID Generator (Snowflake ID, ULID, UUIDv4 vs UUIDv7)
 
 ### Chapter 28 — Content Ingestion, Search & Storage Engines
 
-- [ ] 28.1 System Design: Web Crawler at Scale (Robots.txt Parsing, Politeness Policy, URL Frontier, Deduplication)
-- [ ] 28.2 System Design: Distributed Search Engine & Google PageRank (Inverted Index Sharding, Web Indexer, Link Graph Analysis)
-- [ ] 28.3 System Design: Distributed Message Queue (Kafka-Like Log-Centric Engine, Partitioning, Replication, Consumer Groups)
-- [ ] 28.4 System Design: Distributed S3-Like Object Storage (Metadata Cluster, Chunk Servers, Erasure Coding, Multipart Uploads)
+- [x] 28.1 System Design: Web Crawler at Scale (Robots.txt Parsing, Politeness Policy, URL Frontier, Deduplication)
+- [x] 28.2 System Design: Distributed Search Engine & Google PageRank (Inverted Index Sharding, Web Indexer, Link Graph Analysis)
+- [x] 28.3 System Design: Distributed Message Queue (Kafka-Like Log-Centric Engine, Partitioning, Replication, Consumer Groups)
+- [x] 28.4 System Design: Distributed S3-Like Object Storage (Metadata Cluster, Chunk Servers, Erasure Coding, Multipart Uploads)
 
 ### Chapter 29 — Feeds, Notifications & Real-Time Messaging
 
-- [ ] 29.1 System Design: Multi-Channel Notification System (Rate Limiting, Dispatchers, Delivery Tracking)
-- [ ] 29.2 System Design: High-Scale Newsfeed System (Fan-Out on Write vs Fan-Out on Read, Aggregation from Multiple Sources)
-- [ ] 29.3 System Design: Global Real-Time Chat System (WebSocket Clusters, Message Sync, Room Routing, Presence Tracking)
-- [ ] 29.4 System Design: Search Autocomplete System (Trie Indexing, Frequency Ranking, Real-Time Cache Update)
+- [x] 29.1 System Design: Multi-Channel Notification System (Rate Limiting, Dispatchers, Delivery Tracking)
+- [x] 29.2 System Design: High-Scale Newsfeed System (Fan-Out on Write vs Fan-Out on Read, Aggregation from Multiple Sources)
+- [x] 29.3 System Design: Global Real-Time Chat System (WebSocket Clusters, Message Sync, Room Routing, Presence Tracking)
+- [x] 29.4 System Design: Search Autocomplete System (Trie Indexing, Frequency Ranking, Real-Time Cache Update)
 
 ### Chapter 30 — Geospatial & Location Services
 
-- [ ] 30.1 System Design: Proximity Service (Spatial Indexing, Geohash Grid Searching, Nearest Neighbor Queries)
-- [ ] 30.2 System Design: Nearby Friends Service (Location Tracking, Pub/Sub Mesh, Cell-Based WebSocket Routing)
-- [ ] 30.3 System Design: Google Maps Infrastructure (Tile Rendering Graph Processing, Routing Engine, A* Pathfinding at Scale)
+- [x] 30.1 System Design: Proximity Service (Spatial Indexing, Geohash Grid Searching, Nearest Neighbor Queries)
+- [x] 30.2 System Design: Nearby Friends Service (Location Tracking, Pub/Sub Mesh, Cell-Based WebSocket Routing)
+- [x] 30.3 System Design: Google Maps Infrastructure (Tile Rendering Graph Processing, Routing Engine, A* Pathfinding at Scale)
 
 ### Chapter 31 — Event Processing, Analytics & Gaming Engines
 
-- [ ] 31.1 System Design: Ad Click Event Aggregation Pipeline (At-Least-Once Streaming, Deduplication, Sliding Window Aggregations)
-- [ ] 31.2 System Design: Real-Time Gaming Leaderboard (Redis Sorted Sets, Distributed Rank Partitioning)
-- [ ] 31.3 System Design: Distributed Gaming Server Bots & State Orchestration (State Machine Synchronization, Bot AI Pool Management)
+- [x] 31.1 System Design: Ad Click Event Aggregation Pipeline (At-Least-Once Streaming, Deduplication, Sliding Window Aggregations)
+- [x] 31.2 System Design: Real-Time Gaming Leaderboard (Redis Sorted Sets, Distributed Rank Partitioning)
+- [x] 31.3 System Design: Distributed Gaming Server Bots & State Orchestration (State Machine Synchronization, Bot AI Pool Management)
 
 ### Chapter 32 — High-Concurrency Financial & Transactional Systems
 
-- [ ] 32.1 System Design: Distributed Hotel Reservation & Booking System (Inventory Locking, Overbooking Prevention, Two-Phase Holds)
-- [ ] 32.2 System Design: High-Scale Payment Processing System (Payment Gateway Integration, Idempotent Processing, Ledger Reconciliation)
-- [ ] 32.3 System Design: Digital Wallet Architecture (Double-Entry Ledger Engine, Multi-Currency Balance Tracking, Zero-Loss Durability)
-- [ ] 32.4 System Design: Ultra-Low Latency Stock Exchange Engine (Order Book Matching, Deterministic Sequencing, Multicast Broadcast)
+- [x] 32.1 System Design: Distributed Hotel Reservation & Booking System (Inventory Locking, Overbooking Prevention, Two-Phase Holds)
+- [x] 32.2 System Design: High-Scale Payment Processing System (Payment Gateway Integration, Idempotent Processing, Ledger Reconciliation)
+- [x] 32.3 System Design: Digital Wallet Architecture (Double-Entry Ledger Engine, Multi-Currency Balance Tracking, Zero-Loss Durability)
+- [x] 32.4 System Design: Ultra-Low Latency Stock Exchange Engine (Order Book Matching, Deterministic Sequencing, Multicast Broadcast)
 
 ### Chapter 33 — Enterprise Operations & Monitoring Infrastructure
 
-- [ ] 33.1 System Design: Metrics Monitoring & Alerting System (Time-Series Database, Pull vs Push Ingestion, Alert Rule Engines)
-- [ ] 33.2 System Design: Distributed Email System (SMTP Ingestion, Storage Engine Sharding, MIME Parsing, Webmail Sync)
+- [x] 33.1 System Design: Metrics Monitoring & Alerting System (Time-Series Database, Pull vs Push Ingestion, Alert Rule Engines)
+- [x] 33.2 System Design: Distributed Email System (SMTP Ingestion, Storage Engine Sharding, MIME Parsing, Webmail Sync)
 
 ### Chapter 34 — Media Streaming & Cloud Storage Systems
 
-- [ ] 34.1 System Design: Video Streaming Platforms (YouTube & Netflix Video Transcoding Pipelines, Adaptive Bitrate Streaming - HLS/DASH, Open Connect Appliance CDN Storage, Per-Title Encoding)
-- [ ] 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
-- [ ] 34.3 System Design: Real-Time CCTV Video Analytics & Theft Detection Engine (RTSP Stream Ingestion, Edge-Cloud Hybrid Inference, Motion Detection Filters, Object ReID, Spatial-Temporal Action Recognition, Evidence Clip Archival)
+- [x] 34.1 System Design: Video Streaming Platforms (YouTube & Netflix Video Transcoding Pipelines, Adaptive Bitrate Streaming - HLS/DASH, Open Connect Appliance CDN Storage, Per-Title Encoding)
+- [x] 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
+- [x] 34.3 System Design: Real-Time CCTV Video Analytics & Theft Detection Engine (RTSP Stream Ingestion, Edge-Cloud Hybrid Inference, Motion Detection Filters, Object ReID, Spatial-Temporal Action Recognition, Evidence Clip Archival)
 
 ### Chapter 35 — Modular Systems & Plugin Architecture
 
-- [ ] 35.1 System Design: Dynamic & Multi-Module Loading Systems (Plugin Architecture, Dynamic Linking, Module Sandboxing, Runtime Hot-Swapping)
+- [x] 35.1 System Design: Dynamic & Multi-Module Loading Systems (Plugin Architecture, Dynamic Linking, Module Sandboxing, Runtime Hot-Swapping)

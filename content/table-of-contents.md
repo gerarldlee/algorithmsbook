@@ -72,3 +72,16 @@ The book is organized into Parts, Chapters, and Topics. This index lists the cha
 - [Chapter 24: Embedded Finance & Lending](docs/08-web3-embedded-finance/03-embedded-finance-lending/)
 - [Chapter 25: Resilience, Testing, SRE & Privacy-Preserving ML](docs/08-web3-embedded-finance/04-resilience-testing-sre/)
 - [Chapter 26: Embedded Systems & Edge Sync](docs/08-web3-embedded-finance/05-embedded-edge-sync/)
+
+## Part IX: High-Scale System Design Case Studies & Applied Infrastructure
+
+- [Part IX: High-Scale System Design Case Studies & Applied Infrastructure](docs/09-high-scale-system-design/)
+- [Chapter 27: Fundamental Distributed Utilities](docs/09-high-scale-system-design/01-fundamental-distributed-utilities/)
+- [Chapter 28: Content Ingestion, Search & Storage Engines](docs/09-high-scale-system-design/02-content-ingestion-search-storage/)
+- [Chapter 29: Feeds, Notifications & Real-Time Messaging](docs/09-high-scale-system-design/03-feeds-notifications-realtime/)
+- [Chapter 30: Geospatial & Location Services](docs/09-high-scale-system-design/04-geospatial-location/)
+- [Chapter 31: Event Processing, Analytics & Gaming Engines](docs/09-high-scale-system-design/05-event-processing-gaming/)
+- [Chapter 32: High-Concurrency Financial & Transactional Systems](docs/09-high-scale-system-design/06-financial-transactional/)
+- [Chapter 33: Enterprise Operations & Monitoring Infrastructure](docs/09-high-scale-system-design/07-enterprise-monitoring/)
+- [Chapter 34: Media Streaming & Cloud Storage Systems](docs/09-high-scale-system-design/08-media-cloud-storage/)
+- [Chapter 35: Modular Systems & Plugin Architecture](docs/09-high-scale-system-design/09-modular-plugin-architecture/)

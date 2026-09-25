@@ -4,7 +4,7 @@ next: 01-algorithms
 ---
 
 Summary and notes for learning algorithms and system design. The book is organized
-into eight parts, ordered so each part builds on the one before it.
+into nine parts, ordered so each part builds on the one before it.
 
 ## Essentials
 
@@ -83,3 +83,16 @@ mindmap, and references.
 - [Chapter 24: Embedded Finance & Lending](08-web3-embedded-finance/03-embedded-finance-lending/)
 - [Chapter 25: Resilience, Testing, SRE & Privacy-Preserving ML](08-web3-embedded-finance/04-resilience-testing-sre/)
 - [Chapter 26: Embedded Systems & Edge Sync](08-web3-embedded-finance/05-embedded-edge-sync/)
+
+## Part IX: High-Scale System Design Case Studies & Applied Infrastructure
+
+- [Part IX: High-Scale System Design Case Studies & Applied Infrastructure](09-high-scale-system-design/)
+- [Chapter 27: Fundamental Distributed Utilities](09-high-scale-system-design/01-fundamental-distributed-utilities/)
+- [Chapter 28: Content Ingestion, Search & Storage Engines](09-high-scale-system-design/02-content-ingestion-search-storage/)
+- [Chapter 29: Feeds, Notifications & Real-Time Messaging](09-high-scale-system-design/03-feeds-notifications-realtime/)
+- [Chapter 30: Geospatial & Location Services](09-high-scale-system-design/04-geospatial-location/)
+- [Chapter 31: Event Processing, Analytics & Gaming Engines](09-high-scale-system-design/05-event-processing-gaming/)
+- [Chapter 32: High-Concurrency Financial & Transactional Systems](09-high-scale-system-design/06-financial-transactional/)
+- [Chapter 33: Enterprise Operations & Monitoring Infrastructure](09-high-scale-system-design/07-enterprise-monitoring/)
+- [Chapter 34: Media Streaming & Cloud Storage Systems](09-high-scale-system-design/08-media-cloud-storage/)
+- [Chapter 35: Modular Systems & Plugin Architecture](09-high-scale-system-design/09-modular-plugin-architecture/)
