@@ -2,6 +2,7 @@
 title: "AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -43,7 +44,29 @@ A JSON Schema for a bounded lookup tool can be:
 
 Multi-agent orchestration assigns roles such as planner, researcher, coder, and verifier. A supervisor agent can delegate and aggregate results, while a blackboard or workflow engine lets workers write typed artifacts to shared state. Coordination adds token cost, message latency, duplicate work, and partial-failure paths. Define ownership, handoff schemas, concurrency limits, and a final integrating role before adding more agents.
 
-The runtime can express the loop as a state machine:
+The runtime expresses the loop as a bounded state machine so that model output never bypasses validation, policy checks, side-effect controls, or termination rules.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ready
+    Ready --> Model: Goal and tool schemas
+    Model --> FinalResponse: Complete answer
+    Model --> ValidateCall: Structured tool call
+    ValidateCall --> Rejected: Invalid schema
+    ValidateCall --> PolicyCheck: Valid arguments
+    PolicyCheck --> Rejected: Unauthorized or stale policy
+    PolicyCheck --> PendingCall: Approved
+    PendingCall --> ExecuteTool: Correlated action ID
+    ExecuteTool --> Observe: Success
+    ExecuteTool --> RetryOrStop: Retryable failure
+    ExecuteTool --> Rejected: Terminal failure
+    RetryOrStop --> ExecuteTool: Idempotent retry within budget
+    RetryOrStop --> Rejected: Retry limit reached
+    Observe --> CompactState: Store bounded observation
+    CompactState --> Model: Continue within budget
+    Rejected --> [*]
+    FinalResponse --> [*]
+```
 
 ```yaml
 agent:
@@ -112,6 +135,6 @@ Safety boundaries belong outside the model. Validate every argument, authorize a
 - **One multi-agent system for every task** — wins for work that genuinely needs independent specialist roles, but it is slower and harder to reason about than a single agent for simple tasks.
 
 ## Related
+- [Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search](01-vector-databases.md)
 - [Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking](02-rag.md)
-- [Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)](01-vector-databases.md)
-- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)
+- [Fine-Tuning & Model Alignment: Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA), Reinforcement Learning Alignment (RLHF, DPO)](06-fine-tuning-alignment.md)

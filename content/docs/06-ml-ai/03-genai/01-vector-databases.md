@@ -2,6 +2,7 @@
 title: "Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -23,6 +24,28 @@ The selected metric must match the embedding model and index. Pinecone provides 
 **HNSW** stores a multi-layer proximity graph. The highest layer starts at a small entry set, and each lower layer expands the search frontier. A best-first walk compares a candidate with its unvisited graph neighbors until the frontier cannot improve, then returns a maintained candidate set. Insertion searches from the top layer downward and connects the new vector in upper and lower layers, with a bidirectional-neighbor heuristic that preserves navigable shortcuts. The number of neighbors considered during search controls the recall and latency trade.
 
 **IVF-PQ** first trains coarse centroids with k-means and assigns each vector to a nearest list, which is the inverted-file step. **Product quantization (PQ)** then splits a residual vector into subvectors, learns a codebook for each subspace, and replaces the residual with one code per subspace. Search probes a small number of nearby lists and estimates distances from compact codes. The index accepts reconstruction and ranking error in exchange for lower storage and bandwidth.
+
+**ScaNN** combines partition-and-search with **anisotropic vector quantization**. It prunes unlikely branches, scores compact quantized candidates, and can rescore promising candidates with fuller representations. This design favors in-memory serving and tuning for a particular distance function, query distribution, and hardware platform rather than making the unquantized index the only representation.
+
+**DiskANN** keeps compressed vectors and the active search frontier in memory while a Vamana proximity graph and fuller neighbor data remain on an SSD. A beam search reads neighborhoods for a small group of promising nodes in each storage round. SSD-resident adjacency and vectors let DiskANN serve indexes larger than RAM, but storage bandwidth and cache-miss latency become part of query cost.
+
+```mermaid
+flowchart LR
+    Q[Query] --> E[Embedding model]
+    E --> S{ANN index}
+    S --> H[HNSW graph in memory]
+    S --> I[IVF-PQ lists and codes]
+    S --> A[ScaNN partitions and quantized candidates]
+    S --> D{DiskANN}
+    D --> R[Compressed vectors and frontier in RAM]
+    D --> O[Vamana graph and full vectors on SSD]
+    O --> B[Beam search reads neighbor batches]
+    B --> T[Top k]
+    H --> T
+    I --> T
+    A --> T
+    R --> T
+```
 
 A portable collection manifest captures the decisions an operator must make before choosing a product-specific client configuration:
 
@@ -324,14 +347,18 @@ static bool bounded_graph_append_neighbor(Node *node, int neighbor_id) {
 }
 
 static void bounded_graph_prune(BoundedGraph *index, Node *node, Metric metric) {
-    for (int i = 1; i < node->neighbor_count; i++) {
-        int current = node->neighbors[i];
-        int position = i;
-        while (position > 0 && bounded_graph_before(index, node->neighbors[position - 1], current, node->vector, metric)) {
-            node->neighbors[position] = node->neighbors[position - 1];
-            position--;
+    for (int i = 0; i + 1 < node->neighbor_count; i++) {
+        int nearest = i;
+        for (int j = i + 1; j < node->neighbor_count; j++) {
+            if (bounded_graph_before(index, node->neighbors[j], node->neighbors[nearest], node->vector, metric)) {
+                nearest = j;
+            }
         }
-        node->neighbors[position] = current;
+        if (nearest != i) {
+            int neighbor = node->neighbors[i];
+            node->neighbors[i] = node->neighbors[nearest];
+            node->neighbors[nearest] = neighbor;
+        }
     }
     if (node->neighbor_count > index->max_neighbors) {
         node->neighbor_count = index->max_neighbors;
@@ -989,6 +1016,5 @@ The unlayered examples are not exact nearest-neighbor search: bounded traversal 
 
 ## Related
 - [Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking](02-rag.md)
-- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding](04-llm-serving.md)
-- [Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)](../01-ml-foundations/02-unsupervised-learning.md)
+- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching](04-llm-serving.md)
 - [AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration](05-ai-agents.md)

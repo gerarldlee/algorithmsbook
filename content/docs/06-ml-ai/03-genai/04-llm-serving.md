@@ -2,6 +2,7 @@
 title: "High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,34 @@ An autoregressive Transformer processes a prompt in a **prefill** phase and then
 A static batch runs until every member finishes. **Continuous batching**, introduced with the Orca serving design and implemented by vLLM, admits new work as completed requests leave the running batch at iteration boundaries. Chunked prefill interleaves prefill and decode work in capable schedulers so long prompts do not monopolize the device. The scheduler must account for prefill compute, decode memory, per-request token budgets, and fairness.
 
 **Speculative decoding** uses a smaller draft model to propose several tokens and a target model to evaluate the proposal in one target step. A verification rule preserves the target model's output distribution while accepting a variable-length prefix of the draft. It can reduce sequential target steps when accepted drafts are long, but it adds draft-model work and can be slower when acceptance is low or the draft model is poorly matched.
+
+**Prompt caching**, implemented as prefix caching in vLLM and related runtimes, hashes a model-qualified prompt prefix and reuses matching KV blocks. It avoids prefill work for repeated system instructions, few-shot examples, and conversation prefixes. Cache identity must include the model and tokenizer context, and access-aware routing must prevent one tenant from learning from or accessing another tenant's cached content.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Continuous-batching scheduler
+    participant K as Paged KV-cache manager
+    participant M as Model replica
+    C->>S: Prompt request
+    S->>K: Allocate logical blocks
+    K-->>S: Block table
+    S->>M: Prefill prompt
+    M->>K: Fill prompt KV blocks
+    loop Every decode iteration
+        S->>M: Run active sequences
+        M->>K: Append each generated token's KV entries
+        M-->>C: Stream generated tokens
+    end
+    alt A sequence completes
+        M-->>S: Completion
+        S->>K: Reclaim its blocks
+        S->>M: Admit a waiting request
+    else A sequence reaches a budget
+        M-->>S: Preemption event
+        S->>K: Reclaim or recompute cache state
+    end
+```
 
 A deployment manifest separates model placement, request policy, cache, and observation:
 
@@ -85,8 +114,7 @@ Operational capacity models should track the separate compute and memory bounds 
 - **Client-side model execution** — wins for private low-concurrency workloads, but hardware limits and model updates are outside the service operator's control.
 
 ## Related
-- [Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention](../01-ml-foundations/05-transformers.md)
+- [Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search](01-vector-databases.md)
 - [Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking](02-rag.md)
-- [Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)](01-vector-databases.md)
-- [Inference Serving](../02-mlops/04-inference-serving.md)
-- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)
+- [Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)](03-distributed-training.md)
+- [Fine-Tuning & Model Alignment: Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA), Reinforcement Learning Alignment (RLHF, DPO)](06-fine-tuning-alignment.md)

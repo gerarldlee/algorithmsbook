@@ -12,6 +12,7 @@
 * 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
 * 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
 * 1.6 Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators
+* 1.7 Data Compression Algorithms & Archival Formats: Lossless Compression (Huffman Coding, LZW, LZ77/LZ78, Deflate), Container Formats (ZIP, RAR, LZH, 7Z), and Compression Ratios
 
 ### Chapter 2: Hierarchical Data Structures, Search Trees & Spatial Indexing
 

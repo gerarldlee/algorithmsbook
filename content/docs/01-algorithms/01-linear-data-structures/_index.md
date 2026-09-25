@@ -11,4 +11,5 @@ The simplest data structures that everything else builds on: arrays, linked list
 - [Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage](04-hash-tables.md)
 - [Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)](05-bitwise-bloom-filters.md)
 - [Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators](06-expression-evaluation.md)
-- [Chapter 1 References](07-references.md)
+- [Data Compression Algorithms & Archival Formats: Lossless Compression (Huffman Coding, LZW, LZ77/LZ78, Deflate), Container Formats (ZIP, RAR, LZH, 7Z), and Compression Ratios](07-data-compression-algorithms.md)
+- [Chapter 1 References](08-references.md)

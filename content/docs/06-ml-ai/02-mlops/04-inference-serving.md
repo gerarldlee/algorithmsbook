@@ -2,6 +2,7 @@
 title: "High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -17,6 +18,26 @@ A model server loads a versioned artifact, exposes an HTTP or gRPC interface, va
 A synchronous request path is appropriate when the caller needs the prediction before it can continue. An asynchronous pipeline accepts a job, writes inputs to durable storage, processes batches, and exposes job status and results later. Asynchronous serving absorbs traffic spikes and protects the system from per-request timeouts, but it introduces queueing, idempotency, result storage, and user-visible completion semantics.
 
 For generative models, the **KV cache** stores attention keys and values for previously processed tokens. Reusing it avoids recomputing those tensors during decoding, while memory grows with active sequence length. Paged KV-cache storage and admission control reduce fragmentation, but the scheduler must reserve enough memory for newly admitted requests.
+
+A scheduler couples arrivals, execution, and memory state. In continuous batching, completed sequences leave the active set and waiting sequences can enter without restarting the whole batch.
+
+```mermaid
+sequenceDiagram
+    participant C as Request clients
+    participant S as Scheduler
+    participant E as Model replica
+    participant K as KV-cache manager
+    C->>S: Submit requests and deadlines
+    S->>S: Select static, dynamic, or continuous batching
+    loop Each execution step
+        S->>K: Reserve memory for admitted sequences
+        K-->>S: Allocation and remaining capacity
+        S->>E: Run active batch
+        E-->>S: Tokens, completions, and measurements
+        S->>K: Reclaim completed sequence blocks
+    end
+    S-->>C: Return predictions and request status
+```
 
 ```yaml
 inference_service:
@@ -46,7 +67,7 @@ inference_service:
 
 | Design choice | Gain | Cost |
 | --- | --- | --- |
-| Static batching | Predictable execution and simple capacity planning | Wasted work while waiting and lower utilization for variable traffic |
+| Static batching | Predictable execution and simple capacity planning | Idle capacity while waiting and lower utilization for variable traffic |
 | Dynamic batching | Better utilization across mixed request sizes | More scheduler state and variable latency |
 | Continuous batching | Higher throughput for autoregressive generation | Complex admission, memory reservation, and fairness logic |
 | Data-parallel replicas | Independent scaling and fault isolation | Duplicated model memory and load-balancing overhead |
@@ -70,6 +91,6 @@ inference_service:
 
 ## Related
 - [End-to-End ML System Design: Training, Validation, Feature Engineering, and Inference Pipelines](01-ml-system-design.md)
-- [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](02-feature-stores-pipelines.md)
 - [Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)](03-model-optimization.md)
-- [LLM Serving](../03-genai/04-llm-serving.md)
+- [Self-Improving Machine Learning Systems: Feedback Loops, Active Learning, Online Recalibration, Continuous Drift Detection, and Auto-Tuning Pipelines](05-self-improving-machine-learning-systems.md)
+- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching](../03-genai/04-llm-serving.md)

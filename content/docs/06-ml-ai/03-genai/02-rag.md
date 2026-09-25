@@ -2,6 +2,7 @@
 title: "Retrieval-Augmented Generation (RAG): Chunking Frameworks, Hybrid Search, Dense/Sparse Embeddings, and Re-ranking"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,26 @@ RAG separates into an indexing path and a request path. The indexing path preser
 Chunking is a systems decision rather than a fixed token count. Fixed windows are predictable, semantic boundaries preserve tables and paragraphs, and recursive splitters used by LangChain and LlamaIndex combine structural rules with size limits. Overlap can retain context across a boundary, but it also duplicates candidates and consumes context. Store the original document ID, chunk ordinal, headings, URI, and access-control labels with every chunk. The labels support policy evaluation, but they do not enforce authorization by themselves: tenant and policy filtering must occur before any unauthorized candidate reaches the reranker, context builder, or generation model.
 
 A **dense embedding** maps text into a vector where related meanings tend to lie near one another. A **sparse representation**, such as a BM25 vector, records weighted terms and preserves exact identifiers, names, and numbers. Hybrid retrieval runs both paths, then fuses the rankings. Reciprocal rank fusion combines ranks without requiring calibrated score scales. A **cross-encoder reranker**, such as a transformer trained to score a query-document pair, can improve ranking by jointly considering the query and candidate, but it does not guarantee better end-to-end accuracy and costs more because it processes the pairs.
+
+```mermaid
+sequenceDiagram
+    participant S as Document source
+    participant I as Indexing pipeline
+    participant D as Dense index
+    participant P as Sparse index
+    participant U as Query gateway
+    participant R as Rank fusion and reranker
+    participant G as Generator
+    S->>I: Versioned document and metadata
+    I->>D: Embed chunks
+    I->>P: Index terms and fields
+    U->>D: Policy-filtered vector query
+    U->>P: Policy-filtered lexical query
+    D-->>R: Dense candidate ranks
+    P-->>R: Sparse candidate ranks
+    R->>G: Bounded context with source labels
+    G-->>U: Answer and citations
+```
 
 The following pipeline manifest makes the data contracts and ordering explicit:
 
@@ -98,7 +119,6 @@ Grounding reduces unsupported answers but does not make the generator reliable b
 - **Deterministic application search** — wins when a structured database or API can answer exactly, but it does not provide open-ended synthesis over prose.
 
 ## Related
-- [Vector Databases (Pinecone, Qdrant, Milvus), Similarity Metrics (Cosine, L2, Dot Product), and Approximate Nearest Neighbors (HNSW, IVF-PQ)](01-vector-databases.md)
-- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding](04-llm-serving.md)
+- [Vector Databases & Billion-Scale Retrieval: Pinecone, Qdrant, Milvus, Similarity Metrics (Cosine, L2, Dot Product), Approximate Nearest Neighbors (HNSW, IVF-PQ), ScaNN, and DiskANN Out-of-Core Vector Search](01-vector-databases.md)
+- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching](04-llm-serving.md)
 - [AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration](05-ai-agents.md)
-- [Transformer Architecture](../01-ml-foundations/05-transformers.md)

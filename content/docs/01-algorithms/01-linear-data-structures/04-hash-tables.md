@@ -13,7 +13,7 @@ A hash table maps keys to values by applying a **hash function** that selects a 
 
 The hash function spreads keys across buckets. When two keys select the same bucket, the table resolves the collision with **separate chaining** by storing a small collection of entries in that bucket. The implementation below uses the same operation set in all six languages: put, get, remove, contains, and size, with a fixed bucket capacity so each operation is independent.
 
-A hash function should be deterministic during a table's lifetime, inexpensive to compute, and stable across processes when a hash is persisted. A universal hash family makes the choice of hash function less predictable. For integer keys, a common family is \(h_{a,b}(x) = ((ax+b) \bmod p) \bmod m\), where \(p\) is a prime larger than the key domain and \(m\) is the number of buckets; selecting random \(a\) and \(b\) gives a collision bound in expectation for a fixed pair of keys.
+A hash function should be deterministic during a table's lifetime, inexpensive to compute, and stable across processes when a hash is persisted. A universal hash family makes the choice of hash function less predictable. For integer keys, a common family is \(h_{a,b}(x) = ((ax+b) \bmod p) \bmod m\), where \(p\) is a prime larger than the key domain, \(m\) is the number of buckets, and the random multiplier \(a\) is selected from the nonzero residues modulo \(p\); selecting random \(a\) and \(b\) gives a collision bound in expectation for a fixed pair of keys.
 
 Separate chaining keeps entries in a bucket collection. Open addressing is the other common strategy: it stores entries directly in the array and probes another slot after a collision. Chaining makes deletion straightforward; open addressing needs a tombstone or backward-shift policy for deletion. Either strategy requires resizing when the load factor becomes too high.
 
@@ -468,4 +468,4 @@ The load factor is the number of entries divided by the number of buckets. Choos
 
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](01-dynamic-arrays.md)
 - [Bitwise Operations and Bloom Filters](05-bitwise-bloom-filters.md)
-- [Binary Search Trees](../02-search-trees/01-binary-search-trees.md)
+- [Binary Search Trees & Self-Balancing Trees (AVL, Red-Black Trees)](../02-search-trees/01-binary-search-trees.md)

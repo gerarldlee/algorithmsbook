@@ -34,7 +34,7 @@ flowchart TD
     I --> J[Single value is result]
 ```
 
-The calculator uses integer-valued floating-point storage because it is the simplest common representation across the six languages. A production calculator would also define division-by-zero behavior, overflow handling, localization, and the precedence of unary operators.
+All six implementations reject an empty expression, an unknown token, a non-finite numeric token, an unbalanced expression, an operand-stack error, and division by zero. Java, Python, Rust, and TypeScript throw an error, C returns `NAN`, and Go returns an error with a zero result. A production calculator would also define overflow handling, localization, and the precedence of unary operators.
 
 ```java
 import java.util.ArrayDeque;
@@ -54,12 +54,22 @@ class Calculator {
             case "+" -> left + right;
             case "-" -> left - right;
             case "*" -> left * right;
-            case "/" -> left / right;
+            case "/" -> {
+                if (right == 0.0) throw new ArithmeticException("division by zero");
+                yield left / right;
+            }
             default -> throw new IllegalArgumentException("invalid operator");
         };
     }
 
+    private double parseNumber(String token) {
+        double value = Double.parseDouble(token);
+        if (!Double.isFinite(value)) throw new IllegalArgumentException("invalid number");
+        return value;
+    }
+
     double evaluateRpn(String expression) {
+        if (expression == null || expression.isBlank()) throw new IllegalArgumentException("invalid expression");
         Deque<Double> values = new ArrayDeque<>();
         for (String token : expression.trim().split("\\s+")) {
             if (isOperator(token)) {
@@ -68,7 +78,7 @@ class Calculator {
                 double left = values.removeLast();
                 values.addLast(apply(left, token, right));
             } else {
-                values.addLast(Double.parseDouble(token));
+                values.addLast(parseNumber(token));
             }
         }
         if (values.size() != 1) throw new IllegalArgumentException("invalid RPN");
@@ -76,6 +86,7 @@ class Calculator {
     }
 
     double evaluateInfix(String expression) {
+        if (expression == null || expression.isBlank()) throw new IllegalArgumentException("invalid expression");
         Deque<Double> values = new ArrayDeque<>();
         Deque<String> operators = new ArrayDeque<>();
         boolean expectOperand = true;
@@ -101,7 +112,7 @@ class Calculator {
                 expectOperand = true;
             } else {
                 if (!expectOperand) throw new IllegalArgumentException("invalid infix");
-                values.addLast(Double.parseDouble(token));
+                values.addLast(parseNumber(token));
                 expectOperand = false;
             }
         }
@@ -122,6 +133,7 @@ class Calculator {
 ```
 
 ```c
+#include <errno.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,6 +151,15 @@ static int calculator_is_operator(const char *token) {
 
 static int calculator_precedence(const char *operator) {
     return operator[0] == '+' || operator[0] == '-' ? 1 : 2;
+}
+
+static int calculator_parse_number(const char *token, double *value) {
+    char *end;
+    errno = 0;
+    double parsed = strtod(token, &end);
+    if (end == token || *end != '\0' || errno == ERANGE || !isfinite(parsed)) return 0;
+    *value = parsed;
+    return 1;
 }
 
 static int calculator_apply(double left, char operator, double right, double *result) {
@@ -179,8 +200,10 @@ double calculator_evaluate_rpn(Calculator *calculator, const char *expression) {
             double left = values[--value_count];
             if (!calculator_apply(left, operator, right, &values[value_count++])) return NAN;
         } else {
-            if (value_count == CALCULATOR_STACK_SIZE) return NAN;
-            values[value_count++] = strtod(token, NULL);
+            if (value_count == CALCULATOR_STACK_SIZE || !calculator_parse_number(token, &values[value_count])) {
+                return NAN;
+            }
+            value_count++;
         }
         token = strtok(NULL, " \t\n");
     }
@@ -220,13 +243,17 @@ double calculator_evaluate_infix(Calculator *calculator, const char *expression)
             operators[operator_count++] = token[0];
             expect_operand = 1;
         } else {
-            if (!expect_operand || value_count == CALCULATOR_STACK_SIZE) return NAN;
-            values[value_count++] = strtod(token, NULL);
+            if (!expect_operand || value_count == CALCULATOR_STACK_SIZE ||
+                !calculator_parse_number(token, &values[value_count])) return NAN;
+            value_count++;
             expect_operand = 0;
         }
         token = strtok(NULL, " \t\n");
     }
-    if (expect_operand || operator_count > 0) return NAN;
+    if (expect_operand) return NAN;
+    for (int index = 0; index < operator_count; index++) {
+        if (operators[index] == '(') return NAN;
+    }
     while (operator_count > 0) {
         if (!calculator_reduce(values, &value_count, operators, &operator_count)) return NAN;
     }
@@ -244,6 +271,12 @@ class Calculator:
 
     def _precedence(self, operator):
         return 1 if operator in {"+", "-"} else 2
+
+    def _parse_number(self, token):
+        value = float(token)
+        if not math.isfinite(value):
+            raise ValueError("invalid number")
+        return value
 
     def _apply(self, left, operator, right):
         if operator == "+":
@@ -266,7 +299,7 @@ class Calculator:
                 left = values.pop()
                 values.append(self._apply(left, token, right))
             else:
-                values.append(float(token))
+                values.append(self._parse_number(token))
         if len(values) != 1:
             raise ValueError("invalid RPN")
         return values[0]
@@ -300,7 +333,7 @@ class Calculator:
             else:
                 if not expect_operand:
                     raise ValueError("invalid infix")
-                values.append(float(token))
+                values.append(self._parse_number(token))
                 expect_operand = False
         if expect_operand or "(" in operators:
             raise ValueError("invalid infix")
@@ -342,6 +375,11 @@ impl Calculator {
         }
     }
 
+    fn parse_number(&self, token: &str) -> Result<f64, String> {
+        let value = token.parse::<f64>().map_err(|_| "invalid number".to_string())?;
+        if value.is_finite() { Ok(value) } else { Err("invalid number".to_string()) }
+    }
+
     fn evaluate_rpn(&self, expression: &str) -> Result<f64, String> {
         let mut values = Vec::new();
         for token in expression.split_whitespace() {
@@ -351,7 +389,7 @@ impl Calculator {
                 let left = values.pop().unwrap();
                 values.push(self.apply(left, token, right)?);
             } else {
-                values.push(token.parse::<f64>().map_err(|_| "invalid number".to_string())?);
+                values.push(self.parse_number(token)?);
             }
         }
         if values.len() == 1 { Ok(values.pop().unwrap()) } else { Err("invalid RPN".to_string()) }
@@ -382,7 +420,7 @@ impl Calculator {
                 expect_operand = true;
             } else {
                 if !expect_operand { return Err("invalid infix".to_string()); }
-                values.push(token.parse::<f64>().map_err(|_| "invalid number".to_string())?);
+                values.push(self.parse_number(token)?);
                 expect_operand = false;
             }
         }
@@ -422,7 +460,14 @@ class Calculator {
         return left / right;
     }
 
+    private parseNumber(token: string): number {
+        const value = Number(token);
+        if (!Number.isFinite(value)) throw new Error("invalid number");
+        return value;
+    }
+
     evaluateRpn(expression: string): number {
+        if (expression.trim() === "") throw new Error("invalid expression");
         const values: number[] = [];
         for (const token of expression.trim().split(/\s+/)) {
             if (this.isOperator(token)) {
@@ -431,7 +476,7 @@ class Calculator {
                 const left = values.pop()!;
                 values.push(this.apply(left, token, right));
             } else {
-                values.push(Number(token));
+                values.push(this.parseNumber(token));
             }
         }
         if (values.length !== 1) throw new Error("invalid RPN");
@@ -439,6 +484,7 @@ class Calculator {
     }
 
     evaluateInfix(expression: string): number {
+        if (expression.trim() === "") throw new Error("invalid expression");
         const values: number[] = [];
         const operators: string[] = [];
         let expectOperand = true;
@@ -463,7 +509,7 @@ class Calculator {
                 expectOperand = true;
             } else {
                 if (!expectOperand) throw new Error("invalid infix");
-                values.push(Number(token));
+                values.push(this.parseNumber(token));
                 expectOperand = false;
             }
         }
@@ -488,6 +534,7 @@ package main
 
 import (
     "fmt"
+    "math"
     "strconv"
     "strings"
 )
@@ -501,6 +548,14 @@ func (calculator *Calculator) IsOperator(token string) bool {
 func (calculator *Calculator) precedence(operator string) int {
     if operator == "+" || operator == "-" { return 1 }
     return 2
+}
+
+func (calculator *Calculator) parseNumber(token string) (float64, error) {
+    value, err := strconv.ParseFloat(token, 64)
+    if err != nil || math.IsInf(value, 0) || math.IsNaN(value) {
+        return 0, fmt.Errorf("invalid number")
+    }
+    return value, nil
 }
 
 func (calculator *Calculator) apply(left float64, operator string, right float64) (float64, error) {
@@ -527,8 +582,8 @@ func (calculator *Calculator) EvaluateRpn(expression string) (float64, error) {
             if err != nil { return 0, err }
             values = append(values, result)
         } else {
-            value, err := strconv.ParseFloat(token, 64)
-            if err != nil { return 0, fmt.Errorf("invalid number") }
+            value, err := calculator.parseNumber(token)
+            if err != nil { return 0, err }
             values = append(values, value)
         }
     }
@@ -562,13 +617,16 @@ func (calculator *Calculator) EvaluateInfix(expression string) (float64, error) 
             expectOperand = true
         } else {
             if !expectOperand { return 0, fmt.Errorf("invalid infix") }
-            value, err := strconv.ParseFloat(token, 64)
-            if err != nil { return 0, fmt.Errorf("invalid number") }
+            value, err := calculator.parseNumber(token)
+            if err != nil { return 0, err }
             values = append(values, value)
             expectOperand = false
         }
     }
-    if expectOperand || len(operators) > 0 { return 0, fmt.Errorf("invalid infix") }
+    if expectOperand { return 0, fmt.Errorf("invalid infix") }
+    for _, operator := range operators {
+        if operator == "(" { return 0, fmt.Errorf("invalid infix") }
+    }
     for len(operators) > 0 {
         if err := calculator.reduce(&values, &operators); err != nil { return 0, err }
     }

@@ -2,6 +2,7 @@
 title: "Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,7 +15,19 @@ Model optimization reduces a model’s memory footprint, latency, or cost while 
 
 **Compilation** lowers a framework graph into an execution plan. ONNX provides a model interchange format, ONNX Runtime provides a cross-platform execution engine, and TensorRT builds an optimized NVIDIA deployment plan. Fusion, layout conversion, kernel selection, and memory planning reduce runtime overhead, but compiled artifacts are tied to a software and hardware configuration. Always evaluate an optimized artifact against the same validation protocol and target hardware as the original.
 
-A reproducible optimization pipeline records the source model, precision and sparsity settings, calibration dataset, compiler version, target device, evaluation results, and artifact digest. The candidate should be tested for numerical overflow, unsupported operators, latency at realistic batch sizes, memory pressure, and output quality.
+A reproducible optimization pipeline records the source model, precision and sparsity settings, calibration dataset, compiler version, target device, evaluation results, and artifact digest. The candidate should be tested for numerical overflow, unsupported operators, latency at realistic batch sizes, memory pressure, and output quality. Optimization is an experiment-and-release loop, not a one-time conversion:
+
+```mermaid
+flowchart TD
+    A[Registered baseline model] --> B[Create quantized, pruned, distilled, or compiled candidates]
+    B --> C[Check graph support and numerical parity]
+    C --> D[Benchmark realistic workloads on target hardware]
+    D --> E[Evaluate quality and calibration]
+    E --> F{All release gates pass?}
+    F -->|yes| G[Register artifact and provenance]
+    F -->|no| H[Reject or revise the candidate]
+    H --> B
+```
 
 ```yaml
 optimization_pipeline:
@@ -66,7 +79,7 @@ optimization_pipeline:
 - **Model architecture search** — can produce a better deployment fit, but requires a larger training and evaluation budget.
 
 ## Related
-- [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
-- [Deep Learning Architectures](../01-ml-foundations/04-deep-learning-architectures.md)
 - [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](02-feature-stores-pipelines.md)
-- [Fine-Tuning & Model Alignment](../03-genai/06-fine-tuning-alignment.md)
+- [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
+- [Self-Improving Machine Learning Systems: Feedback Loops, Active Learning, Online Recalibration, Continuous Drift Detection, and Auto-Tuning Pipelines](05-self-improving-machine-learning-systems.md)
+- [Deep Learning Architectures: CNNs, RNNs, LSTMs, GRUs, 3D CNNs, SlowFast, Video Transformers, YOLO, ByteTRACK, and DeepSORT](../01-ml-foundations/04-deep-learning-architectures.md)

@@ -67,6 +67,7 @@ For every algorithm chapter:
 - [x] 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
 - [x] 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
 - [x] 1.6 Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators
+- [x] 1.7 Data Compression Algorithms & Archival Formats: Lossless Compression (Huffman Coding, LZW, LZ77/LZ78, Deflate), Container Formats (ZIP, RAR, LZH, 7Z), and Compression Ratios
 
 ### Chapter 2 — Hierarchical Data Structures, Search Trees & Spatial Indexing
 
@@ -220,11 +221,11 @@ For every algorithm chapter:
 ### Chapter 13 — Machine Learning & Deep Learning Foundations
 
 - [x] 13.1 Supervised Learning: Linear/Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost)
-  - [ ] Supervised Classifiers & Kernel Methods: Support Vector Machines (SVM), LightGBM/CatBoost, and k-Nearest Neighbors (k-NN)
+  - [x] Supervised Classifiers & Kernel Methods: Support Vector Machines (SVM), LightGBM/CatBoost, and k-Nearest Neighbors (k-NN)
 - [x] 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
 - [x] 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
 - [x] 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
-  - [ ] Sequence & Spatial-Temporal Models: LSTMs, GRUs, Object Tracking (YOLO, ByteTRACK, DeepSORT), and Video Transformers (3D-CNNs, SlowFast)
+  - [x] Sequence & Spatial-Temporal Models: LSTMs, GRUs, Object Tracking (YOLO, ByteTRACK, DeepSORT), and Video Transformers (3D-CNNs, SlowFast)
 - [x] 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics
 
 ### Chapter 14 — MLOps & Production Machine Learning Systems
@@ -233,7 +234,7 @@ For every algorithm chapter:
 - [x] 14.2 Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)
 - [x] 14.3 Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)
 - [x] 14.4 High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving
-- [ ] 14.5 Self-Improving Machine Learning Systems: External Data -> Process -> Decision -> Feedback -> Recalibration Loops
+- [x] 14.5 Self-Improving Machine Learning Systems: External Data -> Process -> Decision -> Feedback -> Recalibration Loops
 
 ### Chapter 15 — Generative AI Infrastructure & Large Scale LLM Orchestration
 

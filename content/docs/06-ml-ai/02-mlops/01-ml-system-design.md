@@ -2,6 +2,7 @@
 title: "End-to-End ML System Design: Training, Validation, Feature Engineering, and Inference Pipelines"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -10,7 +11,23 @@ End-to-end machine learning system design is the engineering of a model’s comp
 ## How it works
 A production ML system separates the **training plane** from the **serving plane**. The training plane ingests labeled data, validates schemas and quality, computes historical features, trains candidate models, evaluates them against validation and test sets, and registers an approved artifact. The serving plane loads that artifact behind an API, obtains request-time features, performs inference, applies post-processing, and records the prediction and its input context.
 
-The two planes share versioned feature definitions and model metadata. **Feature consistency** means training and serving use the same transformation semantics. **Data drift** is a change in input distributions, while **concept drift** is a change in the relationship between inputs and outcomes. Monitoring compares these signals with thresholds and can trigger investigation, retraining, or rollback. A model registry should identify the training data, feature definitions, code revision, evaluation report, and serving configuration for every registered version.
+The two planes share versioned feature definitions and model metadata. **Feature consistency** means training and serving use the same transformation semantics. **Data drift** is a change in input distributions, while **concept drift** is a change in the relationship between inputs and outcomes. Monitoring evaluates input, prediction, operational, and outcome signals against a reference period. Because concept-drift evaluation requires outcomes, it can lag behind the events that caused the shift. A model registry should identify the training data, feature definitions, code revision, evaluation report, and serving configuration for every registered version.
+
+```mermaid
+flowchart LR
+    A[External data] --> B[Validate and version]
+    B --> C[Historical feature store]
+    C --> D[Train and evaluate]
+    D -->|approved artifact| E[(Model registry)]
+    B --> F[Online feature store]
+    E --> G[Inference service]
+    F --> G
+    G --> H[Prediction and decision log]
+    H --> I[Join delayed outcomes]
+    I --> J[Quality and drift evaluation]
+    J -->|continued evidence| K[Monitor production]
+    J -->|change justified| D
+```
 
 A typical request path is:
 
@@ -39,7 +56,7 @@ system:
     response: [prediction, request_id, model_version]
   feedback_plane:
     monitoring: [latency, quality, data_drift, concept_drift]
-    actions: [alert, rollback, retraining, investigation]
+    actions: [alert, investigation, validated_retraining, rollback]
   contracts:
     features: [name, type, freshness, null_policy, version]
     models: [artifact_digest, runtime, hardware, compatibility]
@@ -71,5 +88,4 @@ system:
 ## Related
 - [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](02-feature-stores-pipelines.md)
 - [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
-- [Supervised Learning](../01-ml-foundations/01-supervised-learning.md)
-- [Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)](../01-ml-foundations/02-unsupervised-learning.md)
+- [Self-Improving Machine Learning Systems: Feedback Loops, Active Learning, Online Recalibration, Continuous Drift Detection, and Auto-Tuning Pipelines](05-self-improving-machine-learning-systems.md)

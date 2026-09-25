@@ -1,6 +1,6 @@
 ---
 title: "Chapter 1 References"
-weight: 7
+weight: 8
 ---
 
 The sources below support the topics in Chapter 1. The chapter pages explain the mechanisms; this page collects the shared books and websites used to verify their definitions, operations, and costs.

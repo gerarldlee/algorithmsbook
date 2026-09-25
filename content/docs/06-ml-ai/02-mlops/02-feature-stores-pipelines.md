@@ -2,6 +2,7 @@
 title: "Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,7 +13,23 @@ Feature definitions identify a feature by name, type, owner, source, transformat
 
 A training-set builder performs a **point-in-time-correct join**: for each event timestamp, it selects feature values that existed at that timestamp rather than values written later. This prevents **data leakage**, in which a training example contains information that would not have been available when its prediction was made. At serving time, the online path normally fetches a precomputed feature value keyed by entity and lookup time. A feature explicitly declared as request-time derived applies its versioned transformation definition to the current request and can materialize the result; the online path does not generally rerun every batch transformation. The response records the feature version used.
 
-DVC versions data artifacts through a Git repository-backed metadata model. A `.dvc` file records a content identifier, while remote object storage holds large files; Git versions the pipeline definition and metadata without storing large datasets in every commit. A production pipeline also needs schema checks, freshness checks, idempotent writes, retries, lineage, and a quarantine path for invalid records.
+```mermaid
+sequenceDiagram
+    participant E as Training event at time t
+    participant B as Training-set builder
+    participant O as Offline feature store
+    participant P as Predictor
+    participant N as Online feature store
+    E->>B: Entity, event time, and label
+    B->>O: Find value available at or before t
+    O-->>B: Historical feature value and version
+    B-->>B: Build the training example
+    P->>N: Find value by entity and lookup time
+    N-->>P: Current feature value and version
+    P-->>P: Build the inference input
+```
+
+DVC versions data artifacts through a Git repository-backed metadata model. A `.dvc` pointer file records the artifact location, file information, and hashes used to verify the data, while remote object storage holds large files; Git versions the pipeline definition and metadata without storing large datasets in every commit. A production pipeline also needs schema checks, freshness checks, idempotent writes, retries, lineage, and a quarantine path for invalid records.
 
 Airflow schedules DAGs with explicit dependencies and backfills. Kubeflow Pipelines packages pipeline steps as versioned containerized components and records their inputs, outputs, and execution status. Both systems require retry policies, timeouts, idempotent task implementations, and a distinction between a data-quality failure and an infrastructure failure.
 
@@ -29,7 +46,7 @@ feature_platform:
     purpose: request_time_lookup
     materialization: precomputed_values_by_entity
     request_time_derived_features: apply_versioned_definition
-    consistency: versioned_feature_values
+    consistency: compatibility_and_freshness_enforced
     examples: [Redis, DynamoDB, feature_service]
 dataset_versioning:
   tool: dvc
@@ -73,8 +90,6 @@ pipeline_orchestration:
 
 ## Related
 - [End-to-End ML System Design: Training, Validation, Feature Engineering, and Inference Pipelines](01-ml-system-design.md)
-- [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
 - [Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)](03-model-optimization.md)
-- [Supervised Learning](../01-ml-foundations/01-supervised-learning.md)
-- [Stateful Stream & Batch Processing Frameworks](../../03-messaging/03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)
-- [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)
+- [High-Performance Inference: Batching, Parallel Execution, and Real-Time vs Async Pipeline Serving](04-inference-serving.md)
+- [Self-Improving Machine Learning Systems: Feedback Loops, Active Learning, Online Recalibration, Continuous Drift Detection, and Auto-Tuning Pipelines](05-self-improving-machine-learning-systems.md)

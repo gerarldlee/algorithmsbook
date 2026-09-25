@@ -427,7 +427,7 @@ func (f *BloomFilter) MightContain(value string) bool {
 
 ### Probabilistic counting
 
-**Probabilistic counting** estimates quantities that are too large to count exactly in a small fixed structure. **HyperLogLog** hashes stream elements into many small registers, records the largest leading-zero position observed, and combines those registers with a harmonic mean to estimate the number of distinct values. It never reports fewer distinct values than it observed, but its estimate has a small configurable error and does not identify the values.
+**Probabilistic counting** estimates quantities that are too large to count exactly in a small fixed structure. **HyperLogLog** hashes stream elements into many small registers, records the largest leading-zero position observed, and combines those registers with a harmonic mean to estimate the number of distinct values. Its estimate can be below or above the true distinct count, so it does not provide the one-sided no-undercount guarantee of a Count-Min Sketch. A correctly constructed sketch has a probabilistic error bound, but it cannot enumerate the values.
 
 A **Count-Min Sketch** maintains a table of counters indexed by several independent hashes. An update increments one counter per row; a query returns the minimum of the counters selected for the queried value. Collisions can only make a returned frequency too high, so the result is an upper-bound estimate. Increasing the number of rows reduces collision probability, while increasing the width increases memory use.
 
@@ -468,4 +468,4 @@ Here, `L` is the length of the value's UTF-8 representation, `k` is the number o
 
 - [Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing](04-hash-tables.md)
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](01-dynamic-arrays.md)
-- [In-Memory Caching](../../02-system-design/02-caching/01-in-memory-caching.md)
+- [In-Memory Caching Engines (Redis, Memcached), Data Structures (Sorted Sets, Streams, Bitmaps, HyperLogLog), & Eviction Policies (LRU, LFU, ARC)](../../02-system-design/02-caching/01-in-memory-caching.md)

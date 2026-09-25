@@ -2,6 +2,7 @@
 title: "Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,20 @@ Tensor parallelism splits matrix multiplications and collective communication gr
 Pipeline parallelism assigns contiguous layers to stages. A conventional schedule processes several **micro-batches** so different stages can work concurrently, but stage fill and drain still leave a **pipeline bubble**. Interleaving or virtual pipeline stages can reduce that idle time at the cost of additional communication and scheduling state.
 
 **ZeRO** reduces data-parallel memory by partitioning optimizer state in stage 1, optimizer state and gradients in stage 2, and those states plus parameters in stage 3. Parameters are gathered for computation and resharded afterward. PyTorch FSDP implements closely related explicit sharding patterns. **Activation checkpointing** instead discards selected intermediate activations and recomputes them during backward propagation, trading additional computation for activation memory.
+
+```mermaid
+flowchart LR
+    B[Micro-batch] --> TP[Tensor-parallel group]
+    TP --> PS1[Pipeline stage]
+    PS1 --> PS2[Next pipeline stage]
+    PS2 --> L[Loss]
+    L --> BW[Backward through the same groups]
+    BW --> S[Shard gradients with ZeRO or FSDP]
+    S --> AR[Data-parallel all-reduce]
+    AR --> A{Accumulation complete?}
+    A -->|No| B
+    A -->|Yes| O[Optimizer step]
+```
 
 DeepSpeed expresses the first pattern in a training configuration:
 
@@ -69,7 +84,5 @@ The execution order of a micro-step is forward through tensor and pipeline group
 - **Cloud managed training** — wins when a provider's supported topology and elastic capacity fit the model, but it constrains hardware, networking, and job customization.
 
 ## Related
-- [Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention](../01-ml-foundations/05-transformers.md)
-- [Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)](../01-ml-foundations/03-neural-networks.md)
-- [Deep Learning Architectures](../01-ml-foundations/04-deep-learning-architectures.md)
-- [Fine-Tuning & Model Alignment](06-fine-tuning-alignment.md)
+- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching](04-llm-serving.md)
+- [Fine-Tuning & Model Alignment: Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA), Reinforcement Learning Alignment (RLHF, DPO)](06-fine-tuning-alignment.md)

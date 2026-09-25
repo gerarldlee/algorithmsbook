@@ -2,6 +2,7 @@
 title: "Fine-Tuning & Model Alignment: Parameter-Efficient Fine-Tuning (PEFT, LoRA, QLoRA), Reinforcement Learning Alignment (RLHF, DPO)"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -19,6 +20,23 @@ QLoRA keeps the base model in a 4-bit NormalFloat representation, dequantizes bl
 **RLHF** commonly starts from an SFT checkpoint. Annotators rank candidate responses, a reward model learns a scalar preference score, and a policy generates rollouts that an optimizer such as Proximal Policy Optimization updates. A KL-divergence term keeps the policy near a reference model, and clipping limits how far an update moves the policy from sampled behavior. The pipeline can improve helpfulness and harmlessness, but reward-model errors, annotator disagreement, reward hacking, and online rollout cost can all affect the result.
 
 **DPO** instead trains directly on preference pairs. It increases the policy's relative log-probability of a chosen response over a rejected response while regularizing against a reference policy. It removes the separate online RL loop, but the reference scores, dataset quality, beta setting, and base-policy behavior still determine what the model learns. With PEFT, an implementation can sometimes use the frozen base as the reference by disabling the trainable adapter, avoiding a second trainable policy.
+
+```mermaid
+flowchart LR
+    B[Base checkpoint] --> SFT[SFT]
+    B --> L[LoRA adapter]
+    B --> Q[QLoRA 4-bit base and adapter]
+    SFT --> P[Preference pairs]
+    P --> RL[RLHF rollouts]
+    RL --> RM[Reward model]
+    RM --> PO[PPO policy update]
+    P --> D[DPO chosen versus rejected loss]
+    L --> D
+    Q --> D
+    PO --> E[Held-out quality and safety evaluation]
+    D --> E
+    E --> R[Versioned checkpoint or adapter]
+```
 
 A reproducible QLoRA run can record the model, data, quantization, adapter, and release gates in one manifest:
 
@@ -106,8 +124,6 @@ LoRA reduces trainable parameter, gradient, and optimizer memory, not the asympt
 - **Distillation** — wins when a smaller model can imitate a validated teacher, but it depends on the teacher's behavior and does not replace preference evaluation.
 
 ## Related
-
 - [Distributed Model Training: Data Parallelism, Tensor Parallelism, Pipeline Parallelism (DeepSpeed, Megatron-LM)](03-distributed-training.md)
-- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, and Speculative Decoding](04-llm-serving.md)
+- [High-Throughput LLM Serving Frameworks: vLLM, PagedAttention, KV Caching, Continuous Batching, Speculative Decoding, and Prompt Caching](04-llm-serving.md)
 - [AI Agent Systems: Tool-Calling Mechanics, Long/Short-Term Memory Stores, Reasoning Frameworks (ReAct), and Multi-Agent Orchestration](05-ai-agents.md)
-- [Model Optimization: Quantization (INT8/FP16), Pruning, Knowledge Distillation, and Model Compilation (TensorRT, ONNX)](../02-mlops/03-model-optimization.md)
