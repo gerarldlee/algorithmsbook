@@ -2,6 +2,7 @@
 title: "Data Architecture & Lakehouse Engines: ETL vs ELT, Data Lake vs Data Warehouse vs Data Lakehouse (Apache Iceberg, Delta Lake, Apache Hudi)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -59,6 +60,20 @@ lakehouse:
 
 Open table formats change the cost model, not the need for data engineering. A table can still contain duplicate records, late events, invalid types, or a semantically wrong feature. A lakehouse therefore needs ingestion keys, data-quality checks, compaction, retention, and lineage. A small files problem also appears when many jobs continually append files; compaction merges them, while partition design controls how much data a query must scan.
 
+The write and read paths share the same catalog and table-format boundary, but they have different responsibilities. A writer publishes files and metadata; a reader resolves a snapshot before scanning selected data.
+
+```mermaid
+flowchart LR
+    A[Streaming writer] --> B[New files]
+    B --> C[Manifest or transaction log]
+    C --> D[Atomic snapshot commit]
+    E[Raw landing files] --> D
+    D --> F[(Catalog pointer)]
+    F --> G[Query engine]
+    G --> H[Snapshot-specific file scan]
+    H --> I[Rows at requested consistency]
+```
+
 A common serving path keeps raw events and curated tables separate. Streaming jobs write recent changes, batch jobs recalculate history, and a serving model reads a stable snapshot. This gives analysts a replayable path while keeping operational queries predictable:
 
 ```sql
@@ -101,6 +116,3 @@ GROUP BY customer_id, date_trunc('day', event_time);
 
 - [Stateful Stream & Batch Processing Frameworks](01-stateful-stream-batch-processing.md)
 - [Data Serialization & In-Memory Formats](03-serialization-in-memory-formats.md)
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](../../04-distributed-systems/02-databases/03-storage-engines.md)
-- [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](../../06-ml-ai/02-mlops/02-feature-stores-pipelines.md)
-- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](../../04-distributed-systems/02-databases/07-distributed-query-pitr.md)

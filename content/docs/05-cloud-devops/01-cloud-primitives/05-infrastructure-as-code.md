@@ -2,6 +2,7 @@
 title: "Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -26,12 +27,32 @@ resource "aws_subnet" "public" {
   availability_zone = "us-east-1a"
 }
 
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_route" "internet" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.main.id
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
 resource "aws_instance" "web" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.web.id]
-  tags                   = { Name = "web" }
+  ami                        = data.aws_ami.ubuntu.id
+  instance_type              = "t3.micro"
+  subnet_id                  = aws_subnet.public.id
+  vpc_security_group_ids     = [aws_security_group.web.id]
+  associate_public_ip_address = true
+  tags                       = { Name = "web" }
 }
 
 resource "aws_security_group" "web" {
@@ -59,7 +80,20 @@ tofu plan -out=tfplan
 tofu apply tfplan
 ```
 
-The core loop is **write → plan → apply**: the plan shows the proposed changes before apply executes them, and the result is recorded in state. **Drift** occurs when reality changes outside the tool (a console edit, a manual fix), so a later plan can expose the difference and restore the declared state. Storing state remotely with locking enables team collaboration, and modules or compositions reuse patterns across environments. **Ansible** is also declarative and convergence-oriented: its modules inspect current state and act on declared module-level state. Most modules are designed for repeated use without unnecessary changes, but `command` and `shell` tasks need explicit change detection or other controls. Shell and SDK scripts are more directly imperative and generally must track prior execution themselves.
+The core loop is **write → plan → apply**: the plan shows the proposed changes before apply executes them, and the result is recorded in state. The subnet name `public` is only a Terraform label; AWS treats a subnet as internet-routable because it is associated with a route table whose default route uses an internet gateway. This example also assigns a public IP to the instance, while security groups still determine which inbound traffic is permitted. A workload without a public address does not gain internet egress merely because its subnet has an internet route; use a NAT gateway or assign an appropriate public address.
+
+```mermaid
+flowchart LR
+    Code[Reviewed HCL configuration] --> Init[tofu init]
+    Init --> Plan[tofu plan]
+    Plan -->|human approval| Apply[tofu apply]
+    Apply --> API[Cloud provider API]
+    API --> Reality[Running infrastructure]
+    Reality --> State[Encrypted remote state]
+    State --> Plan
+```
+
+**Drift** occurs when reality changes outside the tool (a console edit, a manual fix), so a later plan can expose the difference and restore the declared state. Storing state remotely with locking enables team collaboration, and modules or compositions reuse patterns across environments. **Ansible** is also declarative and convergence-oriented: its modules inspect current state and act on declared module-level state. Most modules are designed for repeated use without unnecessary changes, but `command` and `shell` tasks need explicit change detection or other controls. Shell and SDK scripts are more directly imperative and generally must track prior execution themselves.
 
 ## Tradeoffs
 - **Declarative vs. imperative**: declarative and convergence-oriented tools express desired state and let modules or providers converge toward it, but task- and module-specific controls still matter; imperative scripts express arbitrary step order and must track and verify state themselves.
@@ -80,6 +114,6 @@ The core loop is **write → plan → apply**: the plan shows the proposed chang
 - **GitOps tools (Argo CD/Flux)**: continuous reconciliation of a live cluster to a Git repo with automatic drift correction, but mainly for Kubernetes and more moving parts.
 
 ## Related
-- [Serverless](04-serverless.md)
 - [CI/CD and GitOps](../02-containers-cicd/04-cicd-gitops.md)
 - [Cloud Networking](03-cloud-networking.md)
+- [Chapter 11: References](06-references.md)

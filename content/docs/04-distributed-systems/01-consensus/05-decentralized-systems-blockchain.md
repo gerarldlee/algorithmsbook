@@ -2,6 +2,7 @@
 title: "Decentralized Systems, Web3 & Blockchain: Merkle-Patricia Tries, PoW/PoS Consensus, EVM Runtimes, P2P Mesh Networks (Libp2p, Kademlia DHT), and DeFi Protocols (AMMs, Oracles)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -18,19 +19,31 @@ A Merkle-Patricia trie compresses a key-value map into a root hash. Leaves hold 
 
 Consensus orders valid blocks. In PoW, a miner varies a nonce and other block fields until the block header meets the chain's difficulty target; the work makes rewriting history expensive. In PoS, validators lock stake, receive proposer or attesting duties, and sign votes for a chain head; the protocol defines slashing, finality, and fork choice. A chain's exact rules are protocol-specific; the shared idea is that participants spend resources or risk stake to make conflicting histories costly and detectable.
 
-The smart-contract execution path is explicit:
+The smart-contract execution path carries post-state through every transaction and commits that state only after the complete block executes successfully:
+
+```mermaid
+flowchart LR
+    Peer[Peer sends block] --> Header[Verify parent and consensus proof]
+    Header --> StateRoot[Recover authenticated pre-state]
+    StateRoot --> Runtime[Execute ordered transactions]
+    Runtime --> PostState[Carry post-state between transactions]
+    PostState --> NewRoot[Compute the post-state root]
+    NewRoot --> NextBlock[Store block and extend the chain]
+```
 
 ```text
 receive_block(block):
   verify_parent(block)
   verify_consensus_proof(block)
-  recover_trie_root(block)
+  pre_state = recover_state(block.state_root)
+  next_state = copy(pre_state)
   for transaction in ordered_transactions(block):
     verify_signature_and_nonce(transaction)
     charge_gas(transaction, block_context)
-    execute_contract_or_transfer(transaction, pre_state)
-    record_receipt_status()
-  store_state_root_and_block_payload()
+    next_state = execute_contract_or_transfer(transaction, next_state)
+    record_receipt_status(transaction, next_state)
+  state = next_state
+  store_state_root_and_block_payload(block, state)
 ```
 
 An EVM transaction names a recipient, carries calldata, and can transfer value. The runtime executes contract bytecode against the current state and records the outcome. A top-level contract **revert** is not the same as transaction rejection: on modern EVM chains, the transaction can be included in a block, consume gas, and produce a receipt with a failed status while the reverted call frame's state changes and logs are discarded. A contract can also catch a lower-level revert and finish successfully. A transaction that the node never includes, such as one with a future nonce, has no block receipt. A contract is therefore a state-transition function, not a message that can freely change another contract's rules. Gas limits resources; they do not prove that the contract's business logic is correct.
@@ -97,5 +110,4 @@ defi:
 
 - [Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)](02-consensus.md)
 - [Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern](04-distributed-transactions.md)
-- [Database Replication & Data Synchronization](../../04-distributed-systems/02-databases/05-replication.md)
-- [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)
+- [Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)](../02-databases/05-replication.md)

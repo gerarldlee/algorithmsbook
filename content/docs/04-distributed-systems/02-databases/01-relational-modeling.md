@@ -2,6 +2,7 @@
 title: "Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,7 +13,22 @@ Relational modeling is the practice of representing business entities as tables 
 
 Start with the entities and invariants in the domain. Give each entity a primary key, move repeating attributes into child tables, and remove partial and transitive dependencies through normalization. Represent relationships with foreign keys, then identify the predicates, joins, and ordering patterns used by the application. Choose a B-tree index for equality, sorting, and range predicates; use a hash index when only exact-key lookup matters. PostgreSQL GIN indexes accelerate searches over arrays, full-text vectors, and other values that can contain many matches, while GiST indexes support approximate and geometric predicates such as overlap and nearest-neighbor search.
 
-A physical schema can denormalize a stable read model after the source model is understood. The duplicate data must then have an explicit owner and refresh or transaction rule.
+```mermaid
+flowchart LR
+    BusinessRule --> Entity[Entity and key]
+    Entity --> Normalized[Normalize tables and foreign keys]
+    Normalized --> Workload[Measured predicates and joins]
+    Workload --> BTree[B-tree for ranges and ordering]
+    Workload --> Hash[Hash for exact keys]
+    Workload --> GIN[GIN for membership and text]
+    Workload --> GiST[GiST for geometry and approximation]
+    BTree --> ReadPath[Verified query access path]
+    Hash --> ReadPath
+    GIN --> ReadPath
+    GiST --> ReadPath
+```
+
+A physical schema can denormalize a stable read model after the source model is understood. The duplicate data must then have an explicit owner and refresh or transaction rule. The SQL block is a standalone PostgreSQL schema. The YAML block is a non-executable design inventory for additional index examples; its names are not a schema that combines with the SQL or implements every table it mentions.
 
 ```sql
 CREATE TABLE customers (
@@ -32,7 +48,9 @@ CREATE INDEX orders_customer_created_idx
 ```
 
 ```yaml
-logical_model:
+artifact_kind: non_executable_design_examples
+applies_to_the_preceding_sql_schema: false
+logical_model_examples:
   orders:
     primary_key: order_id
     foreign_keys:
@@ -45,7 +63,7 @@ logical_model:
 normalization:
   target: 3NF
   exceptions: deliberate_read_models
-indexes:
+index_examples:
   orders_customer_created_idx: b_tree
   customer_email_hash: hash
   article_search: gin
@@ -80,6 +98,5 @@ indexes:
 ## Related
 
 - [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)](03-storage-engines.md)
 - [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
-- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)

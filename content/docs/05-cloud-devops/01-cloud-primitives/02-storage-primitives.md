@@ -2,12 +2,27 @@
 title: "Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
 Cloud storage primitives are managed data services that persist bytes across three fundamental access models: **block** (raw volumes mounted like a disk), **file** (shared filesystems with a directory hierarchy), and **object** (flat key–value blobs addressed over HTTP). Each model trades latency, sharing, and cost differently, and most platforms also layer **tiers** and **snapshots** on top.
 
 ## How it works
+A storage client chooses a data path according to how the workload reads, writes, and shares bytes:
+
+```mermaid
+flowchart LR
+    App[Application data]
+    App --> Block[Block volume]
+    Block --> AZ[Compute instance in one zone]
+    App --> File[Shared NFS or EFS filesystem]
+    File --> Clients[Many compute clients]
+    App --> Object[S3-compatible object store]
+    Object --> HTTP[HTTP GET PUT and byte ranges]
+    Object --> Replica[Regional durable replicas]
+```
+
 - **Block storage (EBS)** attaches a virtual disk to a compute instance in one availability zone. It provides low-latency random I/O at the block-device level and supports volume types from magnetic storage to high-IOPS NVMe SSD. Snapshots can capture changed blocks for backup and volume cloning.
 - **File storage (EFS/NFS)** presents a shared filesystem that many instances can mount at once. It scales capacity and throughput with usage, provides strong consistency, and is billed for the storage and throughput consumed by the service. It fits shared directories, home directories, and applications that expect a filesystem.
 - **Object storage (S3)** stores objects and their metadata in a flat namespace of buckets and keys, served over HTTP. Objects are replicated and protected with erasure coding, with S3 designed for 99.999999999% durability. A `PUT` creates or replaces a complete object, and multipart uploads assemble ordered parts into that object; it does not provide in-place byte edits. A `GET` can retrieve a complete object or a byte range, so read granularity is finer than write granularity. Access tiers trade retrieval cost for storage price.
@@ -55,6 +70,5 @@ Object storage **lifecycle tiers** move data automatically: *Standard* (frequent
 ## Related
 - [Compute](01-compute.md)
 - [Cloud Networking](03-cloud-networking.md)
-- [Storage Engines](../../04-distributed-systems/02-databases/03-storage-engines.md)
-- [Container Internals](../02-containers-cicd/01-container-internals.md)
 - [High-Performance File Systems & Low-Level I/O](../03-operating-systems-kernel-mechanics/03-file-systems-low-level-io.md)
+- [Chapter 11: References](06-references.md)

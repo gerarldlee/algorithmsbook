@@ -2,6 +2,7 @@
 title: "Observability Platforms & Low-Level Profiling: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), Continuous Profiling, eBPF Kernel Tracing, and Alerting"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,23 @@ An observability platform infers a distributed system's internal behavior from t
 **Structured logging** emits machine-readable events with named fields. A log backend can index those fields without parsing an arbitrary message. **Metrics** aggregate numerical measurements as counters, gauges, or histograms over time. Prometheus scrapes or receives time series, evaluates PromQL, stores samples in its time-series database, and supplies metrics to Grafana or compatible visualizers.
 
 A **distributed trace** records a request as a tree of spans. Each span carries a trace identifier, its parent span identifier, timing, attributes, and events. **OpenTelemetry** standardizes instrumentation APIs and a vendor-neutral telemetry protocol, so a service can emit traces, metrics, and logs without coupling its application code to one backend. The OpenTelemetry Collector receives telemetry, applies memory limiting, batching, transformation, sampling, and routing rules, then exports it to storage.
+
+**Continuous profiling** samples running processes rather than waiting for a specific request. A profiling agent can collect CPU samples, wall-clock stacks, allocation profiles, lock waits, and garbage-collection events over a time window, then aggregate stacks into flame graphs and compare them across releases. Symbol files and build identifiers are required to turn native addresses into meaningful functions. **eBPF** extends this visibility inside the kernel: a small verified program can attach to schedulers, syscalls, network paths, or other probe points and emit compact events. Tools such as BCC, bpftrace, and continuous-profiling agents can then attribute latency, packet loss, or system calls without restarting the target process.
+
+```mermaid
+flowchart LR
+    Service[Service process] --> ProfileAgent[Continuous profiling agent]
+    ProfileAgent --> ProfileStore[(Profile and symbol store)]
+    Kernel[Kernel sched syscalls and network] --> BPF[eBPF programs and probes]
+    BPF --> Agent[Telemetry agent]
+    Agent --> OTel[OpenTelemetry Collector]
+    Service -->|OTLP logs metrics traces| OTel
+    OTel --> TelemetryStore[(Telemetry backend)]
+    ProfileStore --> Compare[Release and incident comparison]
+    TelemetryStore --> Compare
+```
+
+Profiling and eBPF still have costs. Event frequency, stack walking, symbol lookup, ring-buffer loss, and kernel version affect overhead, while privileged probes can expose arguments, secrets, or process data. Apply retention and field-redaction policy just as you would for logs, and prefer purpose-built stable probe points when a portable userspace signal is sufficient.
 
 ```json
 {
@@ -137,4 +155,4 @@ A **service-level objective (SLO)** defines a target for a service-level indicat
 - [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
 - [CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)](04-cicd-gitops.md)
 - [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
-- [Serverless & Edge Computing (AWS Lambda, Cloudflare Workers, Event-Driven Triggers)](../01-cloud-primitives/04-serverless.md)
+- [Chapter 12: References](06-references.md)

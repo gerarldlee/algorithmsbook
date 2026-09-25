@@ -152,7 +152,7 @@ For every algorithm chapter:
 - [x] 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
 - [x] 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
 - [x] 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
-- [ ] 7.5 Fast Data Propagation Mechanics: Gossip Protocols, Epidemic Dissemination, Anti-Entropy Mechanisms, Overlay Networks, and Low-Latency Broadcast Trees
+- [x] 7.5 Fast Data Propagation Mechanics: Gossip Protocols, Epidemic Dissemination, Anti-Entropy Mechanisms, Overlay Networks, and Low-Latency Broadcast Trees
 
 ### Chapter 7A — Data Engineering & Stream Processing
 
@@ -213,7 +213,7 @@ For every algorithm chapter:
 
 ### Chapter 12B — Version Control Systems & Software Workflows
 
-- [ ] 12B.1 Distributed Version Control Mechanics: Git Internals, Branching Strategies, Merging, Rebasing, Conflict Resolution
+- [x] 12B.1 Distributed Version Control Mechanics: Git Internals (Objects, Directed Acyclic Graph, Trees, Commits), Branching Strategies (Trunk-Based, GitFlow, Feature Branching), Merging, Rebasing, Conflict Resolution, and Code Review Workflows
 
 ## Part VI — Machine Learning Systems & Scalable AI Infrastructure
 

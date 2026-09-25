@@ -2,6 +2,7 @@
 title: "Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,21 @@ For 2PC, the coordinator first asks each participant to **prepare**. A participa
 3PC inserts a pre-commit state between voting and commit. Under its bounded-delay network assumption, participants can use the pre-commit state to reduce the blocking window, but a network partition can still leave a participant unable to distinguish a committed transaction from one that should be blocked. 3PC is therefore not a general partition-safe replacement for 2PC. XA standardizes the coordinator/resource interface but inherits 2PC's blocking and recovery costs.
 
 A Saga executes a sequence of local transactions. In an orchestrated Saga, a coordinator sends commands and records progress; in a choreography, services react to events. If a later step fails, compensating actions run for completed steps, usually in reverse order. Compensation cannot erase an external side effect, so business operations must define an actual reversal, such as refunding a payment or releasing a reservation. The **outbox pattern** writes the business change and an event record in one local transaction; a relay publishes that record, giving at-least-once delivery without losing the event when the local transaction commits. Consumers use **idempotency keys** or deduplication records so retries do not apply an effect twice.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active
+    Active --> Prepared: All participants vote yes
+    Active --> Aborted: Any participant votes no
+    Prepared --> Committed: Coordinator durably records commit
+    Prepared --> Aborted: Coordinator durably records abort
+    Committed --> [*]
+    Aborted --> [*]
+    note right of Prepared
+        A failed coordinator can leave
+        participants in-doubt
+    end note
+```
 
 ```yaml
 two_phase_commit:
@@ -67,9 +83,5 @@ idempotency:
 ## Related
 
 - [Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)](02-consensus.md)
-- [Clocks & Ordering](03-clocks-ordering.md)
-- [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
-- [Replication](../02-databases/05-replication.md)
-- [Message Delivery Guarantees](../../03-messaging/01-messaging/03-delivery-guarantees.md)
-- [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../../02-system-design/02-software-architecture-patterns/02-domain-driven-event-architectures.md)
-- [Decentralized Systems, Web3 & Blockchain](05-decentralized-systems-blockchain.md)
+- [Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks](03-clocks-ordering.md)
+- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](../02-databases/04-acid-isolation.md)

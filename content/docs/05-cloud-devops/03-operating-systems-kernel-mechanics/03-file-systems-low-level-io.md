@@ -2,6 +2,7 @@
 title: "High-Performance File Systems & Low-Level I/O: Inodes, File Descriptors, POSIX I/O, Page Cache, Journaling, `epoll` vs `kqueue`, and `io_uring` Asynchronous Ring Buffers"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -18,9 +19,27 @@ Linux's **page cache** holds file-backed data pages that were read or written. A
 
 A metadata **journal** records operations before or during a transaction so a crash during a multi-step update can be rolled forward or rejected. Write ordering and barriers determine how data-file updates, metadata, and device caches are coordinated. Journaling protects filesystem structure; backups and replication still determine recovery from media loss, corruption, or deletion.
 
-When an application waits on many sockets, polling every descriptor wastes work on entries that are not ready. Linux `epoll` and BSD/macOS `kqueue` maintain registered interest sets and return ready descriptors. `epoll` supports level-triggered and edge-triggered operation; an edge-triggered consumer must drain or otherwise handle state until the next event. Readiness is an observation, not a reservation: another consumer can take the data, or an error, hangup, or priority condition can change the outcome before the application calls `read` or `write`. A nonblocking descriptor should therefore still be attempted, and `EAGAIN` or `EWOULDBLOCK` must return the descriptor to the wait set. End-of-file and errors are results, not proof that a read succeeded.
+When an application waits on many sockets, polling every descriptor wastes work on entries that are not ready. Linux `epoll` and BSD/macOS `kqueue` maintain registered interest sets and return ready descriptors. Linux commonly exposes one `epoll` instance for the process, while BSD and macOS can attach a `kqueue` instance to one or many descriptors; both are readiness mechanisms, and neither is a completion API. `epoll` supports level-triggered and edge-triggered operation; an edge-triggered consumer must drain or otherwise handle state until the next event. Readiness is an observation, not a reservation: another consumer can take the data, or an error, hangup, or priority condition can change the outcome before the application calls `read` or `write`. A nonblocking descriptor should therefore still be attempted, and `EAGAIN` or `EWOULDBLOCK` must return the descriptor to the wait set. End-of-file and errors are results, not proof that a read succeeded.
 
 `io_uring` uses a **submission queue** for work descriptors called SQEs and a **completion queue** for completion entries called CQEs. User space and the kernel share mapped ring memory. A process can submit many filesystem, network, and timer operations in a batch, then consume completions. Some operations complete inline and others run asynchronously. Batching amortizes entry and exit costs, but queue depth, memory registration, filesystem support, and completion policy still determine throughput and tail latency.
+
+A high-performance filesystem changes how layout, metadata, durability, and network distribution affect those calls. **FFS-style allocation** groups related metadata and data blocks to improve locality. **Lustre** and **GPFS** distribute files and strips across servers, relying on parallel metadata, striping, and client caching; an accelerator or parallel file system scales aggregate throughput but introduces server and fabric dependencies. **NVMe** reduces device queueing and latency, but the connected filesystem must still issue efficient, sufficiently large I/O. Direct I/O and `io_uring` are I/O paths, not filesystems: they can bypass or batch page-cache work while operating on a file hosted by a high-performance filesystem.
+
+```mermaid
+flowchart TD
+    App[Application] --> Buffered[read write pread or pwrite]
+    App --> Direct[Aligned O_DIRECT I/O]
+    App --> Submit[io_uring submission queue]
+    Buffered --> VFS[Virtual filesystem layer]
+    Direct --> VFS
+    VFS --> Cache{Page-cache path}
+    Cache -->|miss or direct| FS[Ext4 XFS FFS Lustre or GPFS]
+    Submit --> KernelWork[Kernel I/O worker]
+    KernelWork --> FS
+    KernelWork --> Completion[io_uring completion queue]
+    FS --> NVMe[Block layer and NVMe queue]
+    NVMe --> Device[Storage device]
+```
 
 A blocking diagnostic can show the actual call path and timestamps:
 
@@ -66,4 +85,4 @@ These bounds describe visible algorithmic work, not disk, network, or filesystem
 - [Virtual Memory & Kernel Traps](02-virtual-memory-kernel-traps.md)
 - [Processes & Threads](01-processes-threads.md)
 - [Storage Primitives: Block Storage, Object Storage (S3), and Network File Systems](../01-cloud-primitives/02-storage-primitives.md)
-- [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](../02-containers-cicd/01-container-internals.md)
+- [Chapter 12A: References](04-references.md)

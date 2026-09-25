@@ -2,6 +2,7 @@
 title: "Stateful Stream & Batch Processing Frameworks: Apache Spark, Apache Flink, Apache Beam, Watermarking, Event-Time vs Processing-Time, and Windowing Paradigms (Tumbling, Sliding, Session)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,20 @@ Apache Spark Structured Streaming uses micro-batches and integrates with batch S
 A record first needs a stable identity and a time model. The source assigns or preserves an event ID, an event time, and an ingestion time. A partitioner selects a key such as customer ID, device ID, or order ID. The keyed operator reads that key's state, updates it, and writes an output record. State is durable enough for recovery, and a checkpoint records the source position together with operator state so a restart does not silently start from the beginning.
 
 Event time prevents a delayed record from being assigned to the wrong business interval. A watermark for event time `T` means that the framework can advance its timer beyond `T` even though a straggler may still arrive. A job can emit an early result, hold a small allowed-lateness interval, route an older record to an update or correction stream, or reject it. Processing time is simpler, but its result can change when network delay, worker load, or replay changes.
+
+The processing path separates durable progress from the event-by-event data path. A watermark generator derives progress from observed event times and the configured lateness bound; it does not guarantee that every straggler has arrived.
+
+```mermaid
+flowchart LR
+    A[Event source] --> B[Partitioner]
+    B --> C[Keyed state]
+    C --> D[Window operator]
+    D --> E{Watermark reaches timer?}
+    E -- No --> C
+    E -- Yes --> F[Emit result]
+    C --> G[(Checkpointed state)]
+    G -. restore .-> C
+```
 
 The framework's processing contract can be represented as configuration and as a state machine:
 
@@ -90,7 +105,5 @@ Spark Structured Streaming represents a query as a table-like plan. It reads a b
 
 ## Related
 
-- [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../../03-messaging/01-messaging/01-queues-vs-streams.md)
-- [Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks](../../03-messaging/01-messaging/04-backpressure-dlq.md)
 - [Data Architecture & Lakehouse Engines](02-lakehouse-architectures.md)
-- [Feature Stores, Dataset Versioning (DVC), and Pipeline Orchestration (Airflow, Kubeflow)](../../06-ml-ai/02-mlops/02-feature-stores-pipelines.md)
+- [Data Serialization & In-Memory Formats](03-serialization-in-memory-formats.md)

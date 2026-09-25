@@ -2,13 +2,31 @@
 title: "Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
-Cloud compute is on-demand, pay-as-you-go access to virtualized processing capacity — VMs, containers, and specialized instance types — without owning physical servers. It is the substrate on which every other cloud primitive runs, offered at three main levels of abstraction: raw virtual machines (EC2), managed container hosts, and fully managed/serverless execution.
+Cloud compute is on-demand access to physical, virtualized, or managed processing capacity without owning the underlying hardware. **Bare metal** exposes a whole physical server, a **hypervisor** partitions that server into virtual machines, and a container runtime starts processes that share a host kernel. A cloud control plane automates allocation, images, scaling, and billing around these models.
 
 ## How it works
-A compute service allocates processing capacity from a pool of physical hosts. Virtual machines run on a **hypervisor**, while containers run through a container runtime on a shared host. You choose an **instance type** that fixes the ratio of vCPU, memory, network bandwidth, and optional accelerators, then launch from a base image that carries the operating system and application. A control plane, such as the EC2 API and an Auto Scaling group, tracks desired capacity. A scaling policy launches or removes instances when its tracked metric crosses a target. The Terraform example below uses the Auto Scaling group's average CPU utilization as that trigger. Provisioning options include on-demand capacity, commitments such as Savings Plans or reserved capacity, and interruptible spot capacity whose discount varies by market and workload.
+A compute service allocates capacity from a pool of physical hosts. The abstraction determines where the guest boundary and operating-system responsibility sit:
+
+```mermaid
+flowchart LR
+    Host[Physical server]
+    Host --> Bare[Bare-metal allocation]
+    Host --> Hypervisor[Hypervisor]
+    Hypervisor --> VM1[VM and guest kernel]
+    Hypervisor --> VM2[VM and guest kernel]
+    Host --> Runtime[Container runtime]
+    Runtime --> SharedKernel[Shared host kernel]
+    SharedKernel --> C1[Container process]
+    SharedKernel --> C2[Container process]
+```
+
+A type 1 hypervisor runs directly on the provider's hardware and manages virtual CPUs, memory, devices, and scheduling for multiple guests. A type 2 hypervisor runs over a host operating system. Managed cloud offerings hide the hypervisor and expose virtual devices, but their control planes still coordinate placement and fail over those guests. Bare-metal allocation omits the guest hypervisor from the workload path; the customer's operating system normally drives the server directly, although the provider still owns the facility, fabric, replacement, and power layers. Bare metal wins when a workload needs dedicated memory, predictable hardware paths, a particular accelerator, or guest-kernel-adjacent control, while a hypervisor wins when isolation and workload packing matter more.
+
+Virtual machines run on a **hypervisor**, while containers run through a container runtime on a shared host. You choose an **instance type** that fixes the ratio of vCPU, memory, network bandwidth, and optional accelerators, then launch from a base image that carries the operating system and application. A control plane, such as the EC2 API and an Auto Scaling group, tracks desired capacity. A scaling policy launches or removes instances when its tracked metric crosses a target. The Terraform example below uses the Auto Scaling group's average CPU utilization as that trigger. Provisioning options include on-demand capacity, commitments such as Savings Plans or reserved capacity, and interruptible spot capacity whose discount varies by market and workload.
 
 ```hcl
 resource "aws_launch_template" "web" {
@@ -67,6 +85,6 @@ Instance types trade off in a few dimensions: **general purpose** (balanced CPU 
 
 ## Related
 - [Storage Primitives](02-storage-primitives.md)
-- [Cloud Networking](03-cloud-networking.md)
 - [Serverless](04-serverless.md)
 - [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](../02-containers-cicd/01-container-internals.md)
+- [Chapter 11: References](06-references.md)

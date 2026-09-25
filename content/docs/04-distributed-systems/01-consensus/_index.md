@@ -10,3 +10,4 @@ The hard problems of distributed systems: CAP/PACELC, consensus, clocks and orde
 - [Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks](03-clocks-ordering.md)
 - [Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern](04-distributed-transactions.md)
 - [Decentralized Systems, Web3 & Blockchain: Merkle-Patricia Tries, PoW/PoS Consensus, EVM Runtimes, P2P Mesh Networks (Libp2p, Kademlia DHT), and DeFi Protocols (AMMs, Oracles)](05-decentralized-systems-blockchain.md)
+- [References](06-references.md)

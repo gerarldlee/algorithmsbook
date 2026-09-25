@@ -2,6 +2,7 @@
 title: "CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -87,7 +88,24 @@ spec:
   wait: true
 ```
 
-Argo CD and Flux render the selected Git revision and compare the resulting desired manifests with live state, so their sync status can expose conflict and drift. Git history provides audit context; it is not a second reconciliation input. A reviewed commit to a `main` environment repository can therefore both change a deployment and later revert that change. Secret values should not enter those commits; External Secrets, SOPS, or a cloud secret manager can deliver references or encrypted values separately.
+Argo CD and Flux render the selected Git revision and compare the resulting desired manifests with live state, so their sync status can expose conflict and drift. Their configuration resources are separate controller artifacts, not interchangeable manifests. An Argo CD `Application` is interpreted by Argo CD; a Flux `Kustomization` is interpreted by Flux controllers together with a Flux `GitRepository`, `OCIRepository`, or Helm source. Do not apply both to the same Kubernetes resources, because two reconcilers can report the drift each other creates. Choose one engine as the owner of application delivery and keep the immutable image digest as the shared artifact promoted across environments. Flux image automation can update a Git reference when a new digest is observed, while Argo CD's GitOps reconciliation does not itself move an application to a new image; image promotion still requires a policy-controlled update to the declared revision or digest.
+
+```mermaid
+flowchart TD
+    Start("repository event") --> Checkout["Checkout fixed revision"]
+    Checkout --> Tests["Static and automated tests"]
+    Tests --> Build["Build container image"]
+    Build --> Registry[("Push immutable digest")]
+    Registry --> Declare["Update reviewed environment Git"]
+    Declare --> Read["GitOps controller reads Git"]
+    Read --> Compare["Compare rendered state with cluster"]
+    Compare --> Apply["Apply or prune on drift"]
+    Apply --> Health["Wait for health and sync status"]
+    Health --> Compare
+    Compare --> Healthy["No drift"]
+```
+
+Git history provides audit context; it is not a second reconciliation input. A reviewed commit to a `main` environment repository can therefore both change a deployment and later revert that change. Secret values should not enter those commits; External Secrets, SOPS, or a cloud secret manager can deliver references or encrypted values separately.
 
 ## Tradeoffs
 - **Immutable artifacts** — a content digest makes promotion and rollback unambiguous, but the pipeline and every environment must preserve and select the same digest.
@@ -114,5 +132,4 @@ Argo CD and Flux render the selected Git revision and compare the resulting desi
 - [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
 - [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
 - [Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu](../01-cloud-primitives/05-infrastructure-as-code.md)
-- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)
-- [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security](../../02-system-design/01-system-design-fundamentals/07-appsec-threat-defense.md)
+- [Chapter 12: References](06-references.md)

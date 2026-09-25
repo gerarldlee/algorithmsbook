@@ -2,6 +2,7 @@
 title: "Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -44,6 +45,19 @@ This broker-neutral topology shows two durable subscriptions receiving the same 
 ]
 ```
 
+```mermaid
+flowchart LR
+    P[Publisher] --> X[Topic exchange]
+    X --> I[(Inventory queue)]
+    X --> N[(Notification queue)]
+    X --> A[(Analytics stream)]
+    I --> IC[Inventory worker]
+    N --> NC[Notification worker]
+    A --> AC[Analytics consumer group]
+```
+
+The exchange creates one delivery obligation per matching subscription, not one shared acknowledgment. Each queue or group can therefore retry, lag, or stop independently. A subscriber that binds after publication does not automatically receive earlier events unless the broker retains a replayable log; a live subscription only describes future matches.
+
 The common fan-out designs differ in where the independent copies live:
 
 | Design | Routing rule | Failure behavior |
@@ -79,8 +93,7 @@ The common fan-out designs differ in where the independent copies live:
 
 ## Related
 
-- [Queues vs Streams](01-queues-vs-streams.md)
-- [Delivery Guarantees](03-delivery-guarantees.md)
-- [Realtime Protocols](../02-realtime/02-realtime-protocols.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, and Event-Driven Systems](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)
-- [Distributed Presence Engines](../02-realtime/03-presence-engines.md)
+- [Message Queues vs Event Streams](01-queues-vs-streams.md)
+- [Message Delivery Guarantees](03-delivery-guarantees.md)
+- [Fast Data Propagation Mechanics](05-fast-data-propagation-mechanics.md)
+- [Chapter 7 References](06-references.md)

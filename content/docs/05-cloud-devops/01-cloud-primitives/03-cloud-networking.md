@@ -2,13 +2,31 @@
 title: "Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, Transit Gateways, and Mesh Networks"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
 Cloud networking is the set of managed primitives that give you isolated, programmable network topology in the cloud: a virtual private cloud (VPC) with subnets, routing, security groups, NAT, peering, load balancers, and DNS. It lets you carve a private address space and control exactly how traffic enters, leaves, and flows between resources.
 
 ## How it works
-A **VPC** is a logically isolated network inside a region with a CIDR block you choose (e.g. `10.0.0.0/16`). You split it into **subnets**, each bound to one availability zone. A public subnet has a route to an internet gateway; a private subnet normally reaches the internet through a **NAT gateway**. A VPC endpoint provides private access to supported AWS service endpoints, while a VPN provides private connectivity to an external network. **Route tables** decide the next hop for each destination. **Security groups** are stateful firewalls attached to elastic network interfaces, while **network ACLs** are stateless subnet-level allow/deny rules. **VPC peering** or **Transit Gateway** connect VPCs, and interface endpoints such as PrivateLink reach supported services without traversing the public internet.
+Cloud topology separates physical fabric reachability from application-level service networking:
+
+```mermaid
+flowchart LR
+    Internet[Internet] --> IGW[Internet gateway]
+    IGW --> Public[Public subnet]
+    Public --> NAT[NAT gateway]
+    NAT --> Private[Private application subnets]
+    Private --> Endpoint[VPC interface endpoint]
+    VPCA[Spoke VPC A] <--> TG[Transit Gateway]
+    VPCB[Spoke VPC B] <--> TG
+    TG --> OnPrem[VPN or Direct Connect]
+    Mesh[Service mesh control plane] -. L7 policy .-> Private
+```
+
+A **VPC** is a logically isolated network inside a region with a CIDR block you choose (e.g. `10.0.0.0/16`). You split it into **subnets**, each bound to one availability zone. A public subnet has a route to an internet gateway, but that route does not by itself assign a public IP or allow inbound traffic. A private subnet normally reaches the internet through a **NAT gateway**. A VPC endpoint provides private access to supported AWS service endpoints, while a VPN provides private connectivity to an external network. **Route tables** decide the next hop for each destination. **Security groups** are stateful firewalls attached to elastic network interfaces, while **network ACLs** are stateless subnet-level allow/deny rules. **VPC peering** directly connects two VPCs and requires reciprocal route and security-group rules. **AWS Transit Gateway** instead acts as a regional routing hub: VPC attachments, VPN connections, and Direct Connect gateways exchange routes through one attachment model, which centralizes many connections but introduces a shared routing dependency. Interface endpoints such as PrivateLink reach supported services without traversing the public internet.
+
+A service **mesh** operates above that network fabric. Istio or Linkerd installs a proxy beside each workload, and a control plane distributes identity, service discovery, load balancing, mutual TLS, retries, and Layer 7 authorization policies. The mesh does not provide VPCs, subnets, or internet egress; it supplies a service-to-service policy layer after the network has already delivered packets.
 
 ```yaml
 Resources:
@@ -112,7 +130,7 @@ Above the raw network sit **load balancers** and **DNS**. Application load balan
 - **Service mesh (Istio/Linkerd)**: L7 policy, mTLS, and observability between services, but a heavier operational footprint than plain security groups.
 
 ## Related
-- [Compute](01-compute.md)
 - [Storage Primitives](02-storage-primitives.md)
+- [Serverless, Edge, and IoT Infrastructure](04-serverless.md)
 - [Infrastructure as Code](05-infrastructure-as-code.md)
-- [Network Protocols & Transport Mechanics](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
+- [Chapter 11: References](06-references.md)

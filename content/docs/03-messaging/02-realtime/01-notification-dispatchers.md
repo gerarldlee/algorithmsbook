@@ -2,6 +2,7 @@
 title: "Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,27 @@ A multi-channel notification dispatcher is an application service that turns one
 ## How it works
 
 A producer submits an event such as `payment.cleared` with a stable event identifier. The dispatcher records that request before accepting downstream work, builds a notification envelope, and sends channel work to a durable queue. Separating intake from delivery prevents a slow provider from blocking the event producer and lets workers scale independently.
+
+The dispatch path separates policy evaluation, durable attempts, and provider delivery:
+
+```mermaid
+flowchart LR
+    Producer[Product service] -->|Event| Intake[Notification intake]
+    Intake --> Record[(Notification record)]
+    Intake --> Queue[(Delivery queue)]
+    Queue --> Router[Routing worker]
+    Router --> Policy[Preferences and consent]
+    Router --> Attempts[(Channel attempts)]
+    Attempts --> Push[APNs or FCM]
+    Attempts --> SMS[SMS provider]
+    Attempts --> Email[Email provider]
+    Attempts --> Webhook[Webhook endpoint]
+    Push --> Status[(Delivery callbacks)]
+    SMS --> Status
+    Email --> Status
+    Webhook --> Status
+    Status --> Record
+```
 
 The normalized envelope is independent of a provider's payload:
 
@@ -72,6 +94,5 @@ Transient errors use a retry schedule with jitter and an expiration deadline. In
 
 - [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](02-realtime-protocols.md)
 - [Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)](../01-messaging/01-queues-vs-streams.md)
-- [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
-- [Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)](../01-messaging/03-delivery-guarantees.md)
 - [Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks](../01-messaging/04-backpressure-dlq.md)
+- [Chapter 8 References](05-references.md)

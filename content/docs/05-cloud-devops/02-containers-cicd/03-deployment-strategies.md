@@ -2,6 +2,7 @@
 title: "Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -115,6 +116,23 @@ A blue-green cutover would use one routing rule that selects either `version: bl
 
 Feature flags provide a related but separate control. They keep deployment separate from the decision to expose behavior, so an operator can enable a feature for selected users without moving container traffic.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Candidate: build immutable artifact
+    Candidate --> Rolling: rolling update
+    Candidate --> BlueGreen: provision parallel target
+    Candidate --> Canary: route small cohort
+    Rolling --> Verified: health and business checks
+    Canary --> Verified: analysis passes
+    BlueGreen --> Verified: cut traffic
+    Verified --> Promoted: all traffic
+    Verified --> Aborted: analysis fails
+    Rolling --> Aborted: failure threshold
+    Canary --> Aborted: failure threshold
+    Aborted --> Candidate: new artifact or revision
+    Promoted --> [*]
+```
+
 ## Tradeoffs
 - **Rolling update** — reuses existing rollout machinery and limits temporary capacity, but mixes versions and makes a broad rollback slower.
 - **Blue-green** — changes the active version atomically and restores the prior route quickly, but keeps two complete environments ready and validates the candidate before a single cutover.
@@ -137,7 +155,7 @@ Feature flags provide a related but separate control. They keep deployment separ
 - **In-place host updates** — the platform is VM-based and a host or virtual machine swap is simpler than maintaining parallel application environments.
 
 ## Related
-- [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](01-container-internals.md)
 - [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
 - [CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)](04-cicd-gitops.md)
-- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)
+- [Observability Platforms & Low-Level Profiling](05-observability.md)
+- [Chapter 12: References](06-references.md)

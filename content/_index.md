@@ -28,12 +28,9 @@ mindmap
   {{< card link="guide" title="How to Use This Book" icon="book-open" >}}
   {{< card link="table-of-contents" title="Table of Contents" icon="book-open" >}}
   {{< card link="about" title="About" icon="user" >}}
+  {{< card link="terms-of-use" title="Terms of Use" icon="book-open" >}}
 {{< /cards >}}
 
-## Disclaimer
+### Disclaimer
 
 This book contains condensed compilations, summaries, notes, and illustrations that the author used, created, or referenced from various sources to aid you—and the author primarily—in learning algorithms and system design.
-
-## Site information
-
-- [Terms of Use](terms-of-use.md)

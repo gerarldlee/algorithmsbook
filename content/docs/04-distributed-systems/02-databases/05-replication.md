@@ -2,6 +2,7 @@
 title: "Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,14 +15,29 @@ In leader-follower replication, one leader accepts writes and sends a WAL, row l
 
 Multi-leader replication lets independent writers accept changes in different regions or sites. It reduces write latency for local users, but concurrent updates can create conflicts. Leaders exchange changes and resolve them with rules such as last-writer-wins, version vectors, CRDTs, or application-specific reconciliation.
 
-Leaderless replication lets any replica accept a write. A common quorum condition is `W + R > N` for `N` replicas, where `W` is the number of write acknowledgements and `R` is the number of read responses. Versions and vector clocks let the coordinator reconcile concurrent writes, while read repair and anti-entropy return stale replicas toward the converged value. Quorum overlap is a coordination property, not a complete application consistency policy by itself.
+Leaderless replication lets any replica accept a write. A common quorum condition is `W + R > N` for `N` replicas, where `W` is the number of write acknowledgements and `R` is the number of read responses. Versions and vector clocks let the coordinator reconcile concurrent writes, while read repair and anti-entropy return stale replicas toward the converged value. Quorum overlap is a coordination property, not a complete application consistency policy by itself. Kafka replicates its durable log through partition leaders and followers, which is a log-replication architecture rather than a database row-replication topology.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Primary as Primary leader
+    participant Sync as Synchronous follower
+    participant Async as Asynchronous follower
+    Client->>Primary: Commit transaction
+    Primary->>Sync: Replicate WAL
+    Sync->>Sync: Durably flush WAL
+    Sync-->>Primary: Durable acknowledgement
+    Primary-->>Client: Commit acknowledgement
+    Primary->>Async: Replicate WAL
+    Note over Primary,Async: An asynchronous follower can be behind at failover
+```
 
 ```yaml
 topologies:
   leader_follower:
     writers: one_leader
     readers: leader_and_followers
-    examples: [PostgreSQL, MySQL, Kafka]
+    examples: [PostgreSQL, MySQL, Percona XtraDB Cluster]
   multi_leader:
     writers: multiple_regions
     conflict_resolution: [last_writer_wins, crdt, application]
@@ -63,10 +79,7 @@ propagation:
 
 ## Related
 
-- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
+- [The CAP Theorem, PACELC, and Architectural Trade-offs](../01-consensus/01-cap-pacelc.md)
+- [Decentralized Systems, Web3 & Blockchain: Merkle-Patricia Tries, PoW/PoS Consensus, EVM Runtimes, P2P Mesh Networks (Libp2p, Kademlia DHT), and DeFi Protocols (AMMs, Oracles)](../01-consensus/05-decentralized-systems-blockchain.md)
 - [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)
 - [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)
-- [Decentralized Systems, Web3 & Blockchain](../01-consensus/05-decentralized-systems-blockchain.md)
-- [The CAP Theorem, PACELC, and Architectural Trade-offs](../01-consensus/01-cap-pacelc.md)
-- [Consensus Protocols](../01-consensus/02-consensus.md)
-- [Relational Data Modeling, Normalization, and Indexing Strategies](01-relational-modeling.md)

@@ -2,6 +2,7 @@
 title: "Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -33,6 +34,22 @@ dead_letter:
   payload: [message, failure_reason, attempt_count, correlation_id]
   operations: [inspect, repair, replay, discard]
 ```
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ready
+    Ready --> Processing
+    Processing --> Ready: success and acknowledgment
+    Processing --> Retrying: transient failure
+    Retrying --> Processing: retry budget remains
+    Processing --> DeadLetter: permanent failure or budget exhausted
+    DeadLetter --> Replaying: operator-approved repair
+    Replaying --> Processing
+    Ready --> Paused: capacity exhausted
+    Paused --> Ready: capacity recovers
+```
+
+A DLQ is a routing outcome, not a repair. The original payload, failure reason, attempt count, correlation ID, and schema version must remain associated with the dead-lettered record so an operator can decide whether to fix, replay, expire, or discard it. A replay should normally target a rate-limited or isolated destination first; replaying directly into the original route can recreate the overload that caused the failure.
 
 A broker redelivery policy makes an unacknowledged message eligible for delivery again after its consumer or visibility timeout. If the original consumer is still processing, the broker can deliver the message again, so redelivery creates a risk of duplicate or concurrent processing. Consumers therefore need idempotent handlers or a mechanism that coordinates exclusive processing.
 
@@ -67,8 +84,7 @@ Event replay is a controlled second delivery path, not a blanket reset. Kafka co
 
 ## Related
 
-- [Delivery Guarantees](03-delivery-guarantees.md)
-- [Queues vs Streams](01-queues-vs-streams.md)
-- [Rate Limiting](../../02-system-design/02-caching/04-rate-limiting.md)
-- [Notification Dispatchers](../02-realtime/01-notification-dispatchers.md)
-- [Stateful Stream & Batch Processing Frameworks](../03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)
+- [Message Delivery Guarantees](03-delivery-guarantees.md)
+- [Message Queues vs Event Streams](01-queues-vs-streams.md)
+- [Fast Data Propagation Mechanics](05-fast-data-propagation-mechanics.md)
+- [Chapter 7 References](06-references.md)

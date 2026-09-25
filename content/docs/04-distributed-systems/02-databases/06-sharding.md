@@ -2,6 +2,7 @@
 title: "Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -41,6 +42,18 @@ consistent_hash:
   virtual_nodes: spread_physical_nodes
   collision: deterministic_forward_probe_to_next_free_position
   rebalancing: affected_ring_segments_only
+```
+
+```mermaid
+flowchart TD
+    AddNode[addNode] --> FormatKey[Format node and virtual-node index]
+    FormatKey --> Hash[hash]
+    Hash --> Resolve[resolvePoint]
+    Resolve --> Insert[Insert at lowerBound]
+    GetNode[getNode] --> KeyHash[Hash routing key]
+    KeyHash --> Lookup[Find first point at or after hash]
+    Lookup --> Wrap[Wrap to first point when needed]
+    RemoveNode[removeNode] --> Remove[Remove every entry owned by node]
 ```
 
 ```java
@@ -178,12 +191,8 @@ static int add_point(ConsistentHash *ring, uint32_t point, const char *node) {
 
     point = resolve_point(ring, point);
     size_t index = lower_bound(ring, point);
-    if (index < ring->length) {
-        memmove(
-            &ring->ring[index + 1],
-            &ring->ring[index],
-            (ring->length - index) * sizeof(Slot)
-        );
+    for (size_t move = ring->length; move > index; move--) {
+        ring->ring[move] = ring->ring[move - 1];
     }
     ring->ring[index].point = point;
     ring->ring[index].node = copy;
@@ -534,6 +543,6 @@ The constants depend on the hash function, tree implementation, and rehash strat
 
 ## Related
 
-- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
 - [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
+- [Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)](05-replication.md)
+- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)

@@ -2,6 +2,7 @@
 title: "Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,22 @@ A row-oriented engine such as InnoDB stores an entire row in a page and organize
 A log-structured merge-tree engine such as RocksDB accepts writes in a memtable and flushes immutable sorted tables called SSTables. Reads search the memtable and relevant SSTables, using per-table filters to skip files that cannot contain a key. Compaction merges files to control file count and read amplification. Cassandra, HBase, and many other systems use LSM families for write-heavy workloads.
 
 Columnar OLAP engines store values by column, compress repeated values, and process only the columns referenced by a query. Parquet provides a file format for this layout, while ClickHouse is a server engine that executes queries over columnar parts. OLTP row storage remains a better fit when a transaction updates a few attributes in a small record.
+
+```mermaid
+flowchart LR
+    Request --> Layout{Access pattern}
+    Layout --> Point[OLTP point operation]
+    Point --> Row[Row and B-tree pages]
+    Row --> WAL[WAL]
+    WAL --> Pages[Durable data pages]
+    Layout --> Write[Append-heavy write]
+    Write --> Memtable[Memtable]
+    Memtable --> SSTables[SSTables]
+    SSTables --> Compact[Compaction]
+    Layout --> Analytics[OLAP scan]
+    Analytics --> Columns[Column segments]
+    Columns --> Predicate[Pruning and vectorized aggregation]
+```
 
 ```yaml
 oltp_row_engine:
@@ -66,7 +83,4 @@ Here, `n` is the number of entries in a B-tree, `m` is the number of SSTables se
 - [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
 - [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
 - [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](04-acid-isolation.md)
-- [Storage Primitives](../../05-cloud-devops/01-cloud-primitives/02-storage-primitives.md)
-- [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)
-- [Data Serialization & In-Memory Formats](../../03-messaging/03-data-engineering-stream-processing/03-serialization-in-memory-formats.md)
-- [Storage Engine Trees (B-Trees and LSM-Trees)](../../01-algorithms/02-search-trees/03-storage-engine-trees.md)
+- [Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)](07-distributed-query-pitr.md)

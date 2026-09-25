@@ -2,6 +2,7 @@
 title: "NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -17,6 +18,20 @@ A document store persists an independently addressable JSON-like document. The d
 A wide-column store represents rows with sparse columns grouped into column families. Cassandra partitions rows by a distribution key and orders the rows within a partition, so its strongest designs align writes and queries with that partition and clustering order. It avoids a general-purpose join engine in favor of bounded access paths.
 
 A graph store represents entities as nodes and relationships as edges. Neo4j and Neptune can traverse multi-hop paths directly, which is useful for recommendations, fraud analysis, and dependency graphs. The application still chooses the identifiers and properties that keep traversals bounded.
+
+```mermaid
+flowchart LR
+    Request --> Model{Data model}
+    Model --> KeyValue[Key -> opaque value]
+    Model --> Document[Key -> nested document]
+    Model --> WideColumn[Partition -> clustered rows]
+    Model --> Graph[Nodes and relationships]
+    KeyValue --> Access[Model-specific access path]
+    Document --> Access
+    WideColumn --> Access
+    Graph --> Access
+    Access --> Consistency[Service consistency contract]
+```
 
 ```yaml
 families:
@@ -68,6 +83,5 @@ partitioning:
 ## Related
 
 - [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
-- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)](03-storage-engines.md)
 - [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)

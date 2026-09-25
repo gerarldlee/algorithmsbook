@@ -2,6 +2,7 @@
 title: "Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,33 @@ Real-time protocols maintain a server-to-client event path so a client receives 
 ## How it works
 
 A transport selection determines the connection model, message direction, failure behavior, and server resource cost. The three mechanisms expose different choices rather than different guarantees for the same application event:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway
+    participant Broker
+    alt WebSocket
+        Client->>Gateway: Upgrade HTTP connection
+        Gateway-->>Client: 101 Switching Protocols
+        Gateway->>Broker: Subscribe to client topics
+        Broker-->>Gateway: Matching application event
+        Gateway-->>Client: Event on the duplex connection
+    else Server-Sent Events
+        Client->>Gateway: GET event feed
+        Gateway-->>Client: 200 text/event-stream
+        Gateway->>Broker: Subscribe to client topics
+        Broker-->>Gateway: Matching application event
+        Gateway-->>Client: Event with id and data
+    else Long polling
+        Client->>Gateway: Open ordinary request
+        Gateway->>Broker: Subscribe to client topics
+        Broker-->>Gateway: Matching application event
+        Note over Client,Gateway: Gateway holds the request until an event or deadline
+        Gateway-->>Client: Event or empty timeout response
+    end
+    Client->>Gateway: Reconnect with resume token
+```
 
 ```yaml
 websocket:
@@ -34,6 +62,8 @@ long_poll:
 **Server-Sent Events** return an HTTP response with `Content-Type: text/event-stream`. The server writes `id`, `event`, and `data` fields, and a browser's `EventSource` reconnects when the stream ends. After a supported reconnection, the client sends the last received event ID in `Last-Event-ID`; the server can use that identifier to resume. Client-to-server events use separate HTTP requests because the SSE response is one-way. Token refresh, connection limits, proxy buffering, and response lifetime still require explicit configuration.
 
 **Long polling** sends an ordinary request that identifies the client's last event or wait deadline. The server holds the request until a matching event arrives or its own timeout expires, then responds. The client sends another request immediately. This works through intermediaries that support ordinary HTTP but block streaming responses or connection upgrades, at the cost of repeated requests and connection churn across successive waits.
+
+**Server push** and **server pull** describe who initiates delivery. A WebSocket or SSE server pushes an event over an already-established stream, while fixed-interval polling makes the client pull by issuing a new request. Long polling is a hybrid: the client initiates each HTTP request, but the server waits and returns as soon as an event is available. None of these transport choices guarantees replay; a resume token, durable event store, or broker offset must supply missed-event recovery.
 
 A scalable service normally separates connection handling from message routing. Stateless or mostly stateless gateways authenticate sessions and publish events to a shared broker; gateway nodes subscribe for the users connected to them. This removes a mandatory need for sticky sessions, although local routing state, device updates, or non-replayable requests can still benefit from affinity. Shared subscription placement, heartbeats, backpressure, and replay are the actual scaling concerns.
 
@@ -64,9 +94,7 @@ A scalable service normally separates connection handling from message routing. 
 
 ## Related
 
-- [Network Protocols: OSI Model, TCP/UDP, HTTP/1.1 vs HTTP/2 vs HTTP/3, gRPC, WebSockets, and Streaming Protocols](../../02-system-design/01-system-design-fundamentals/02-network-protocols.md)
-- [Load Balancing Strategies: L4 vs L7, Round-Robin, Least Connections, Consistent Hashing](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
+- [Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture](01-notification-dispatchers.md)
 - [Distributed Presence Engines, User State Tracking, and Heartbeat Protocols](03-presence-engines.md)
 - [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)
-- [Multi-Channel Notification Dispatchers](01-notification-dispatchers.md)
-- [Publish-Subscribe](../01-messaging/02-pub-sub.md)
+- [Chapter 8 References](05-references.md)

@@ -2,6 +2,7 @@
 title: "Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups (v1/v2)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,24 @@ A container is an isolated Linux process packaged with the user-space files it n
 A container image is an ordered set of filesystem layers plus metadata. Docker and tools such as BuildKit build layers from a `Dockerfile`, store each layer by digest, and publish an OCI image manifest. Sharing matching layer digests lets hosts reuse data without copying identical content into every image.
 
 A runtime such as `runc` or `crun` consumes an already-prepared OCI runtime bundle. It applies mounts and resource settings, creates a Linux **namespace** for each isolated system view, and starts the configured process. Image-layer extraction and root-filesystem preparation are normally handled by the image manager, such as `containerd` and its shims; CRI-O provides a Kubernetes Container Runtime Interface (CRI) endpoint for an OCI runtime.
+
+```mermaid
+sequenceDiagram
+    participant Client as Docker or CRI client
+    participant Runtime as OCI runtime
+    participant Images as Image manager
+    participant Kernel as Linux kernel
+    participant App as Container process
+    Client->>Runtime: Create from OCI bundle
+    Runtime->>Images: Resolve manifest and layers
+    Images-->>Runtime: Root filesystem layers
+    Runtime->>Kernel: Create namespaces and cgroups
+    Kernel-->>Runtime: Container PID and devices
+    Runtime->>App: Mount resources and exec
+    App-->>Client: stdout, stderr, and status
+    Client->>Runtime: Delete
+    Runtime->>Kernel: Signal and reap process
+```
 
 ```dockerfile
 FROM debian:bookworm-slim
@@ -62,7 +81,16 @@ Namespaces divide operating-system resources without creating another kernel:
 | User | User and group ID mappings |
 | Cgroup | Cgroup hierarchy visible to the process |
 
-The writable container filesystem is typically an overlay mount: reads combine lower image layers, while a write goes to the container's upper layer. A **cgroup v2** hierarchy then accounts for and limits memory, CPU, and I/O. A secure configuration also drops unnecessary Linux capabilities and can apply seccomp, AppArmor or SELinux, and a read-only root filesystem. Namespaces organize resource isolation; they do not replace these additional security controls.
+The writable container filesystem is typically an overlay mount: reads combine lower image layers, while a write goes to the container's upper layer. **cgroups** then account for and limit kernel resources, but Linux exposes two different control interfaces:
+
+| Control interface | Organization | Representative controls |
+| --- | --- | --- |
+| cgroups v1 | Each controller has a separate hierarchy; the effective hierarchy for a process combines mounts | `cpu.cfs_quota_us` and `cpu.cfs_period_us`, `memory.limit_in_bytes`, and per-device `blkio` files |
+| cgroups v2 | One unified hierarchy; controllers are delegated to child cgroups through `cgroup.subtree_control` | `cpu.max`, `memory.max`, `io.max`, and `pids.max` |
+
+A cgroups v1 host gives each container paths in the CPU, memory, and I/O hierarchies, and the runtime must keep those paths consistent with one container identity. A v2 host places the container in the unified hierarchy and enables only the controllers needed by its parent. A host normally uses one interface rather than requiring runtimes to manage both. OCI resource fields describe the portable intent; `runc`, `crun`, and the container manager translate them into the host's cgroup version. Controllers and support vary by kernel, so a manifest can run but receive a different enforceable resource boundary on an older host.
+
+A secure configuration also drops unnecessary Linux capabilities and can apply seccomp, AppArmor or SELinux, and a read-only root filesystem. Namespaces organize resource isolation; they do not replace these additional security controls.
 
 ## Tradeoffs
 - **Kernel sharing** — containers start without booting a guest kernel, but a compromised host kernel can affect every container on that host.
@@ -85,9 +113,6 @@ The writable container filesystem is typically an overlay mount: reads combine l
 
 ## Related
 - [Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)](02-kubernetes.md)
-- [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
 - [Cloud Compute Mechanics: Virtual Machines, Bare-Metal, Containers, and Hypervisors](../01-cloud-primitives/01-compute.md)
-- [Virtual Memory & Kernel Traps: Paging, Page Tables, TLB, Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals](../03-operating-systems-kernel-mechanics/02-virtual-memory-kernel-traps.md)
 - [Processes & Threads](../03-operating-systems-kernel-mechanics/01-processes-threads.md)
-- [High-Performance File Systems & Low-Level I/O](../03-operating-systems-kernel-mechanics/03-file-systems-low-level-io.md)
-- [Storage Primitives](../01-cloud-primitives/02-storage-primitives.md)
+- [Chapter 12: References](06-references.md)

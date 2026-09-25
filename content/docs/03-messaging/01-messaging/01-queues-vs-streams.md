@@ -2,6 +2,7 @@
 title: "Message Queues vs Event Streams (RabbitMQ, Apache Kafka, Apache Pulsar)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -34,6 +35,20 @@ stream:
   replay: from_any_retained_offset
 ```
 
+```mermaid
+flowchart LR
+    P[Producer] --> Q[Queue]
+    Q --> C1[Consumer A]
+    Q --> C2[Consumer B]
+    P --> S[Stream log]
+    S --> G1[Consumer group A]
+    S --> G2[Consumer group B]
+    G1 --> A1[Offset and partition assignments]
+    G2 --> A2[Independent offset and partition assignments]
+```
+
+The queue and stream models separate the producer's responsibility from the consumer's progress. A queue acknowledges a delivery to one worker, whereas a stream acknowledgment advances a group position without removing the record from the log. This is why a queue usually needs a separate archive for long replay, while a stream makes replay a first-class operation subject to retention.
+
 RabbitMQ emphasizes flexible routing and acknowledgments, including quorum queues that replicate messages and queue metadata. Kafka emphasizes a replicated, partitioned log and consumer-group offsets. Pulsar separates a durable logical topic from its partitioned storage and supports configurable retention, compaction, and consumer positions. These products share the stream vocabulary but differ in storage, replication, and operational controls; select the engine from its failure and retention semantics rather than from the name alone.
 
 ## Tradeoffs
@@ -65,11 +80,6 @@ RabbitMQ emphasizes flexible routing and acknowledgments, including quorum queue
 ## Related
 
 - [Publish-Subscribe](02-pub-sub.md)
-- [Delivery Guarantees](03-delivery-guarantees.md)
-- [Backpressure and Dead Letter Queues](04-backpressure-dlq.md)
-- [Notification Dispatchers](../02-realtime/01-notification-dispatchers.md)
-- [API Paradigms: REST, GraphQL, gRPC Protocol Buffers, Event-Driven Systems, tRPC, and OpenAPI/AsyncAPI](../../02-system-design/01-system-design-fundamentals/05-api-paradigms.md)
-- [Domain-Driven Design & Event Architectures: Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox](../../02-system-design/02-software-architecture-patterns/02-domain-driven-event-architectures.md)
-- [Stateful Stream & Batch Processing Frameworks](../03-data-engineering-stream-processing/01-stateful-stream-batch-processing.md)
-- [Load Balancing Strategies](../../02-system-design/01-system-design-fundamentals/03-load-balancing.md)
-- [In-Memory Caching Engines (Redis, Memcached) & Eviction Policies (LRU, LFU, ARC)](../../02-system-design/02-caching/01-in-memory-caching.md)
+- [Message Delivery Guarantees](03-delivery-guarantees.md)
+- [Fast Data Propagation Mechanics](05-fast-data-propagation-mechanics.md)
+- [Chapter 7 References](06-references.md)

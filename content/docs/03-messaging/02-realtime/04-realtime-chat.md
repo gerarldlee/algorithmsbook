@@ -2,6 +2,7 @@
 title: "Scalable Real-Time Chat & Collaboration Systems Architecture"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,23 @@ A scalable real-time chat and collaboration system accepts concurrent events, as
 ## How it works
 
 Clients authenticate at a real-time gateway and subscribe to conversation and presence streams. Gateway nodes publish accepted events to a partitioned log such as Kafka, route resulting updates back to local sockets, and use a presence engine to locate active sessions. Durable chat history and collaboration metadata live in stores that clients can query after a stream resumes.
+
+The durable write path is separate from fan-out to active sockets:
+
+```mermaid
+flowchart LR
+    ClientA[Connected client] --> Gateway[Real-time gateway]
+    ClientB[Other participant] <--> Gateway
+    Gateway -->|Conversation command| Ingress[(Partitioned log)]
+    Ingress --> Sequencer[Conversation sequencer]
+    Sequencer --> Store[(Message store)]
+    Sequencer -->|Assigned event| Delivery[(Delivery log)]
+    Delivery --> Fanout[Participant fan-out]
+    Fanout --> Gateway
+    Store --> History[History and catch-up API]
+    History --> ClientA
+    Presence[Presence engine] --> Gateway
+```
 
 A canonical chat message separates client intent from server-assigned state:
 
@@ -27,13 +45,13 @@ A canonical chat message separates client intent from server-assigned state:
 }
 ```
 
-The send path begins when a client creates a unique `client_message_id` and sends the message over WebSocket. The ingress service authenticates the sender, checks conversation membership, validates the payload, and publishes the command to the partition for `conversation_id`. Using that identifier as the partition key keeps accepted events for one conversation in partition order. A consumer allocates the next conversation sequence, persists the message, and records the client identifier used for deduplication.
+The send path begins when a client creates a unique `client_message_id` and sends the message over WebSocket. The ingress service authenticates the sender, checks conversation membership, validates the payload, and publishes the command to the partition for `conversation_id`. A log preserves order within that partition, but the sequencer must also process one conversation in order rather than running competing consumers against it. It allocates the next conversation sequence, persists the message, and records the sender-local client identifier for deduplication.
 
-Exactly-once processing across a gateway, log, database, and push path is not automatic. The design instead makes every retry safe: the database enforces a unique `(conversation_id, client_message_id)` constraint, the client treats its local ID as an idempotency key, and consumers commit offsets only after the durable effect succeeds. A gateway that loses its acknowledgment can resend the same command without creating another message.
+Exactly-once processing across a gateway, log, database, and push path is not automatic. The design instead makes retries safe: the database enforces a unique `(conversation_id, sender_id, client_message_id)` constraint, and the client treats its local identifier as an idempotency key. The sequencer writes the message and an outbox entry containing the assigned event in one database transaction. A relay publishes outbox entries to the delivery log; duplicate publication remains safe because consumers key effects by `message_id`. The sequencer commits its source offset only after that transaction succeeds.
 
-After commit, the system fans out the assigned event to participant gateways through pub/sub or the same durable log. Each gateway sends it to local connections and advances a membership cursor. Clients de-duplicate by `message_id` and place messages by `sequence`; a gap suspends normal rendering until catch-up completes. For long outages, clients request missing events by conversation and sequence rather than relying on an ephemeral socket replay.
+After publication, the system fans the assigned event out to participant gateways. Each gateway sends it to local connections and advances a membership cursor. Clients de-duplicate by `message_id` and place messages by `sequence`; a gap pauses later messages until catch-up completes. For long outages, clients request missing events by conversation and sequence rather than relying on ephemeral socket replay. Conversation history must therefore remain available for at least the product's retention and offline-access window.
 
-Offline participants need durable inbox state even when fan-out happens only at delivery time. A projection consumes the message log, determines each user's conversation membership, and creates or advances that user's inbox cursor. Reopening chat reads the conversation store and catches up from the last confirmed sequence. Conversation snapshots can bound catch-up work after a very large gap.
+Durable conversation history, rather than socket delivery, preserves messages for offline participants. A per-user inbox projection is optional when the product needs precomputed unread counts or ordered conversation previews; it can consume the same assigned events and advance a per-user watermark. Reopening chat reads the conversation store and catches up from the last confirmed sequence. A snapshot can collapse a very large gap into one current-state read followed by a bounded event replay.
 
 Presence, typing, and read state follow different rules:
 
@@ -42,7 +60,7 @@ Presence, typing, and read state follow different rules:
 - **Read state** is a user-and-conversation watermark rather than a new copy of every message.
 - **Shared-document operations** use a CRDT or operational transformation layer to merge concurrent edits, while chat messages keep a conversation order.
 
-This separation prevents a losable typing hint from entering the durable message path and prevents every connected client from writing a separate receipt for every rendered message. Collaboration documents may use presence-aware connections while keeping the document operation log independent of chat delivery.
+This separation prevents a losable typing hint from entering the durable message path. A client reports read progress with a per-user watermark instead of appending a separate receipt for every rendered message. Collaboration documents may use presence-aware connections while keeping the document operation log independent of chat delivery.
 
 ## Tradeoffs
 
@@ -52,6 +70,7 @@ This separation prevents a losable typing hint from entering the durable message
 | Global sequence service | One easy ordering model | Adds coordination latency and limits throughput |
 | Durable log as source | Replay, recovery, and independent projections | Consumers must manage offsets, lag, and retention |
 | Database as source | Transactional history and straightforward queries | Requires a separate durable event log when cross-service replay is needed |
+| Transactional outbox | Records the message and publishable event atomically | Adds a relay and possible duplicate events that consumers must deduplicate |
 | Gateway fan-out | Low delivery latency for active participants | Requires connection routing, backpressure, and per-user offline handling |
 | Read-modify-write plus notifications | Simple and familiar client code | Concurrent messages and duplicate HTTP requests can lose data |
 | CRDT collaboration | Clients can edit and merge during disconnection | Larger payloads and metadata, semantic conflicts, and privacy tradeoffs |
@@ -75,5 +94,4 @@ This separation prevents a losable typing hint from entering the durable message
 
 - [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](02-realtime-protocols.md)
 - [Distributed Presence Engines, User State Tracking, and Heartbeat Protocols](03-presence-engines.md)
-- [Multi-Channel Notification Dispatchers: Push (APNs, FCM), SMS, Email, and Webhook Architecture](01-notification-dispatchers.md)
-- [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
+- [Chapter 8 References](05-references.md)

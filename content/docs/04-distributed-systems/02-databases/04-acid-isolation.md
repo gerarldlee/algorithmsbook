@@ -2,6 +2,7 @@
 title: "ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,21 +15,49 @@ The database begins a transaction, reads and modifies rows, and records enough i
 
 PostgreSQL's MVCC keeps row versions so readers do not block ordinary writers and writers do not block readers. Serializable transactions still track dangerous dependencies and abort when validation cannot prove a serial order. The database can recover committed transactions from the WAL, while a replica or a later restore may be behind unless replication and recovery are configured explicitly.
 
+A transfer must lock both account rows in a deterministic order, verify that both accounts exist, and verify that the amount is positive and no greater than the source balance. A non-negative `balance` constraint enforces the account invariant at the database boundary, and the transaction must roll back unless both updates affect exactly one row. Locking the destination as well as the source prevents another transaction from changing it between validation and commit.
+
+```mermaid
+sequenceDiagram
+    participant T as Transfer transaction
+    participant DB as Database
+    T->>DB: Begin and lock both account rows in key order
+    DB-->>T: Return both balances
+    T->>T: Verify two accounts, positive amount, sufficient source balance
+    T->>DB: Debit source and credit destination atomically
+    alt Invariant or row-count check fails
+        T->>DB: Roll back
+    else Both accounts were updated
+        T->>DB: Commit
+    end
+```
+
+The following SQL assumes the `accounts` table exists and adds the non-negative balance constraint before the transfer. The application checks the locked result set and affected-row count before committing.
+
 ```sql
+ALTER TABLE accounts
+  ADD CONSTRAINT accounts_balance_nonnegative CHECK (balance >= 0);
+
 BEGIN;
 
-SELECT balance
+SELECT account_id, balance
 FROM accounts
-WHERE account_id = 1001
+WHERE account_id IN (1001, 1002)
+ORDER BY account_id
 FOR UPDATE;
 
 UPDATE accounts
-SET balance = balance - 100
-WHERE account_id = 1001;
-
-UPDATE accounts
-SET balance = balance + 100
-WHERE account_id = 1002;
+SET balance = balance + CASE account_id
+  WHEN 1001 THEN -100
+  WHEN 1002 THEN 100
+END
+WHERE account_id IN (1001, 1002)
+  AND EXISTS (
+    SELECT 1
+    FROM accounts AS source
+    WHERE source.account_id = 1001
+      AND source.balance >= 100
+  );
 
 COMMIT;
 ```
@@ -76,7 +105,6 @@ mvcc:
 ## Related
 
 - [Relational Data Modeling, Normalization, and Indexing Strategies (B-Tree, Hash, GIN, GiST)](01-relational-modeling.md)
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
-- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
-- [CAP and PACELC Theorems](../01-consensus/01-cap-pacelc.md)
-- [Clocks & Ordering](../01-consensus/03-clocks-ordering.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)](03-storage-engines.md)
+- [The CAP Theorem, PACELC, and Architectural Trade-offs](../01-consensus/01-cap-pacelc.md)
+- [Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks](../01-consensus/03-clocks-ordering.md)

@@ -2,6 +2,7 @@
 title: "Processes & Threads: Execution Contexts, Inter-Process Communication (IPC), Thread Pools, Concurrency Bugs, and CPU Scheduling Algorithms (Preemption, MLFQ, Real-Time)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,15 +15,16 @@ A process contains a virtual address space, open-file references, credentials, s
 
 On Linux, `fork` creates a child process. Most physical pages are initially shared and copied only when a write occurs, a mechanism called **copy-on-write**. `fork` does not load a new program; a successful `exec` replaces the child's program image. Modern programs often use a higher-level runtime API, but the operating-system sequence remains visible in process tracing tools. A context switch saves the current thread's registers and scheduling state, restores another thread's state, and changes processor bookkeeping. It can take constant kernel-side work while still producing variable latency from cache, TLB, and CPU effects.
 
-A **thread pool** keeps a bounded set of workers alive and moves tasks through a queue. It amortizes thread creation, bounds concurrency, and gives the scheduler a predictable workload:
+A **thread pool** keeps a bounded set of workers alive and moves tasks through a queue. It amortizes thread creation and bounds concurrency. The scheduler still runs each worker as a thread, and this call-oriented path shows what happens when the processor switches from one runnable thread to another:
 
 ```mermaid
-flowchart LR
-    A[Accept task] --> B[Bounded queue]
-    B --> C[Idle worker]
-    C --> D[Run task]
-    D --> E[Record result]
-    E --> C
+flowchart TD
+    Runnable[Runnable thread] -->|Timer interrupt or yield| Entry[Enter kernel scheduler]
+    Entry --> Select[Select next runnable thread]
+    Select --> Save[Save current register and scheduling state]
+    Select --> Restore[Restore next thread state]
+    Restore --> Return[Return to user mode]
+    Return --> Runnable
 ```
 
 A service can expose concurrency controls as part of its deployment contract:
@@ -73,7 +75,8 @@ process's scheduling state and processor affinity:
 
 ```bash
 PID=$$
-ps -eLo pid,tid,cls,rtprio,pri,ni,psr,stat,comm
+ps -p "$PID" -o pid,ppid,nlwp,cls,rtprio,pri,ni,psr,stat,comm
+ps -T -p "$PID" -o pid,spid,tid,cls,rtprio,pri,psr,stat,comm
 taskset -pc "$PID"
 cat /proc/"$PID"/status
 ```
@@ -111,3 +114,4 @@ cat /proc/"$PID"/status
 - [Virtual Memory & Kernel Traps](02-virtual-memory-kernel-traps.md)
 - [High-Performance File Systems & Low-Level I/O](03-file-systems-low-level-io.md)
 - [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](../02-containers-cicd/01-container-internals.md)
+- [Chapter 12A: References](04-references.md)

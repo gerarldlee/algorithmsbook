@@ -8,9 +8,9 @@ Divided into Parts, Chapters, and Topics. Each topic presents algorithms, with g
 
 ## How should this book be used?
 
-The content follows a dependency order: start with the prerequisites and fundamentals, then work through data structures, complexity, techniques, and finally the templates you should practice and memorize.
+The material is organized by dependencies: start with the prerequisites and fundamentals, then move on to data structures, complexity analysis, techniques, and finally the template patterns you should practice and commit to memory. It’s best to follow this sequence, but you’re free to skip the more advanced topics or algorithms if you wish.
 
-It is preferable to do them in order. You can skip the advanced topics or algorithms.
+The author demonstrates how an algorithm is applied, outlines its alternatives, and explains when each should be chosen. Implementation details are deliberately omitted, giving readers the freedom to investigate and work them out on their own time.
 
 You can use this book as a reference too.
 
@@ -31,4 +31,3 @@ flowchart LR
     G --> H[Test with examples]
     H --> I[Choose the right use case]
 ```
-

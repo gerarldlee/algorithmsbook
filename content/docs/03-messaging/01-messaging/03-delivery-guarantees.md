@@ -2,6 +2,7 @@
 title: "Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -33,6 +34,19 @@ ordering:
   queue: only_when_delivery_mode_and_consumer_count_allow_it
   stream: within_one_partition
 ```
+
+```mermaid
+stateDiagram-v2
+    [*] --> Received
+    Received --> Processing
+    Processing --> Acked: effect committed
+    Processing --> Redelivered: failure before acknowledgment
+    Redelivered --> Processing
+    Received --> Dropped: at-most-once policy accepts loss
+    Acked --> [*]
+```
+
+A delivery attempt is not an acknowledged outcome. The broker can mark a message delivered while a handler is still executing, and a handler can commit a business effect before the acknowledgment reaches the broker. Redelivery is therefore expected in at-least-once systems, not evidence that the first attempt never happened. Exactly-once is meaningful only after naming the boundary that includes the state transition and every effect being deduplicated.
 
 An inbox table and its insert turn the deduplication decision into a database constraint:
 
@@ -78,8 +92,7 @@ The **transactional outbox** solves a different dual-write problem: the producer
 
 ## Related
 
-- [Queues vs Streams](01-queues-vs-streams.md)
-- [Backpressure and Dead Letter Queues](04-backpressure-dlq.md)
+- [Message Queues vs Event Streams](01-queues-vs-streams.md)
 - [Publish-Subscribe](02-pub-sub.md)
-- [Distributed Transactions](../../04-distributed-systems/01-consensus/04-distributed-transactions.md)
-- [Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheads, Exponential Backoff, Retry Strategies, and Timeout Budgets](../../02-system-design/02-software-architecture-patterns/03-resilience-fault-tolerance.md)
+- [Backpressure, Dead Letter Queues, and Event Replay](04-backpressure-dlq.md)
+- [Chapter 7 References](06-references.md)

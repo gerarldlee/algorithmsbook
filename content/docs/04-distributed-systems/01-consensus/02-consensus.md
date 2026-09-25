@@ -2,6 +2,7 @@
 title: "Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,22 @@ The standard crash-fault configuration uses `2f+1` replicas and a majority of `f
 **Paxos** separates the proposer, acceptor, and learner roles. In phase 1, a proposer obtains promises and learns the highest previously accepted proposal and any value already accepted for it. In phase 2, it asks acceptors to accept a value consistent with those promises; a value chosen by a quorum is safe. **Multi-Paxos** amortizes phase 1 for a stable leader, then runs an accept phase for each log slot instead of repeating a full single-value decision for every entry. **Raft** makes the leader and log roles explicit: followers grant a vote only to a candidate whose log is at least as up-to-date as the voter's log, and a leader advances `commitIndex` only after an entry from its current term is acknowledged by a majority. **ZAB** is ZooKeeper's atomic-broadcast protocol and adds epochs to order proposals and leadership changes.
 
 Consensus-backed locks usually combine an agreed log with a lease. **Chubby** uses Paxos for coordination and a sequencer-based lock service, while clients use fencing information when an operation may outlive a lease. **Redlock** is a different design: a client writes a unique value to a majority of independent Redis masters, checks that acquisition completed before the lease expires, and releases only its own value. Redlock is an algorithm over independent stores, not a consensus protocol; its reasoning depends on bounded clock drift and process pauses, and a client still needs fencing when work can continue after lease expiry.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Leader
+    participant FollowerA
+    participant FollowerB
+    Client->>Leader: Submit command
+    Leader->>FollowerA: Append in current term
+    Leader->>FollowerB: Append in current term
+    FollowerA-->>Leader: Durable acknowledgement
+    FollowerB-->>Leader: Durable acknowledgement
+    Leader-->>Client: Commit index
+    Leader->>FollowerA: Replicate commit index
+    Leader->>FollowerB: Replicate commit index
+```
 
 ```yaml
 crash_failure_model:
@@ -71,7 +88,6 @@ distributed_locks:
 ## Related
 
 - [The CAP Theorem, PACELC, and Architectural Trade-offs](01-cap-pacelc.md)
-- [Clocks & Ordering](03-clocks-ordering.md)
-- [Distributed Transactions](04-distributed-transactions.md)
-- [Replication](../02-databases/05-replication.md)
-- [Decentralized Systems, Web3 & Blockchain](05-decentralized-systems-blockchain.md)
+- [Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks](03-clocks-ordering.md)
+- [Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern](04-distributed-transactions.md)
+- [Decentralized Systems, Web3 & Blockchain: Merkle-Patricia Tries, PoW/PoS Consensus, EVM Runtimes, P2P Mesh Networks (Libp2p, Kademlia DHT), and DeFi Protocols (AMMs, Oracles)](05-decentralized-systems-blockchain.md)

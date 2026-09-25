@@ -10,3 +10,4 @@ The cloud's raw materials: compute, storage, networking, serverless, and infrast
 - [Cloud Networking: Virtual Private Clouds (VPC), Subnets, NAT Gateways, Peering, Transit Gateways, and Mesh Networks](03-cloud-networking.md)
 - [Serverless, Edge & IoT Infrastructure: AWS Lambda, Cloudflare Workers, MQTT, CoAP, Microcontrollers (ESP32/ARM), Conflict-Free Replicated Data Types (CRDTs), and Local-First Sync](04-serverless.md)
 - [Infrastructure as Code (IaC): Declarative Provisioning with Terraform and OpenTofu](05-infrastructure-as-code.md)
+- [Chapter 11: References](06-references.md)

@@ -5,6 +5,8 @@ type: about
 
 ## About this book
 
+All too often, algorithm and computer‑science textbooks are packed with lengthy explanations, dense theory, and rigorous mathematics that most working developers don’t need. As a result, the reasons behind choices, the practical implementation steps, and the optimal solutions get lost in translation. This book strives to present the essentials in a short, concise format, supported by abundant illustrations to make learning easier.
+
 This book is a practical collection of summaries, notes, and explanations for learning algorithms and system design. It is designed to build strong fundamentals, improve interview preparation, and help apply algorithms and system design to everyday engineering problems.
 
 The material begins with foundations and then moves deeper into data structures, techniques, and scalable systems. The goal is not to memorize isolated solutions, but to understand when a data structure or design pattern fits a problem and why it works.

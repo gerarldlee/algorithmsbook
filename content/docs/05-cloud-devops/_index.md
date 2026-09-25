@@ -8,3 +8,4 @@ Cloud architecture and deployment: compute/storage/network primitives, serverles
 - [Chapter 11: Cloud Primitives, Edge Systems & IoT Engineering](01-cloud-primitives/)
 - [Chapter 12: Containerization, Orchestration & CI/CD Pipelines](02-containers-cicd/)
 - [Chapter 12A: Operating Systems & Kernel Mechanics](03-operating-systems-kernel-mechanics/)
+- [Chapter 12B: Version Control Systems & Software Workflows](04-version-control-workflows/)

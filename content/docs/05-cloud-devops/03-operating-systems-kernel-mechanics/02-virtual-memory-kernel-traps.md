@@ -2,6 +2,7 @@
 title: "Virtual Memory & Kernel Traps: Paging, Page Tables, Translation Lookaside Buffer (TLB), Page Faults, Swap, Syscalls, User/Kernel Transitions, Interrupts, and Signals"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,23 @@ A process uses virtual addresses instead of physical frame numbers. The memory m
 A **translation lookaside buffer (TLB)** is a CPU cache of recent virtual-to-physical translations. A hit avoids the page-table walk. A miss walks the levels; the TLB can then cache the result. Transparent huge pages can reduce the number of entries and translations by covering a larger contiguous region, but they increase fragmentation and copy-on-write costs. Memory-management unit costs also include cache misses, so a small TLB miss can be much slower than a TLB hit on real hardware.
 
 When the kernel cannot supply a valid mapping, it raises a **page fault**:
+
+```mermaid
+stateDiagram-v2
+    [*] --> UserMode
+    UserMode --> TrapEntry: page fault system call or interrupt
+    TrapEntry --> Validate: page fault
+    TrapEntry --> KernelWork: system call or interrupt
+    Validate --> Reclaim: valid but unmapped
+    Reclaim --> Cached: minor fault
+    Reclaim --> Storage: major fault
+    Storage --> Resume: mapping installed
+    Cached --> Resume
+    Validate --> Fatal: illegal access
+    KernelWork --> Resume: work completed
+    Resume --> UserMode
+    Fatal --> [*]
+```
 
 1. The processor records the faulting address and reason and enters kernel mode.
 2. The kernel checks whether the address is legal for the process.
@@ -71,3 +89,4 @@ The following bounds use a fixed-width page-table walk and count kernel or hardw
 - [Processes & Threads](01-processes-threads.md)
 - [High-Performance File Systems & Low-Level I/O](03-file-systems-low-level-io.md)
 - [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](../02-containers-cicd/01-container-internals.md)
+- [Chapter 12A: References](04-references.md)

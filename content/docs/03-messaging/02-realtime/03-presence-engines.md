@@ -2,6 +2,7 @@
 title: "Distributed Presence Engines, User State Tracking, and Heartbeat Protocols"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -12,7 +13,27 @@ A distributed presence engine tracks which user sessions are active across gatew
 
 Each authenticated client opens a real-time session through a gateway. The gateway creates a unique **session epoch** for that connection, records which node owns it, and starts a heartbeat deadline. A client heartbeat refreshes the deadline; a clean disconnect marks the epoch offline immediately. If no heartbeat arrives by the deadline, the gateway or presence store expires the session.
 
-The session state machine makes the lifecycle explicit:
+The connection state machine distinguishes a clean close from a failure detected by timeout:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Connecting
+    Connecting --> Active: Authentication succeeds
+    Connecting --> Disconnected: Handshake fails
+    Active --> Active: Heartbeat refreshes deadline
+    Active --> Disconnected: Clean close
+    Active --> Expired: Deadline missed
+    Disconnected --> Connecting: Reconnect with new epoch
+    Expired --> Connecting: Reconnect with new epoch
+    Disconnected --> [*]
+    Expired --> [*]
+    note right of Active
+        Session epoch rejects delayed
+        messages from an older connection
+    end note
+```
+
+The session record makes the lifecycle and ownership explicit:
 
 ```yaml
 session:
@@ -33,9 +54,9 @@ session:
 
 The epoch prevents a delayed heartbeat or disconnect from an old connection from overwriting a newer session for the same user. A reconnect therefore creates a new session rather than reviving an expired record by user ID alone.
 
-A common implementation stores short-lived records in Redis with a TTL slightly longer than the heartbeat timeout. Gateway heartbeats use `SET` with expiry, while a keyspace notification or a Redis Stream can publish state changes to interested gateway nodes. Expired records represent a detected failure, not proof that the client closed cleanly. The exact timeout must exceed expected heartbeat jitter and network delay, while still meeting the product's acceptable offline-detection delay.
+A common implementation stores short-lived records in Redis with a TTL slightly longer than the heartbeat timeout. A gateway refreshes a record only when its session epoch still matches the current owner, so a delayed update cannot replace a newer session. A keyspace notification or Redis Stream can publish state changes to interested gateway nodes, although durable presence is not required for ephemeral online status. Expired records represent a detected failure, not proof that the client closed cleanly. The timeout must exceed expected heartbeat jitter and network delay while still meeting the product's acceptable offline-detection delay.
 
-A user can connect from several devices. The engine aggregates those sessions into an account-level state: online when at least one session is active, busy when the user's chosen precedence makes any active busy session authoritative, and away when the user has set a timed state that has not expired. The aggregate carries the source session set so a status change can be explained and reconciled.
+A user can connect from several devices. The engine applies product-defined precedence to aggregate those sessions. The user is online when at least one session is active; an account-level away or do-not-disturb setting can override device availability, and a busy result comes from the designated authoritative device or explicit account setting. The aggregate carries its contributing session set so a status change can be explained and reconciled.
 
 For group views, the engine can query active records, maintain a materialized set, or subscribe to changes and maintain a local projection. Per-user records answer direct lookups efficiently; group projections make roster counts cheap but introduce cleanup and consistency work. Presence events include a version or session epoch so subscribers can reject stale updates.
 
@@ -73,4 +94,4 @@ Redis-backed presence is centralized and operationally simple. Gossiped node mem
 - [Real-Time Protocols: WebSockets, Server-Sent Events (SSE), and Long Polling](02-realtime-protocols.md)
 - [Scalable Real-Time Chat & Collaboration Systems Architecture](04-realtime-chat.md)
 - [Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns](../01-messaging/02-pub-sub.md)
-- [Clocks and Ordering](../../04-distributed-systems/01-consensus/03-clocks-ordering.md)
+- [Chapter 8 References](05-references.md)

@@ -2,6 +2,7 @@
 title: "Distributed Query Execution, Global Secondary Indexes, and Point-In-Time Recovery (PITR)"
 weight: 7
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,21 @@ A query coordinator parses and plans a statement, resolves partition predicates,
 A local secondary index accelerates predicates on one partition. A global secondary index records a partition key together with indexed values and is maintained asynchronously or synchronously depending on the service. Because writes can arrive on many partitions, global indexes require a consistency model, duplicate handling, and a repair path when a partition or consumer fails. A query can use the global index to produce candidate keys, then fetch rows from the owning partitions.
 
 PITR uses a base backup as the starting image and archives WAL segments or an equivalent redo log continuously. Recovery restores the base image into a clean destination, confirms the target timestamp, replays archived changes through that point, and verifies integrity before the restored instance becomes writable. Continuous log archiving reduces the recovery point objective (RPO) to the archive lag; restore and replay time determine the recovery time objective (RTO). Change data capture (CDC) uses the same durable change stream for downstream consumers rather than only for rollback.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Coordinator
+    participant ShardA
+    participant ShardB
+    Client->>Coordinator: Query with cross-shard predicates
+    Coordinator->>ShardA: Push predicate and local plan
+    Coordinator->>ShardB: Push predicate and local plan
+    ShardA-->>Coordinator: Partial rows or aggregate
+    ShardB-->>Coordinator: Partial rows or aggregate
+    Coordinator->>Coordinator: Merge results at the required consistency
+    Coordinator-->>Client: Distributed query result
+```
 
 ```sql
 CREATE INDEX orders_status_created_idx
@@ -73,8 +89,6 @@ pitr:
 
 ## Related
 
-- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse)](03-storage-engines.md)
-- [Database Replication (Leader-Follower, Multi-Leader, Leaderless/Dynamo-Style)](05-replication.md)
+- [Storage Engines: OLTP (Row-Oriented) vs OLAP (Columnar/Parquet/ClickHouse/Apache Arrow In-Memory Engine)](03-storage-engines.md)
+- [Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)](05-replication.md)
 - [Partitioning & Sharding Strategies: Range, Hash, List, and Directory-Based Sharding](06-sharding.md)
-- [NoSQL Classifications: Key-Value, Document, Columnar (Cassandra), and Graph Databases (Neo4j)](02-nosql.md)
-- [Data Architecture & Lakehouse Engines](../../03-messaging/03-data-engineering-stream-processing/02-lakehouse-architectures.md)

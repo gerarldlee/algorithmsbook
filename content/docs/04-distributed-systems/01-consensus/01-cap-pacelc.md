@@ -2,6 +2,7 @@
 title: "The CAP Theorem, PACELC, and Architectural Trade-offs"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,17 @@ The CAP theorem describes the consistency-availability trade-off of a replicated
 During a partition, a CP design preserves one agreed history by rejecting operations that cannot reach a quorum, so requests may fail while a minority is isolated. An AP design continues serving reachable replicas, accepts divergent work, and reconciles conflicts later. The decision is operational rather than a permanent label: a system can expose strong consistency for some operations and eventual consistency for others.
 
 The normal-operation branch matters because coordination is expensive even when no partition exists. A low-latency design can read a nearby replica and return immediately, while a consistency-first design waits for enough acknowledgement to establish the requested consistency. Quorums provide one common mechanism: with `N` replicas, overlapping read and write quorums satisfy `R + W > N`, but that equation alone does not establish linearizability without versioning, conflict rules, or a stronger coordination protocol.
+
+```mermaid
+flowchart LR
+    Request --> Partition{Partition?}
+    Partition -- Yes --> Guarantee{C or A?}
+    Guarantee -- C --> Reject[Reject without a quorum]
+    Guarantee -- A --> Diverge[Accept and reconcile later]
+    Partition -- No --> Normal{E or C?}
+    Normal -- E --> Nearby[Read a nearby replica]
+    Normal -- C --> Acknowledge[Wait for required acknowledgement]
+```
 
 ```yaml
 partition_behavior:
@@ -63,8 +75,6 @@ examples:
 
 ## Related
 
-- [Consensus Protocols](02-consensus.md)
-- [Clocks & Ordering](03-clocks-ordering.md)
-- [Distributed Transactions](04-distributed-transactions.md)
-- [Replication](../02-databases/05-replication.md)
-- [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
+- [Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)](02-consensus.md)
+- [Database Replication & Data Synchronization: Leader-Follower, Multi-Leader, Leaderless (Dynamo-Style), Change Data Capture (CDC), Active-Active Multi-Region Sync, and Point-In-Time Recovery (PITR)](../02-databases/05-replication.md)
+- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](../02-databases/04-acid-isolation.md)

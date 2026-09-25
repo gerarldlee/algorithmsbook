@@ -2,6 +2,7 @@
 title: "Clocks & Ordering: Physical Clocks, NTP, Logical Clocks (Lamport), and Vector Clocks"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -14,7 +15,20 @@ NTP periodically estimates clock offset and drift between hosts. The resulting t
 
 A **Lamport clock** stores one counter per process. A process increments its counter for a local event. When it receives an event with counter `C_remote`, it sets its counter to `max(C_local, C_remote) + 1`. If event `a` happens before event `b`, then `LC(a) < LC(b)`; the reverse implication is false. Two concurrent events can have equal counters or counters ordered only by an application tie-breaker, so Lamport clocks preserve causality but do not identify concurrency by themselves.
 
-A **vector clock** stores one counter per known process. A process increments its own component on a local event and merges a received vector component-wise with `max` on receipt. With complete clock knowledge, `a` happens before `b` when every component of `VC(a)` is less than or equal to the corresponding component of `VC(b)` and the vectors are not equal. Events are concurrent when neither vector dominates the other component-wise. The metadata grows with the number of processes, and a partial vector clock cannot prove causality for omitted processes. Linearizability applies a real-time order to individual operations, while serializability orders transactions without requiring that non-overlapping transactions follow wall-clock time; strict serializability adds that real-time constraint.
+A **vector clock** stores one counter per known process. A process increments its own component on a local event and merges a received vector component-wise with `max` on receipt. With complete clock knowledge, `a` happens before `b` when every component of `VC(a)` is less than or equal to the corresponding component of `VC(b)` and at least one component of `VC(a)` is strictly smaller. Events are concurrent when neither vector is component-wise less than or equal to the other. The metadata grows with the number of processes, and a partial vector clock cannot prove causality for omitted processes. Linearizability applies a real-time order to individual operations, while serializability orders transactions without requiring that non-overlapping transactions follow wall-clock time; strict serializability adds that real-time constraint.
+
+```mermaid
+sequenceDiagram
+    participant A
+    participant B
+    A->>A: Local event: A component + 1
+    A->>B: Send event with vector [2, 0]
+    B->>B: Local event: B component + 1
+    B-->>A: Return vector [2, 1]
+    A->>A: Merge component-wise maximum
+    Note over A,B: A dominates the sent event <br/> the returned event dominates it
+    
+```
 
 ```yaml
 physical_clock:
@@ -31,8 +45,8 @@ vector_clock:
   state: one counter per known process
   local_event: increment the local process component
   receive: merge component-wise with max
-  causality: a happens-before b when VC(a) is component-wise less than or equal to VC(b) and the vectors differ
-  concurrency: neither vector strictly dominates the other
+  causality: a happens-before b when every VC(a) component is at most its VC(b) component and at least one is strictly smaller
+  concurrency: neither vector is component-wise less than or equal to the other
 linearizability:
   order: one order consistent with non-overlapping real-time invocations and responses
 serializability:
@@ -66,7 +80,5 @@ serializability:
 ## Related
 
 - [Consensus Protocols: Paxos, Raft, Multi-Paxos, and Distributed Locks (Chubby, Redlock)](02-consensus.md)
-- [Distributed Transactions](04-distributed-transactions.md)
-- [The CAP Theorem, PACELC, and Architectural Trade-offs](01-cap-pacelc.md)
-- [ACID and Isolation Levels](../02-databases/04-acid-isolation.md)
-- [Distributed Presence Engines](../../03-messaging/02-realtime/03-presence-engines.md)
+- [Distributed Transactions: Two-Phase Commit (2PC), Three-Phase Commit (3PC), and the Saga Pattern](04-distributed-transactions.md)
+- [ACID Guarantees & Transaction Isolation Levels (Read Committed, Repeatable Read, Serializable)](../02-databases/04-acid-isolation.md)

@@ -2,6 +2,7 @@
 title: "Container Orchestration: Kubernetes Architecture (Control Plane, Worker Nodes, Pods, Services, Ingress)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -10,7 +11,29 @@ Kubernetes is a declarative orchestration system that schedules and operates con
 ## How it works
 A Kubernetes cluster has a **control plane** and **worker nodes**. The API server exposes the HTTP API and authenticates requests. `etcd` stores the API objects that represent desired state. The scheduler selects a node for each pending Pod, while the controller manager runs reconciliation loops such as the Deployment and ReplicaSet controllers. A worker runs `kubelet`, which asks the CRI runtime to start and monitor Pod containers, along with a Container Network Interface (CNI) plugin and other node services.
 
-A Pod is the smallest schedulable Kubernetes object. Its containers share a network namespace and declared volumes, so a Pod is the deployment boundary when those containers must communicate directly. A Deployment manages a ReplicaSet, and the ReplicaSet controller creates or deletes Pods to match the declared replica count and pod template. The Horizontal Pod Autoscaler can change a workload's scale through its scale subresource when metrics satisfy its configured policy.
+A Pod is the smallest schedulable Kubernetes object. Its containers share a network namespace and declared volumes, so a Pod is the deployment boundary when those containers must communicate directly. A Deployment manages a ReplicaSet, and the ReplicaSet controller creates or deletes Pods to match the declared replica count and pod template. Every `spec.selector.matchLabels` entry must be present with the same value in `spec.template.metadata.labels`; template labels may be a superset, while a selector label that the template omits or changes is invalid because the Deployment would no longer identify its own Pods. Keep the selector stable after creation. The Horizontal Pod Autoscaler can change a workload's scale through its scale subresource when metrics satisfy its configured policy.
+
+```mermaid
+sequenceDiagram
+    participant User as kubectl client
+    participant API as API server
+    participant Store as etcd
+    participant Deploy as Deployment controller
+    participant RS as ReplicaSet controller
+    participant Kubelet as kubelet
+    participant Runtime as CRI runtime
+    User->>API: Create Deployment
+    API->>Store: Persist desired object
+    Deploy->>Store: Create matching ReplicaSet
+    RS->>Store: Create Pods from template
+    API->>Kubelet: Watch assigned Pods
+    Kubelet->>Runtime: Pull image and create containers
+    Runtime-->>Kubelet: Container status
+    Kubelet->>API: Update Pod status
+    API->>Store: Persist status
+    Deploy->>Store: Publish observed status
+    Store-->>User: Watch desired and actual state
+```
 
 A Service provides a stable virtual endpoint and selects Pods through labels. Ingress defines host and path rules, but an ingress controller or gateway must implement those rules. NetworkPolicy objects restrict traffic when the installed CNI and policy engine support them.
 
@@ -119,7 +142,6 @@ Kubernetes updates run through reconciliation rather than a single transaction a
 
 ## Related
 - [Container Internals: Docker, OCI Runtimes, Linux Namespaces, and cgroups](01-container-internals.md)
-- [CI/CD Workflows, Automated Testing Pipelines, and GitOps Engines (ArgoCD, Flux)](04-cicd-gitops.md)
-- [Observability Platforms: Structured Logging, Metrics (Prometheus), Distributed Tracing (OpenTelemetry), and Alerting](05-observability.md)
 - [Deployment Strategies: Blue-Green, Canary Releases, Rolling Updates, and Shadow Deployments](03-deployment-strategies.md)
-- [AppSec & Threat Defense: OWASP Top 10, Threat Modeling, Secrets Management (HashiCorp Vault), and Supply-Chain Security](../../02-system-design/01-system-design-fundamentals/07-appsec-threat-defense.md)
+- [Observability Platforms & Low-Level Profiling](05-observability.md)
+- [Chapter 12: References](06-references.md)
