@@ -81,6 +81,7 @@ toc: true
 | `toc` | `toc: true` on chapters (explicit, even though Hextra defaults to `true`). Omit on `_index.md`, `content/about.md` and the `00-essentials` reference pages. `toc: false` hides the right-hand in-page TOC. |
 | `next` / `prev` | Only used to override the Hextra pager link; `content/docs/_index.md` sets `next: 01-algorithms`. |
 | `type` | Only `content/about.md` (`type: about`). Section/category `_index.md` files get a plain docs page. |
+| `level` | Required on chapter pages: `normal` or `advanced`. Accept `easy` as an alias for `normal`. The page label is the default for its sections. |
 | `tabs` | Not used. The header language selector filters tagged fences directly; keep the six language fences in the fixed order (§6). |
 | `draft` | Never in committed content. `hugo new` emits `draft: true`, so remove the key once the chapter is written; drafts are previewed with `hugo server -D` and are excluded from the production build. |
 
@@ -111,6 +112,23 @@ chapters) and `Tradeoffs` (54) are mutually exclusive in today's content and sit
 `How it works`; pick the one that fits the topic. Extra `##` sections are not used in the current
 outline, and `###` sub-headings are used sparingly (15 in the whole book) — prefer folding material
 into the canonical sections.
+
+### Level labels
+
+Add a page-level `level` to every chapter using `normal` or `advanced`; treat `easy` as an alias for
+`normal`. A section inherits its page level unless it is specifically more advanced. Label such a
+section with the `level` shortcode:
+
+```text
+{{< level "advanced" >}}
+This section is shown only when the reader selects Advanced.
+{{< /level >}}
+```
+
+The shortcode must render its inner Markdown and expose a `data-level` attribute. The header level
+selector exposes `All`, `Normal`, and `Advanced`; `All` shows everything, while the other choices
+show only matching page and section levels. Add page labels to existing chapters and label advanced
+sections within otherwise-normal pages.
 
 Complexity tables in use (any of these shapes is fine — pick the one that fits, keep the header):
 
@@ -251,7 +269,8 @@ as described in §6; do not wrap them in tab shortcodes.
    any `Related` links pointing at moved files.
 2. `hugo new content docs/<part>/<category>/<NN-slug>.md` → fills the §4 front matter (YAML `---`,
    quoted `title`, `weight` = prefix, `toc: true`, `draft: true`) and the §5 skeleton.
-3. Write the §5 sections in order; add `Complexity` or `Tradeoffs`, never both.
+3. Write the §5 sections in order; add `Complexity` or `Tradeoffs`, never both. Add the page-level
+   `level: normal` or `level: advanced` label, and wrap advanced-only sections with the `level` shortcode.
 4. For an algorithm topic, write the full six-language group of §6 — same algorithm, same type
    names, same operation set, in the fixed order — instead of a single-language snippet.
 5. Add the page to the parent `_index.md` bullet list at the right position — until you do, the page

@@ -127,10 +127,13 @@ For every algorithm chapter:
 - [x] 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
 - [x] 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
 
-### Chapter 5C — Object-Oriented Programming & Software Design Principles
+### Chapter 5C — Object-Oriented Design, Refactoring & Software Craftsmanship
 
 - [ ] 5C.1 OOP Foundations & SOLID Principles
 - [ ] 5C.2 Classic Software Design Patterns (Creational, Structural, Behavioral)
+- [ ] 5C.3 Refactoring Mechanics & Technical Debt Reduction (Red-Green-Refactor Cycle, Technical Debt Quadrants)
+- [ ] 5C.4 Code Smells Catalog (Bloaters, Object-Oriented Abusers, Change Preventers, Dispensables, Couplers)
+- [ ] 5C.5 Refactoring Techniques (Composing Methods, Moving Features, Organizing Data, Simplifying Conditionals & Method Calls, Dealing with Generalization)
 
 ### Chapter 6 — Caching Strategies & Edge Acceleration
 
@@ -147,6 +150,7 @@ For every algorithm chapter:
 - [x] 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
 - [x] 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
 - [x] 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
+- [ ] 7.5 Fast Data Propagation Mechanics: Gossip Protocols, Epidemic Dissemination, Anti-Entropy Mechanisms, Overlay Networks, and Low-Latency Broadcast Trees
 
 ### Chapter 7A — Data Engineering & Stream Processing
 
@@ -214,9 +218,11 @@ For every algorithm chapter:
 ### Chapter 13 — Machine Learning & Deep Learning Foundations
 
 - [x] 13.1 Supervised Learning: Linear/Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost)
+  - [ ] Supervised Classifiers & Kernel Methods: Support Vector Machines (SVM), LightGBM/CatBoost, and k-Nearest Neighbors (k-NN)
 - [x] 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
 - [x] 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
 - [x] 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
+  - [ ] Sequence & Spatial-Temporal Models: LSTMs, GRUs, Object Tracking (YOLO, ByteTRACK, DeepSORT), and Video Transformers (3D-CNNs, SlowFast)
 - [x] 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics
 
 ### Chapter 14 — MLOps & Production Machine Learning Systems
@@ -373,8 +379,9 @@ For every algorithm chapter:
 
 ### Chapter 34 — Media Streaming & Cloud Storage Systems
 
-- [ ] 34.1 System Design: YouTube Streaming Platform (Video Transcoding Pipeline, Adaptive Bitrate Streaming - HLS/DASH, CDN Storage)
+- [ ] 34.1 System Design: Video Streaming Platforms (YouTube & Netflix Video Transcoding Pipelines, Adaptive Bitrate Streaming - HLS/DASH, Open Connect Appliance CDN Storage, Per-Title Encoding)
 - [ ] 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
+- [ ] 34.3 System Design: Real-Time CCTV Video Analytics & Theft Detection Engine (RTSP Stream Ingestion, Edge-Cloud Hybrid Inference, Motion Detection Filters, Object ReID, Spatial-Temporal Action Recognition, Evidence Clip Archival)
 
 ### Chapter 35 — Modular Systems & Plugin Architecture
 

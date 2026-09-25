@@ -74,10 +74,13 @@
 * 5B.2 Domain-Driven Design & Event Architectures: DDD Bounded Contexts, CQRS, Event Sourcing, and Transactional Outbox Pattern
 * 5B.3 Resilience & Fault Tolerance Patterns: Circuit Breakers, Bulkheading, Exponential Backoff with Jitter, Retry Strategies, and Timeout Budgets
 
-### Chapter 5C: Object-Oriented Programming & Software Design Principles
+### Chapter 5C: Object-Oriented Design, Refactoring & Software Craftsmanship
 
 * 5C.1 OOP Foundations & SOLID Principles: Encapsulation, Abstraction, Inheritance, Polymorphism, Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
 * 5C.2 Classic Software Design Patterns: Creational (Factory, Abstract Factory, Builder, Singleton, Prototype), Structural (Adapter, Bridge, Composite, Decorator, Facade, Proxy), Behavioral (Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor)
+* 5C.3 Refactoring Mechanics & Technical Debt Reduction: Definition, Technical Debt Quadrants, Clean Code Principles, Red-Green-Refactor Cycle, Safe Refactoring Workflows
+* 5C.4 Code Smells Catalog: Bloaters (Long Method, Large Class, Long Parameter List), Object-Oriented Abusers (Switch Statements, Refused Bequest, Alternative Classes), Change Preventers (Divergent Change, Shotgun Surgery), Dispensables (Comments, Duplicate Code, Dead Code, Lazy Class), Couplers (Feature Envy, Inappropriate Intimacy, Message Chains, Middle Man)
+* 5C.5 Refactoring Techniques: Composing Methods (Extract/Inline Method, Replace Temp with Query), Moving Features Between Objects (Move Method/Field, Extract Class), Organizing Data (Self Encapsulate Field, Replace Magic Number with Symbolic Constant), Simplifying Conditional Expressions (Decompose Conditional, Replace Conditional with Polymorphism), Simplifying Method Calls (Rename Method, Add/Remove Parameter), Dealing with Generalization (Pull Up/Push Down Field/Method, Extract Interface/Superclass)
 
 ### Chapter 6: Caching Strategies & Edge Acceleration
 
@@ -96,6 +99,7 @@
 * 7.2 Publish-Subscribe (Pub/Sub) Architecture Mechanics & Fan-Out Design Patterns
 * 7.3 Message Delivery Guarantees: At-Most-Once, At-Least-Once, and Exactly-Once (Idempotency Patterns)
 * 7.4 Backpressure, Dead Letter Queues (DLQ), and Event Replay Frameworks
+* 7.5 Fast Data Propagation Mechanics: Gossip Protocols, Epidemic Dissemination, Anti-Entropy Mechanisms, Overlay Networks, and Low-Latency Broadcast Trees
 
 ### Chapter 7A: Data Engineering & Stream Processing
 
@@ -171,7 +175,7 @@
 * 13.1 Supervised Learning: Linear/Logistic Regression, Decision Trees, Random Forests, Gradient Boosting (XGBoost)
 * 13.2 Unsupervised Learning: K-Means, Hierarchical Clustering, Principal Component Analysis (PCA)
 * 13.3 Neural Network Mechanics: Forward/Backpropagation, Activation Functions, Loss Functions, and Optimizers (Adam, SGD)
-* 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs)
+* 13.4 Deep Learning Architectures: Convolutional Neural Networks (CNNs), Recurrent Neural Networks (RNNs, LSTMs, GRUs), Object Detection & Tracking (YOLO, ByteTRACK, DeepSORT), Spatial-Temporal Action Recognition (3D-CNNs, Video Transformers), and Autoencoders
 * 13.5 Transformer Architecture: Self-Attention Mechanics, Scaled Dot-Product, Positional Encodings, Multi-Head Attention, and FlashAttention Mechanics
 
 ### Chapter 14: MLOps & Production Machine Learning Systems
@@ -334,9 +338,10 @@
 
 ### Chapter 34: Media Streaming & Cloud Storage Systems
 
-* 34.1 System Design: YouTube Streaming Platform (Video Transcoding Pipeline, Adaptive Bitrate Streaming - HLS/DASH, CDN Storage)
+* 34.1 System Design: Video Streaming Platforms (YouTube & Netflix Video Transcoding Pipelines, Adaptive Bitrate Streaming - HLS/DASH, Open Connect Appliance CDN Storage, Per-Title Encoding)
 * 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
-
+* 34.3 System Design: Real-Time CCTV Video Analytics & Theft Detection Engine (RTSP Stream Ingestion, Edge-Cloud Hybrid Inference, Motion Detection Filters, Object ReID, Spatial-Temporal Action Recognition, Evidence Clip Archival)
+* 
 ### Chapter 35: Modular Systems & Plugin Architecture
 
 * 35.1 System Design: Dynamic & Multi-Module Loading Systems (Plugin Architecture, Dynamic Linking, Module Sandboxing, Runtime Hot-Swapping)
