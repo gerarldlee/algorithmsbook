@@ -57,7 +57,7 @@ jobs:
           hugo \
             --gc --minify \
             --cleanDestinationDir \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+            --baseURL "https://gerarldlee.github.io/algorithmsbook/"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

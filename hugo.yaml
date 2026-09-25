@@ -1,9 +1,9 @@
 # Hugo configuration file
 title: Learn Algorithms & System Design
-baseURL: "/"
+baseURL: "https://algorithmsbook-fociilabs-com.vercel.app/"
 languageCode: "en-us"
 
-relativeURLs: true
+relativeURLs: false
 canonifyURLs: false
 
 # import hextra as module
