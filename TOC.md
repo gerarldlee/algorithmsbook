@@ -342,7 +342,6 @@
 * 34.1 System Design: Video Streaming Platforms (YouTube & Netflix Video Transcoding Pipelines, Adaptive Bitrate Streaming - HLS/DASH, Open Connect Appliance CDN Storage, Per-Title Encoding)
 * 34.2 System Design: Google Drive / Cloud Sync Architecture (Chunking Engine, File Delta Sync, Metadata Storage, Block Deduplication)
 * 34.3 System Design: Real-Time CCTV Video Analytics & Theft Detection Engine (RTSP Stream Ingestion, Edge-Cloud Hybrid Inference, Motion Detection Filters, Object ReID, Spatial-Temporal Action Recognition, Evidence Clip Archival)
-* 
 ### Chapter 35: Modular Systems & Plugin Architecture
 
 * 35.1 System Design: Dynamic & Multi-Module Loading Systems (Plugin Architecture, Dynamic Linking, Module Sandboxing, Runtime Hot-Swapping)

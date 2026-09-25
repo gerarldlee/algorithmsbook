@@ -12,7 +12,7 @@ enforces the parts that can be checked mechanically.
 | `hugo.yaml` | Site config: menus, author/footer params, `editURL`, markup (raw HTML allowed, math passthrough delimiters). |
 | `go.mod` / `go.sum` | Hextra `v0.12.3` imported as a **Go module**. There is deliberately no `themes/` directory and no git submodule — do not re-add one. |
 | `content/` | All prose. `content/docs/**` = the book; `content/_index.md` = home; `content/about.md` = about page. |
-| `TOC.md` | Canonical expanded outline; the implemented book currently reaches Chapter 15, while later topics remain future scope. Keep implemented pages and navigation synchronized as sections are added (and vice versa). |
+| `TOC.md` | Canonical expanded outline; the implemented book currently reaches Chapter 35. Keep implemented pages and navigation synchronized as sections are added (and vice versa). |
 | `archetypes/default.md` | Template used by `hugo new`: derives `title`/`weight` from the filename and emits the §5 skeleton. |
 | `layouts/_markup/render-link.html` | Project-level link render hook. Hextra's own hook only rewrites destinations that begin with `/`; this one also resolves **relative** destinations, which is what the content uses (§9). |
 | `tools/check_links.py` | Relative-link/front-matter/weight checker (`python tools/check_links.py`). |

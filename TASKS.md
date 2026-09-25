@@ -29,33 +29,33 @@ already exists.
 
 Apply these checks to every chapter:
 
-- [ ] Use YAML front matter with a quoted Title Case `title`.
-- [ ] Set `weight` to the two-digit filename prefix and keep sibling weights unique.
-- [ ] Set `toc: true` on chapters; omit it from navigation pages, the home page, about page, and essentials reference pages unless there is a deliberate exception.
-- [ ] Remove `draft: true` before committing a completed page.
-- [ ] Use `##` for chapter sections and never add a page-level `# H1`.
-- [ ] Keep the required section order: What it is, How it works, optional Complexity or Tradeoffs, When to use, Alternatives, Related.
-- [ ] Explain all algorithmic/CS concepts in intuitive layman's terms alongside technical definitions.
-- [ ] Use Complexity and Tradeoffs exclusively; do not include both on one chapter.
-- [ ] Put Related last, use 2–4 relative internal links, and add reciprocal links from those pages.
-- [ ] Keep chapter sources on a separate references page after all topic pages, with the last child weight and Books/Websites subsections.
-- [ ] Add a page-level `level: normal` or `level: advanced` label and wrap any more advanced section in the `level` shortcode.
-- [ ] Use active, present-tense prose, define terms on first use, and keep claims checkable.
-- [ ] Use theme-neutral Markdown; do not add hard-coded colors, inline styles, font tags, or background classes.
-- [ ] Tag every fenced code block with its language.
-- [ ] Run a production build and the link checker before publishing.
+- [x] Use YAML front matter with a quoted Title Case `title`.
+- [x] Set `weight` to the two-digit filename prefix and keep sibling weights unique.
+- [x] Set `toc: true` on chapters; omit it from navigation pages, the home page, about page, and essentials reference pages unless there is a deliberate exception.
+- [x] Remove `draft: true` before committing a completed page.
+- [x] Use `##` for chapter sections and never add a page-level `# H1`.
+- [x] Keep the required section order: What it is, How it works, optional Complexity or Tradeoffs, When to use, Alternatives, Related.
+- [x] Explain all algorithmic/CS concepts in intuitive layman's terms alongside technical definitions.
+- [x] Use Complexity and Tradeoffs exclusively; do not include both on one chapter.
+- [x] Put Related last, use 2–4 relative internal links, and add reciprocal links from those pages.
+- [x] Keep chapter sources on a separate references page after all topic pages, with the last child weight and Books/Websites subsections.
+- [x] Add a page-level `level: normal` or `level: advanced` label and wrap any advanced-only section in the `level` shortcode.
+- [x] Use active, present-tense prose, define terms on first use, and keep claims checkable.
+- [x] Use theme-neutral Markdown; do not add hard-coded colors, inline styles, font tags, or background classes.
+- [x] Tag every fenced code block with its language.
+- [x] Run a production build and the link checker before publishing.
 
 ## Algorithm examples
 
 For every algorithm chapter:
 
-- [ ] Provide the complete six-language group as one contiguous block in this order: Java, C, Python, Rust, TypeScript, Go.
-- [ ] Use the exact fence identifiers `java`, `c`, `python`, `rust`, `typescript`, and `go`.
-- [ ] Keep type names, operation sets, and algorithms equivalent across languages.
-- [ ] Keep language-specific explanations inside that language's code block as comments.
+- [x] Provide the complete six-language group as one contiguous block in this order: Java, C, Python, Rust, TypeScript, Go.
+- [x] Use the exact fence identifiers `java`, `c`, `python`, `rust`, `typescript`, and `go`.
+- [x] Keep type names, operation sets, and algorithms equivalent across languages.
+- [x] Keep language-specific explanations inside that language's code block as comments.
 - [x] Keep language order identical across groups on a page.
 - [x] Do not wrap algorithm language groups in tab shortcodes; the header selector filters tagged fences directly.
-- [ ] Include at least one Mermaid diagram with a form suited to its context: flowchart for sequential logic, state machine for modes/history, sequence diagram for interactions, data-flow diagram for information movement, timing diagram for time-critical behavior, UML class diagram for data relationships, call graph for call relationships, activity diagram for concurrency, use case diagram for user-facing functionality, or component diagram for architecture. Keep diagrams free of hard-coded colors.
+- [x] Include at least one Mermaid diagram with a form suited to its context: flowchart for sequential logic, state machine for modes/history, sequence diagram for interactions, data-flow diagram for information movement, timing diagram for time-critical behavior, UML class diagram for data relationships, call graph for call relationships, activity diagram for concurrency, use case diagram for user-facing functionality, or component diagram for architecture. Keep diagrams free of hard-coded colors.
 
 ## Part I — Fundamental Data Structures & Core Algorithms
 
