@@ -1,5 +1,5 @@
 # Hugo configuration file
-title: Learn Algorithms and Design
+title: Learn Algorithms & System Design
 baseURL: "https://gerarldlee.github.io/algorithmsbook.fociilabs.com/"
 languageCode: "en-us"
 

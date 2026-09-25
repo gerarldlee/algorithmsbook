@@ -2,6 +2,7 @@
 title: "Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,16 @@ A stack is a Last-In-First-Out (LIFO) collection, a queue is First-In-First-Out 
 A stack exposes one end: `pushBack` adds a value and `popBack` removes the most recently added value. A queue uses `pushBack` with `popFront`. A deque uses all four end operations. A circular buffer tracks a head index, a capacity, and a size, so it never shifts existing elements when it removes a value.
 
 The implementation below uses a fixed-capacity circular buffer. Every language provides the same logical operations: push and pop at either end, peek at either end, report size, and test emptiness. A full buffer rejects insertion rather than overwriting an unread value.
+
+```mermaid
+flowchart LR
+    A[Push value] --> B{Buffer full?}
+    B -->|Yes| C[Reject insertion]
+    B -->|No| D[Write at logical position]
+    D --> E[Advance head or tail]
+    E --> F[Wrap at capacity]
+    F --> G[Update size]
+```
 
 ```java
 class CircularBuffer {
@@ -472,6 +483,12 @@ func (buffer *CircularBuffer) IsFull() bool {
 
 A stack uses `pushBack` and `popBack`; a queue uses `pushBack` and `popFront`; a deque exposes all four end operations. The circular buffer is the storage mechanism underneath those restricted-access views. A linked-list implementation provides the same interface shape with per-node allocation instead of a fixed capacity.
 
+### Call stack mechanics
+
+The **call stack** is the runtime stack that records active function invocations. Each recursive call creates a **recursion frame** containing values such as the return address, arguments, local variables, and bookkeeping needed to resume the caller. A base case returns and removes its frame; without a base case, a recursive program can exhaust the stack and terminate with a stack overflow. A call tree of depth `d` uses O(d) stack space.
+
+A call in tail position makes another call as its final action and then returns. **Tail-call optimization** reuses the current frame for that final call, so a tail-recursive routine can run without growing the call stack. The optimization depends on the language and runtime; Java does not provide general tail-call optimization, while some functional language implementations do.
+
 ## Complexity
 
 | Operation | Time | Space |
@@ -480,6 +497,8 @@ A stack uses `pushBack` and `popBack`; a queue uses `pushBack` and `popFront`; a
 | Peek at either end | O(1) | O(1) auxiliary |
 | Report size or test emptiness | O(1) | O(1) auxiliary |
 | Search (unsupported interface) | O(n) | O(1) auxiliary |
+| Recursion frame push or pop | O(1) | O(1) per frame |
+| Maximum call depth d | — | O(d) |
 | Buffer storage | O(capacity) | O(capacity) |
 
 ## When to use
@@ -498,3 +517,4 @@ A stack uses `pushBack` and `popBack`; a queue uses `pushBack` and `popFront`; a
 
 - [Dynamic Arrays, Memory Allocation, and Amortized Analysis](01-dynamic-arrays.md)
 - [Linked Lists (Singly, Doubly, Skip Lists)](02-linked-lists.md)
+- [Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators](06-expression-evaluation.md)

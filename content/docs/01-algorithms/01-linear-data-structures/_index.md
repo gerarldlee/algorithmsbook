@@ -10,3 +10,5 @@ The simplest data structures that everything else builds on: arrays, linked list
 - [Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)](03-stacks-queues-deques.md)
 - [Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage](04-hash-tables.md)
 - [Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)](05-bitwise-bloom-filters.md)
+- [Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators](06-expression-evaluation.md)
+- [Chapter 1 References](07-references.md)

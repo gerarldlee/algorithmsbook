@@ -19,9 +19,9 @@ enforces the parts that can be checked mechanically.
 | `.github/workflows/pages.yaml` | CI: build with Hugo `0.159.2` and deploy to GitHub Pages on push to `main`. |
 | `public/`, `resources/`, `.hugo_build.lock` | Generated output, gitignored. **Never edit or commit.** |
 
-Current content shape: 132 Markdown files — 93 chapters (Part I 28, II 14, III 11, IV 12, V 13,
+Current content shape: 137 Markdown files — 95 chapters (Part I 30, II 14, III 11, IV 12, V 13,
 VI 15), 8 `00-essentials` reference pages, 27 `_index.md` navigation pages, `content/about.md`,
-`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 93 chapters open with the §5 sections in that order.
+`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 95 chapters open with the §5 sections in that order.
 
 ## 2. Book requirements → what they mean when you write
 
@@ -63,7 +63,7 @@ consistent with the language, theme, and content requirements they describe.
 
 ## 4. Front matter contract
 
-Every content file starts with **YAML** front matter delimited by `---`. All 132 files use YAML;
+Every content file starts with **YAML** front matter delimited by `---`. All 137 files use YAML;
 never use TOML `+++`.
 
 ```yaml
@@ -104,11 +104,14 @@ Keep to these sections, in this order, with these exact names:
 | `## Tradeoffs` | optional, mutually exclusive with `Complexity` | Only when there is a genuine design tradeoff. `- **Option** — gain, then cost.` bullets or a `\| Property \| Gain \| Cost \|` table. |
 | `## When to use` | yes | 3–6 bullets, each phrased as a condition the reader can check ("You need X …"). |
 | `## Alternatives` | yes | Bullets: `**Named alternative** — when it wins, and what it costs.` |
-| `## Related` | yes | Relative links to neighbouring pages. Place it immediately before `References`. |
-| `## References` | yes | Source material, citations, and external links used by the chapter. Always the **last** section, with `### Books` and `### Websites` subsections. |
+| `## Related` | yes | Relative links to neighbouring pages. It is the final section in each topic page. |
 
-Every chapter must end with `## References`; `## Related` comes immediately before it. `Complexity` (39
-chapters) and `Tradeoffs` (54) are mutually exclusive in today's content and sit immediately after
+References are collected on a separate page after all topic pages in the chapter. Give that page the
+last child weight in the category, list it in the parent `_index.md`, and use reference-page front matter
+with `title` and `weight`; it is not a chapter section and does not need `toc` or `level`. The page uses
+`## Books` and `## Websites` subsections.
+
+`Complexity` (39 chapters) and `Tradeoffs` (54) are mutually exclusive in today's content and sit immediately after
 `How it works`; pick the one that fits the topic. Extra `##` sections are not used in the current
 outline, and `###` sub-headings are used sparingly (15 in the whole book) — prefer folding material
 into the canonical sections.
@@ -164,7 +167,7 @@ invisible to the language switcher and gets no syntax highlighting.
   the same API in a different dialect, not a different program.
 - Every language implements the **same operation set and the same algorithm** — no language gets a
   simplified version.
-- **Compliance today: complete.** All 28 Part I chapters carry one contiguous six-language group, and
+- **Compliance today: complete.** All 30 Part I chapters carry one contiguous six-language group, and
   so do the five algorithm-bearing chapters elsewhere (the three caching chapters, `06-sharding`,
   `01-vector-databases`). `01-dynamic-arrays.md` adds four extra complete six-language groups to
   illustrate array declaration, indexed access, iteration, and linear search — extra groups are fine,
@@ -185,6 +188,21 @@ the diagram theme with the reader's light/dark choice, so never bake colours int
 Every algorithm chapter should include at least one Mermaid illustration that shows the core data
 flow, state transition, or execution path. Keep the diagram focused on one idea, use the same
 theme-neutral conventions as the rest of the book, and place it near the mechanism it explains.
+
+Choose the Mermaid form from the mechanism being illustrated:
+
+- **Flowchart** — sequential workflows and simple procedural logic where the focus is the order of operations and conditional branches.
+- **State machine** (`stateDiagram-v2`) — behavior changes based on previous history or current modes, such as user interfaces, game logic, control systems, or event-driven systems.
+- **Sequence diagram** (`sequenceDiagram`) — interactions between multiple objects or components over time.
+- **Data-flow diagram** — how information moves through a system; use a directed flowchart when Mermaid has no dedicated data-flow form.
+- **Timing diagram** (`timingDiagram`) — time-critical behavior such as signal levels or embedded and real-time algorithms.
+- **UML class diagram** (`classDiagram`) — data structures, objects, and their relationships.
+- **Call graph** — function or procedure call relationships and recursion depth; use a directed flowchart with call nodes when Mermaid has no dedicated call-graph form.
+- **Activity diagram** (`activityDiagram`) — concurrency, swimlanes, and parallel flows.
+- **Use case diagram** — high-level system functionality from a user's perspective, not algorithm logic; use a directed flowchart with an actor when Mermaid has no dedicated use-case form.
+- **Component diagram** — architecture-level services, event producers, consumers, and brokers; use a directed flowchart with labeled component nodes when Mermaid has no dedicated component form.
+
+Do not use a generic flowchart when one of the specialized forms communicates the mechanism more accurately.
 
 **`00-essentials`** is reference material, not algorithm chapters. It uses the fixed six-language
 groups where it teaches implementation detail; do not add ad hoc language mixes there.
@@ -240,14 +258,15 @@ as described in §6; do not wrap them in tab shortcodes.
   same text as its `title` and a `NN-slug.md` (or `NN-category/`) target.
 - New categories/parts must also be added to `content/docs/_index.md` (Part lists) and, for a new
   part, to the table of contents in `content/_index.md`.
-- External sources go into the References page (`content/docs/00-essentials/08-references.md`), not
-  inline as bare URLs.
+- External sources belong on the relevant chapter's separate references page, not in individual topic
+  documents as bare URLs. Cross-book sources may also be collected in the central references page
+  (`content/docs/00-essentials/08-references.md`).
 - Images: the book has none yet. If you add one, put the file in `assets/` (processed by Hugo) or
   `static/`, and reference it site-absolute (`/images/foo.png`); Hextra's image hook resolves that
   form for both, and page-bundle resources work as well.
 - Run `python tools/check_links.py` after any link or file move; it also reports missing front
   matter, `weight`/filename mismatches, duplicate weights, unlisted pages, and stray `# H1`s.
-  (Current state: 132 files checked, 0 problems.)
+  (Current state: 137 files checked, 0 problems.)
 
 ## 10. Prose style
 
@@ -275,8 +294,9 @@ as described in §6; do not wrap them in tab shortcodes.
    names, same operation set, in the fixed order — instead of a single-language snippet.
 5. Add the page to the parent `_index.md` bullet list at the right position — until you do, the page
    is unreachable from the sidebar and `tools/check_links.py` reports it.
-6. Add `Related` links to the 2–4 nearest pages, then add the required `References` section as the final section.
-   Include `### Books` and `### Websites` subsections, then add reciprocal links from those pages' `Related`.
+6. Add `Related` links to the 2–4 nearest pages. Create or update the chapter's separate references
+   page after all topic pages, give it the last child weight, list it in the parent `_index.md`, and
+   include `## Books` and `## Websites` subsections. Add reciprocal links from those pages' `Related`.
 7. Mirror the new section in `TOC.md`.
 8. Remove `draft: true`.
 9. `hugo --gc --minify` → must build with no warnings; then `python tools/check_links.py`.

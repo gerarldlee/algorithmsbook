@@ -1,5 +1,5 @@
 ---
-title: "Learn Algorithms and Design"
+title: "Learn Algorithms & System Design"
 ---
 
 ```mermaid

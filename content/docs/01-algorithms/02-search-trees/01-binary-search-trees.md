@@ -2,6 +2,7 @@
 title: "Binary Search Trees & Self-Balancing Trees (AVL, Red-Black Trees)"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,25 @@ A binary search tree (BST) is a binary tree that keeps keys ordered: every key i
 Search compares a target with the current node and continues left or right. Insertion follows the same comparisons until it can attach a leaf. Deletion removes a leaf directly, replaces a one-child node with its child, and replaces a two-child node with its in-order successor. The implementations below expose the same `search`, `insert`, and `delete` operations in all six languages; insertion ignores duplicate keys, and deletion reports whether a key was removed.
 
 An ordinary BST can degenerate into a linked list, so its worst-case height is O(n). An **AVL tree** stores each node's height and restores a height difference of at most one with rotations after each update. A **red-black tree** stores a color bit and uses recoloring and rotations to maintain logarithmic height. Java's `TreeMap`, C++'s `std::map`, Rust's `BTreeMap`, and .NET's `SortedDictionary` use balanced search trees or related implementations.
+
+```mermaid
+classDiagram
+    class BST {
+        +Node root
+        +search(key) bool
+        +insert(key) bool
+        +delete(key) bool
+    }
+    class Node {
+        +int key
+        +Node left
+        +Node right
+        +int height
+        +string color
+    }
+    BST --> Node : stores
+    Node --> Node : left and right
+```
 
 ```java
 public class BST {
@@ -159,8 +179,6 @@ bool bst_delete(BST *tree, int key) {
         if (successor_parent != current) {
             successor_parent->left = successor->right;
             successor->right = current->right;
-        } else {
-            successor->right = NULL;
         }
         replacement = successor;
     }
@@ -525,6 +543,12 @@ func (tree *BST) Delete(key int) bool {
 }
 ```
 
+### AVL and red-black balancing
+
+An AVL tree stores the height of each node's subtree. After insertion or deletion, it updates those heights and restores the balance invariant with at most one double rotation or a sequence of single rotations. This produces a shorter tree and predictable O(log n) worst-case operations, but every update carries height bookkeeping.
+
+A red-black tree stores one color bit per node. Its constraints limit the longest root-to-leaf path to a constant multiple of the shortest path. An update repairs a red-red violation with recoloring and rotations. Red-black trees usually perform fewer rotations than AVL trees, but their invariants are more distributed and their search is less strictly height-balanced.
+
 ## Complexity
 | Operation | Time (average) | Time (worst) | Extra space |
 | --- | --- | --- | --- |
@@ -548,9 +572,7 @@ Here `n` is the number of keys and `h` is tree height. Sorted input can make an 
 - **Treap** — gives expected O(log n) operations with simpler balancing than AVL or red-black code, but its behavior depends on random priorities.
 
 ## Related
-- [Heaps and Priority Queues](02-heaps-priority-queues.md)
-- [Storage Engine Trees (B-Trees and LSM-Trees)](03-storage-engine-trees.md)
 - [Range Query Trees (Segment Trees and Fenwick Trees)](04-range-query-trees.md)
-- [Dynamic Arrays, Memory Allocation, and Amortized Analysis](../01-linear-data-structures/01-dynamic-arrays.md)
-- [Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing](../01-linear-data-structures/04-hash-tables.md)
 - [Tries, Radix Trees, and Suffix Trees/Arrays](06-tries-suffix.md)
+- [Language Parsing Data Structures: ASTs, Parse Trees, and Symbol Tables](08-language-parsing.md)
+- [Dynamic Arrays, Memory Allocation, and Amortized Analysis](../01-linear-data-structures/01-dynamic-arrays.md)

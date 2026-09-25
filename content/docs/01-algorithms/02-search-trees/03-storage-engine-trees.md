@@ -2,6 +2,7 @@
 title: "Storage Engine Trees: B-Trees, B+ Trees, and Log-Structured Merge-Trees (LSM-Trees)"
 weight: 3
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,17 @@ A B+ tree keeps separator keys in internal nodes and links leaf pages in key ord
 An LSM-tree writes updates to an in-memory **memtable**. When the memtable reaches a threshold, the engine flushes its sorted contents to an immutable **SSTable** and starts a new memtable. Reads inspect the memtable and relevant SSTables; **compaction** merges runs to remove obsolete versions and limit the number that a read must probe. Leveled and tiered compaction policies trade write cost, read cost, and temporary space differently. LevelDB and RocksDB use leveled designs, while Cassandra and HBase commonly use tiered families.
 
 The implementations below demonstrate a minimum-degree-2 B-tree with the same `search` and `insert` operations in all six languages. Storage engines add page pinning, checksums, concurrency, and recovery around this core structure.
+
+```mermaid
+flowchart LR
+    W[Write record] --> M[Memtable]
+    M -->|threshold reached| S[Immutable SSTable]
+    S --> C[Compaction]
+    C --> R[Read path]
+    Q[Read request] --> M
+    Q --> R
+    R --> V[Visible version]
+```
 
 ```java
 import java.util.ArrayList;
@@ -528,6 +540,12 @@ func (tree *BTree) insertNonFull(node *BTreeNode, key int) {
     tree.insertNonFull(node.children[index], key)
 }
 ```
+
+### B+ trees and LSM-trees
+
+A B+ tree keeps most or all records in leaves and uses internal keys mainly as separators. Because leaves are linked, a range scan follows leaf pointers instead of restarting a root search for every key. A B+ tree is therefore a strong fit for database indexes that need broad scans and predictable page access.
+
+An LSM-tree changes the write path: updates enter a memtable, reach disk as sorted immutable tables, and are merged by compaction. Reads may need to inspect several tables before finding the newest version. LSM-trees favor write-heavy workloads, but they require versioning, sequence identifiers, compaction scheduling, and recovery logic around the tree structure.
 
 ## Complexity
 | Operation or property | B-tree or B+ tree | LSM-tree |

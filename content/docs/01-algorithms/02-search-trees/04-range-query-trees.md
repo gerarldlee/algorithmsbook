@@ -2,6 +2,7 @@
 title: "Range Queries: Segment Trees, Fenwick Trees (Binary Indexed Trees), and Interval Trees"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,25 @@ A segment tree divides an array or coordinate domain in half at each level. A po
 A **Fenwick tree**, or binary indexed tree, stores the aggregate for the block ending at each one-based index `i`; that block has length `i & -i`, the value of its lowest set bit. A point update advances through `i += i & -i`. A prefix query runs backward through `i -= i & -i`. Subtracting two prefix answers gives an inclusive range sum. Fenwick trees support invertible operations such as addition and XOR, but not ordinary min or max.
 
 An **interval tree** is usually an augmented balanced search tree ordered by an interval's lower endpoint. Each node stores the greatest upper endpoint in its subtree. An overlap query first finds intervals whose lower endpoint does not exceed the query's upper endpoint, then uses the stored maxima to skip subtrees that cannot contain a match. The examples below implement the same Fenwick `add`, `prefix_sum`, and `range_sum` operations in all six languages.
+
+```mermaid
+classDiagram
+    class SegmentTree {
+        +update(index, value)
+        +query(left, right) aggregate
+    }
+    class FenwickTree {
+        +add(index, delta)
+        +prefix_sum(index)
+        +range_sum(left, right)
+    }
+    class IntervalTree {
+        +insert(interval)
+        +overlap(query)
+    }
+    SegmentTree --> SegmentTree : child segments
+    IntervalTree --> IntervalTree : ordered intervals
+```
 
 ```java
 public class FenwickTree {
@@ -221,6 +241,12 @@ func (fenwick *FenwickTree) RangeSum(left, right int) int {
 }
 ```
 
+### Segment and interval trees
+
+A segment tree is best when values belong to a known numeric domain or array positions and the query combines a small number of stored aggregates. Lazy propagation moves pending work down only when a query needs it, which is useful for range assignment, addition, and other composable transformations.
+
+An interval tree is best when records are intervals rather than positions. It orders intervals by their lower endpoints and stores subtree maxima so an overlap query can prune branches whose intervals end before the query begins. The structure can also store arbitrary interval data, so its update and query shape differs from a segment tree's fixed decomposition.
+
 ## Complexity
 | Structure and operation | Time | Extra space |
 | --- | --- | --- |
@@ -250,5 +276,5 @@ A Fenwick tree uses one additional cell for `n` input values, while a convention
 ## Related
 - [Binary Search Trees](01-binary-search-trees.md)
 - [Union-Find (Disjoint Set Union)](05-union-find.md)
-- [Storage Engine Trees (B-Trees and LSM-Trees)](03-storage-engine-trees.md)
 - [Spatial Indexing & Geospatial Data Structures](07-spatial-indexing.md)
+- [Language Parsing Data Structures: ASTs, Parse Trees, and Symbol Tables](08-language-parsing.md)

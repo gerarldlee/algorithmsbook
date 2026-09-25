@@ -2,6 +2,7 @@
 title: "Dynamic Arrays, Memory Allocation, Custom Allocators, Cache Locality, and Amortized Analysis"
 weight: 1
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,16 @@ A dynamic array is a contiguous, random-access collection whose capacity grows a
 Arrays are contiguous, indexed collections of values stored in a preallocated block of memory. An array is useful when you need fast indexed access and know an appropriate initial size. A dynamic array adds automatic capacity growth so callers do not manage resizing themselves.
 
 A fixed array and a dynamic array share the same indexing model. Their difference is ownership: the fixed array exposes allocation and capacity, while the dynamic array exposes operations such as `push`, `get`, and `size`.
+
+```mermaid
+flowchart LR
+    A[Append value] --> B{Capacity available?}
+    B -->|Yes| C[Write at size]
+    B -->|No| D[Allocate larger block]
+    D --> E[Copy existing values]
+    E --> C
+    C --> F[Increment size]
+```
 
 Declare an array of type `int`:
 
@@ -441,6 +452,14 @@ func (a *DynamicArray) resize(capacity int) {     // O(n), rare
 func (a *DynamicArray) Len() int { return a.size }
 ```
 
+### Custom allocators
+
+A **custom allocator** controls where a dynamic array obtains its backing storage and how that storage is reused. A system allocator handles general-purpose requests, while a pool or arena allocator reuses memory from a larger region. The latter can reduce allocation overhead when many short-lived collections are created, but it requires an explicit release or lifetime policy. C exposes allocation directly through functions such as `malloc` and `realloc`; Java, Python, Rust, TypeScript, and Go expose dynamic-array APIs while their runtimes or standard libraries determine the allocation strategy.
+
+### Cache locality
+
+**Cache locality** is the tendency for a processor to find nearby memory addresses quickly. A dynamic array stores values in one contiguous region, so scanning it usually touches a small number of cache lines. A linked list stores values in separate nodes, so the next access often follows a pointer to a distant address. A dynamic array therefore favors sequential scans, while a linked list can avoid moving values when insertion changes their relationships. The trade-off is that resizing copies a contiguous region and temporarily increases memory traffic.
+
 ## Complexity
 
 | Operation | Time | Space |
@@ -468,8 +487,5 @@ func (a *DynamicArray) Len() int { return a.size }
 
 - [Linked Lists (Singly, Doubly, Skip Lists)](02-linked-lists.md)
 - [Stacks, Queues, Deques, and Ring/Circular Buffers](03-stacks-queues-deques.md)
-- [Binary Search Trees](../02-search-trees/01-binary-search-trees.md)
 - [Hash Tables: Hash Functions, Collision Resolution, and Universal Hashing](04-hash-tables.md)
-- [Bitwise Algorithms, Bitsets, and Bloom Filters](05-bitwise-bloom-filters.md)
-- [Divide-and-Conquer & Advanced Sorting (Quick, Merge, Radix, Counting Sort)](../03-paradigms/01-divide-and-conquer-sorting.md)
-- [Amortized Analysis Techniques (Aggregate, Accounting, and Potential Methods)](../03-paradigms/05-amortized-analysis.md)
+- [Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators](06-expression-evaluation.md)

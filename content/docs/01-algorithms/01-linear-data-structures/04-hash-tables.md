@@ -2,6 +2,7 @@
 title: "Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage"
 weight: 4
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,18 @@ The hash function spreads keys across buckets. When two keys select the same buc
 A hash function should be deterministic during a table's lifetime, inexpensive to compute, and stable across processes when a hash is persisted. A universal hash family makes the choice of hash function less predictable. For integer keys, a common family is \(h_{a,b}(x) = ((ax+b) \bmod p) \bmod m\), where \(p\) is a prime larger than the key domain and \(m\) is the number of buckets; selecting random \(a\) and \(b\) gives a collision bound in expectation for a fixed pair of keys.
 
 Separate chaining keeps entries in a bucket collection. Open addressing is the other common strategy: it stores entries directly in the array and probes another slot after a collision. Chaining makes deletion straightforward; open addressing needs a tombstone or backward-shift policy for deletion. Either strategy requires resizing when the load factor becomes too high.
+
+```mermaid
+flowchart TD
+    A[Put key and value] --> B[Compute hash]
+    B --> C[Select bucket]
+    C --> D{Bucket already has key?}
+    D -->|Yes| E[Replace value]
+    D -->|No| F[Add entry to bucket]
+    E --> G[Update size only when new]
+    F --> G
+    G --> H[Return from operation]
+```
 
 ```java
 import java.util.ArrayList;

@@ -2,6 +2,7 @@
 title: "Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)"
 weight: 6
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,25 @@ A trie follows one character per edge from the root, creates missing nodes durin
 A suffix tree builds a compact trie of the text's suffixes. A unique sentinel ensures that every suffix reaches a leaf, and suffix links connect suffixes that omit their first character. The compact edge labels let one comparison consume many characters, and suffix links support efficient repeated-substring and longest-common-substring algorithms. A suffix array instead sorts suffix positions. Substring search can binary-search the array and compare candidates; a longest-common-prefix array lets the implementation skip portions of matching text.
 
 The implementations below expose the same string-based `insert`, `search`, and `startsWith` operations in all six languages. Production trie indexes replace fixed branches with maps, arrays, or compressed transitions according to key size and lookup patterns.
+
+```mermaid
+classDiagram
+    class Trie {
+        +insert(word)
+        +search(word) bool
+        +startsWith(prefix) bool
+    }
+    class TrieNode {
+        +bool isEnd
+        +map children
+    }
+    class SuffixIndex {
+        +search(text, pattern) matches
+    }
+    Trie --> TrieNode : owns
+    TrieNode --> TrieNode : labeled edges
+    SuffixIndex --> Trie : uses prefix relationships
+```
 
 ```java
 import java.util.HashMap;
@@ -313,6 +333,12 @@ func (trie *Trie) StartsWith(prefix string) bool {
 }
 ```
 
+### Radix trees, suffixes, and multi-pattern matching
+
+A radix tree compresses chains in an ordinary trie into labeled edges. It can reduce the number of nodes for long keys, but insertion and search must compare or split edge labels instead of consuming one character per transition.
+
+Suffix trees and suffix arrays expose substring relationships across a text. A KMP table reuses the longest prefix that can remain after a mismatch, a Rabin–Karp comparison hashes a window to reject impossible matches, and Aho–Corasick builds failure links so one scan can locate a set of patterns. These algorithms trade a preprocessing table for faster repeated or multi-pattern search.
+
 ## Complexity
 | Structure and operation | Time | Space or output |
 | --- | --- | --- |
@@ -341,5 +367,5 @@ Here `L` is the inspected key length, `m` is the pattern length, and `n` is the 
 ## Related
 - [Binary Search Trees](01-binary-search-trees.md)
 - [Divide and Conquer Sorting](../03-paradigms/01-divide-and-conquer-sorting.md)
-- [Amortized Analysis](../03-paradigms/05-amortized-analysis.md)
 - [Finite Automata & Formal Languages](../04a-computational-theory/03-automata-formal-languages.md)
+- [Language Parsing Data Structures: ASTs, Parse Trees, and Symbol Tables](08-language-parsing.md)

@@ -2,6 +2,7 @@
 title: "Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing"
 weight: 7
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,17 @@ A **quadtree** works like filing papers into progressively smaller folders. Each
 An **R-tree** stores rectangles rather than quadrants. Objects are grouped when their bounding rectangles fit in a larger rectangle, so child rectangles may overlap. This makes R-trees natural for rectangles, polygons, and mixed dimensions, but updates can require a split or a parent adjustment. A **KD-tree** alternates or chooses a coordinate for each split and is efficient for point data, especially with a balanced build. A **geohash** interleaves longitude and latitude bits and encodes the result in base 32. It is excellent for prefix filtering and cache keys, but nearby points can fall on opposite sides of a cell boundary, so production systems use bounding boxes or multiple neighboring cells.
 
 The implementation below uses one equivalent operation set in all six languages: `insert`, `query`, `nearest`, and `geohash`. Its concrete index is a quadtree over normalized coordinates from 0 to 1, and every implementation returns exactly the requested number of geohash characters. C reports an invalid insert with `false` and returns `NULL` for an invalid geohash request; the other languages throw or panic on the same normalized-coordinate and nonnegative-precision requirements. The same algorithm makes the comparison concrete; databases such as PostGIS, Elasticsearch, and MongoDB choose among these structures according to object shape, update rate, and query mix.
+
+```mermaid
+flowchart LR
+    Q[Map viewport or radius] --> R[Region index]
+    R --> C[Candidate regions]
+    C --> F[Filter exact geometry]
+    F --> O[Ordered results]
+    P[Point or geometry] --> R
+    P --> U[Update and rebalance]
+    U --> R
+```
 
 ```java
 import java.util.ArrayList;
@@ -899,6 +911,12 @@ func (index *SpatialIndex) Geohash(point Point, precision int) string {
     return string(result)
 }
 ```
+
+### R-trees and KD-trees
+
+An R-tree groups objects under bounding rectangles. It is a good general-purpose index for rectangles, polygons, and mixed dimensions, but overlapping children can return more candidates than a quadtree. Insertion may split or redistribute nodes and propagate the change upward.
+
+A KD-tree splits points by a chosen coordinate at each level. A balanced build is efficient for point data and exact nearest-neighbor queries, but the split order must reflect the dataset's dimensions. Dynamic updates, deletions, and highly clustered distributions can make a KD-tree harder to keep balanced. R-trees and KD-trees solve the same pruning problem with different geometry assumptions.
 
 ## Complexity
 For \(n\) points, \(d\) dimensions, and a well-distributed spatial tree, the following are typical bounds. Exact constants depend on the object shape, fanout, depth cap, and query selectivity; clustered or collocated data can force a traversal to visit most nodes.

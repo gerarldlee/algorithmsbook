@@ -2,6 +2,7 @@
 title: "Linked Lists (Singly, Doubly, Skip Lists)"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -13,6 +14,15 @@ A linked list is a sequential collection of nodes, each holding a value and a re
 A singly linked list stores each value in a node with one forward reference. A doubly linked list adds a backward reference, which makes traversal in both directions and removal of a known node easier. A skip list adds multiple ordered levels so search can skip large ranges of nodes, at the cost of additional pointers and update work.
 
 The implementation below demonstrates a singly linked list. Every language provides the same logical operations: push a value at the head, remove the first matching value, test membership, convert the list to an array, and report its size. A production implementation would also define ownership and memory-release rules for its language.
+
+```mermaid
+flowchart LR
+    A[New value] --> B[Allocate node]
+    B --> C[Point node to head]
+    C --> D[Update head]
+    D --> E[Increment size]
+    E --> F[Stop at null]
+```
 
 ```java
 class Node {
@@ -401,6 +411,12 @@ func (list *LinkedList) Length() int {
 
 A **singly linked node** has one forward reference and is the smallest representation. A **doubly linked node** also stores a backward reference, which supports reverse traversal and O(1) removal when the node is already known. A **skip list** stores several forward references at increasing levels, so search can skip larger ranges while retaining node-based updates.
 
+### Trivia: traversing and inverting
+
+Traversal starts at the head and follows each `next` reference until it reaches null. It visits every node once, so a complete traversal takes O(n) time and can feed a search, a conversion to another collection, or a recursive operation.
+
+Inversion changes every `next` reference to point toward the previous node. Save the current node's following node, redirect the current node backward, then advance using the saved reference. Start with an empty previous node, and after the final step the previous node is the new head. The operation takes O(n) time and O(1) auxiliary space, but it changes the order visible to every holder of the list.
+
 ## Complexity
 
 | Operation | Time | Space |
@@ -409,6 +425,7 @@ A **singly linked node** has one forward reference and is the smallest represent
 | Search | O(n) | O(1) |
 | Push at head | O(1) | O(1) |
 | Remove first matching value | O(n) | O(1) |
+| Reverse in place | O(n) | O(1) |
 | Convert to an array | O(n) | O(n) output |
 | Report size | O(1) | O(1) |
 

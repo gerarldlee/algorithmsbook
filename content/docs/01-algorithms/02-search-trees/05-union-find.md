@@ -2,6 +2,7 @@
 title: "Disjoint-Set Data Structures (Union-Find with Path Compression)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,16 @@ Union-find, also called disjoint-set union, maintains a partition of elements in
 Every element stores a parent index. A root is its own parent and represents one set. `find` follows parent pointers to a root, then points each visited node directly to that root with **path compression**. `union` finds both roots and attaches the lower-rank or smaller tree below the higher-rank or larger one with **union by rank** or **union by size**. The root choice bounds tree height, while compression shortens future traversals.
 
 The implementations below expose the same `find`, `union`, and `connected` operations in all six languages. Applications use them for connected components, Kruskal's minimum spanning tree algorithm, image region grouping, and equivalence relations.
+
+```mermaid
+flowchart TD
+    A[find element] --> B{Root reached?}
+    B -->|No| C[Follow parent pointer]
+    C --> A
+    B -->|Yes| D[Compress visited path]
+    D --> E[union roots]
+    E --> F[Attach by rank or size]
+```
 
 ```java
 public class UnionFind {
@@ -278,6 +289,12 @@ func (unionFind *UnionFind) Connected(left, right int) bool {
     return unionFind.Find(left) == unionFind.Find(right)
 }
 ```
+
+### Union by rank and path compression
+
+Union by rank or size keeps the shallower or smaller tree attached beneath the other tree. This prevents a sequence of unions from building a deep chain when the implementation chooses roots well. Path compression then shortens existing chains during `find`. The two techniques work together: the union rule limits future height, while compression improves paths that already exist.
+
+The amortized O(α(n)) bound describes a sequence of `find` and `union` operations, not one isolated call. With either optimization alone, the bound is weaker, so implementations generally enable both when the partition changes repeatedly.
 
 ## Complexity
 | Operation | Time | Extra space | Stored state |

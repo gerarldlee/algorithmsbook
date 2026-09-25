@@ -37,7 +37,9 @@ Apply these checks to every chapter:
 - [ ] Keep the required section order: What it is, How it works, optional Complexity or Tradeoffs, When to use, Alternatives, Related.
 - [ ] Explain all algorithmic/CS concepts in intuitive layman's terms alongside technical definitions.
 - [ ] Use Complexity and Tradeoffs exclusively; do not include both on one chapter.
-- [ ] Put Related last and use relative internal links.
+- [ ] Put Related last, use 2–4 relative internal links, and add reciprocal links from those pages.
+- [ ] Keep chapter sources on a separate references page after all topic pages, with the last child weight and Books/Websites subsections.
+- [ ] Add a page-level `level: normal` or `level: advanced` label and wrap any more advanced section in the `level` shortcode.
 - [ ] Use active, present-tense prose, define terms on first use, and keep claims checkable.
 - [ ] Use theme-neutral Markdown; do not add hard-coded colors, inline styles, font tags, or background classes.
 - [ ] Tag every fenced code block with its language.
@@ -47,13 +49,13 @@ Apply these checks to every chapter:
 
 For every algorithm chapter:
 
-- [ ] Provide the complete six-language group in this order: Java, C, Python, Rust, TypeScript, Go.
+- [ ] Provide the complete six-language group as one contiguous block in this order: Java, C, Python, Rust, TypeScript, Go.
 - [ ] Use the exact fence identifiers `java`, `c`, `python`, `rust`, `typescript`, and `go`.
 - [ ] Keep type names, operation sets, and algorithms equivalent across languages.
 - [ ] Keep language-specific explanations inside that language's code block as comments.
 - [x] Keep language order identical across groups on a page.
 - [x] Do not wrap algorithm language groups in tab shortcodes; the header selector filters tagged fences directly.
-- [ ] Use Mermaid fences for diagrams and keep diagrams free of hard-coded colors.
+- [ ] Include at least one Mermaid diagram with a form suited to its context: flowchart for sequential logic, state machine for modes/history, sequence diagram for interactions, data-flow diagram for information movement, timing diagram for time-critical behavior, UML class diagram for data relationships, call graph for call relationships, activity diagram for concurrency, use case diagram for user-facing functionality, or component diagram for architecture. Keep diagrams free of hard-coded colors.
 
 ## Part I — Fundamental Data Structures & Core Algorithms
 
@@ -64,7 +66,7 @@ For every algorithm chapter:
 - [x] 1.3 Stacks, Queues, Deques, Ring/Circular Buffers, and Call Stack Mechanics (Tail-Call Optimization, Recursion Frames)
 - [x] 1.4 Hash Tables: Hash Functions, Collision Resolution, Universal Hashing, and In-Memory Key-Value Storage
 - [x] 1.5 Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)
-- [ ] 1.6 Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators
+- [x] 1.6 Expression Evaluation: Reverse Polish Notation (RPN), Shunting-Yard Algorithm, and Stack Calculators
 
 ### Chapter 2 — Hierarchical Data Structures, Search Trees & Spatial Indexing
 
@@ -75,7 +77,7 @@ For every algorithm chapter:
 - [x] 2.5 Disjoint-Set Data Structures (Union-Find with Path Compression)
 - [x] 2.6 Tries, Radix Trees, Suffix Trees/Arrays, and Advanced String Matching (KMP, Rabin-Karp, Aho-Corasick)
 - [x] 2.7 Spatial Indexing & Geospatial Data Structures: Quadtrees, R-Trees, KD-Trees, and Geohashing
-- [ ] 2.8 Language Parsing Data Structures: Abstract Syntax Trees (AST), Parse Trees, and Symbol Tables
+- [x] 2.8 Language Parsing Data Structures: Abstract Syntax Trees (AST), Parse Trees, and Symbol Tables
 
 ### Chapter 3 — Core Algorithmic Paradigms & Parallel Computing
 

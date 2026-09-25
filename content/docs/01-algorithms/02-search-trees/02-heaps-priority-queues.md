@@ -2,6 +2,7 @@
 title: "Heaps, Priority Queues, and Fibonacci Heaps"
 weight: 2
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -11,6 +12,17 @@ A heap is a complete binary tree that keeps every parent ordered before its chil
 For zero-based array index `i`, a binary min-heap stores children at `2i+1` and `2i+2` and the parent at floor `(i-1)/2`. Insert appends a key and sifts it upward; extraction moves the last key to the root and sifts it downward. The complete-tree layout avoids pointers and keeps the height at floor(log₂ n). The implementations below expose the same `insert`, `extract_min`, `peek`, and `size` operations in all six languages.
 
 A Fibonacci heap consists of root lists and circular linked lists organized into binomial trees. Insertion adds a singleton tree, extraction promotes each child of the minimum root and consolidates roots by degree, and decrease-key cuts a node from its parent before cascading upward. Its amortized bounds are O(1) for insert and decrease-key and O(log n) for extract-min. Java's older `FibonacciHeap` example and research systems illustrate the structure, but production graph libraries usually choose binary or pairing heaps because those designs are simpler and cache-efficient.
+
+```mermaid
+flowchart TD
+    Start([Start]) --> A[Insert or decrease key]
+    A --> B[Update root list]
+    B --> C[Extract minimum]
+    C --> D[Promote child trees]
+    D --> E[Consolidate roots by degree]
+    E --> F[Rebuild minimum root]
+    F --> End([Stop])
+```
 
 ```java
 import java.util.Arrays;
@@ -370,6 +382,10 @@ func (heap *MinHeap) siftDown() {
     }
 }
 ```
+
+### Fibonacci-heap operations
+
+A Fibonacci heap keeps a list of roots and organizes nodes into circular child lists. `insert` adds a singleton tree in O(1) time. `extract_min` removes the minimum root, promotes its children, and consolidates equal-degree trees; the deferred work makes the operation O(log n) amortized. `decrease-key` changes a key, cuts a node from its parent when the heap order breaks, and continues cutting ancestors until the heap property is restored. That cutting is why decrease-key can be O(1) amortized even though a single cut may expose several ancestors.
 
 ## Complexity
 | Operation or structure | Time | Extra space |

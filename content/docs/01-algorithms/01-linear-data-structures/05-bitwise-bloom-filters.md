@@ -2,6 +2,7 @@
 title: "Bitwise Algorithms, Bitsets, Bloom Filters, and Probabilistic Counting (HyperLogLog, Count-Min Sketch)"
 weight: 5
 toc: true
+level: normal
 ---
 
 ## What it is
@@ -15,6 +16,17 @@ A bitset represents each position with one bit. Setting a bit uses an OR operati
 A Bloom filter starts with a bitset containing `m` zero bits. Adding a value computes `k` seeded hashes and sets each resulting bit. A membership query computes the same hashes and returns false when any bit is zero; it returns true only when every bit is set. The implementation below uses a 32-bit FNV-style polynomial hash over the value's UTF-8 bytes. It exposes the same `Bitset` operations and `BloomFilter` operations in all six languages.
 
 The code below uses `k` seeded hashes. A production Bloom filter selects `m` and `k` for its target false-positive rate and uses a hash implementation appropriate for its input distribution. Java's `BitSet`, Python's byte arrays, C byte arrays, Rust byte vectors, TypeScript typed arrays, and Go byte slices can all provide the same bit-level operations.
+
+```mermaid
+flowchart TD
+    A[Add or query value] --> B[Compute k bit positions]
+    B --> C[Check each bit]
+    C --> D{Any bit is zero?}
+    D -->|Query: yes| E[Definitely absent]
+    D -->|Query: no| F[Possibly present]
+    D -->|Add: zero bit| G[Set bit]
+    G --> H[Continue hashing]
+```
 
 ```java
 import java.nio.charset.StandardCharsets;
@@ -413,6 +425,12 @@ func (f *BloomFilter) MightContain(value string) bool {
 }
 ```
 
+### Probabilistic counting
+
+**Probabilistic counting** estimates quantities that are too large to count exactly in a small fixed structure. **HyperLogLog** hashes stream elements into many small registers, records the largest leading-zero position observed, and combines those registers with a harmonic mean to estimate the number of distinct values. It never reports fewer distinct values than it observed, but its estimate has a small configurable error and does not identify the values.
+
+A **Count-Min Sketch** maintains a table of counters indexed by several independent hashes. An update increments one counter per row; a query returns the minimum of the counters selected for the queried value. Collisions can only make a returned frequency too high, so the result is an upper-bound estimate. Increasing the number of rows reduces collision probability, while increasing the width increases memory use.
+
 ## Complexity
 
 | Operation | Time | Space |
@@ -421,6 +439,10 @@ func (f *BloomFilter) MightContain(value string) bool {
 | Bloom filter add | O(kL) | O(1) additional |
 | Bloom filter query | O(kL) | O(1) additional |
 | Bloom filter initialization | O(m) | O(m) bits |
+| HyperLogLog update | O(1) expected | O(1) per register |
+| HyperLogLog estimate | O(1) expected | O(1) additional |
+| Count-Min Sketch update | O(k) | O(1) additional |
+| Count-Min Sketch query | O(k) | O(1) additional |
 | False-positive probability with independent hashes | ≈ \( (1-e^{-kn/m})^k \) | — |
 
 Here, `L` is the length of the value's UTF-8 representation, `k` is the number of hashes, `m` is the number of bits, and `n` is the number of inserted elements. When input length is treated as a bounded constant, add and query are O(k).
@@ -430,7 +452,7 @@ Here, `L` is the length of the value's UTF-8 representation, `k` is the number o
 - You need a compact approximate-membership test and can tolerate false positives before an exact lookup.
 - You need constant-time flag reads, writes, and clears for a fixed-size set of bits.
 - You want a Bloom filter to avoid most database, disk, or network reads for values that are not present.
-- You need a probabilistic filter that supports only insertion and lookup, not deletion or counting.
+- You need a probabilistic filter that supports only insertion and lookup, not exact counting.
 - You need to serialize or transmit a Bloom filter, provided every process uses the same `m`, `k`, and hash algorithm.
 
 ## Alternatives
@@ -439,6 +461,8 @@ Here, `L` is the length of the value's UTF-8 representation, `k` is the number o
 - **Sorted array or vector** — wins for small, immutable collections that benefit from binary search; costs O(log n) membership and ordered storage.
 - **Counting Bloom filter** — adds deletion by replacing each bit with a counter; costs more memory and requires careful counter overflow handling.
 - **Cuckoo filter** — supports deletion with compact fingerprints and bounded probe sequences; costs more complex construction and membership logic.
+- **HyperLogLog** — estimates distinct-value cardinality in fixed small space, but loses the exact count and cannot enumerate the values.
+- **Count-Min Sketch** — estimates stream frequencies with sublinear space, but collisions can overestimate a value and deletion is not supported by the basic structure.
 
 ## Related
 
