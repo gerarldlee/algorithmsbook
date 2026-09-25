@@ -19,9 +19,9 @@ enforces the parts that can be checked mechanically.
 | `.github/workflows/pages.yaml` | CI: build with Hugo `0.159.2` and deploy to GitHub Pages on push to `main`. |
 | `public/`, `resources/`, `.hugo_build.lock` | Generated output, gitignored. **Never edit or commit.** |
 
-Current content shape: 171 Markdown files — 106 chapters (Part I 33, II 19, III 12, IV 12, V 14,
-VI 15), 8 `00-essentials` reference pages, 29 `_index.md` navigation pages, `content/about.md`,
-`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 106 chapters open with the §5 sections in that order.
+Current content shape: 214 Markdown files — 138 chapters (Part I 33, II 19, III 12, IV 12, V 14,
+VI 16, VII 32), 8 `00-essentials` reference pages, 36 `_index.md` navigation pages, `content/about.md`,
+`content/guide.md`, `content/table-of-contents.md`, `content/terms-of-use.md`, and `content/_index.md`. All 138 chapters open with the §5 sections in that order.
 
 ## 2. Book requirements → what they mean when you write
 
@@ -63,7 +63,7 @@ consistent with the language, theme, and content requirements they describe.
 
 ## 4. Front matter contract
 
-Every content file starts with **YAML** front matter delimited by `---`. All 171 files use YAML;
+Every content file starts with **YAML** front matter delimited by `---`. All 214 files use YAML;
 never use TOML `+++`.
 
 ```yaml
@@ -266,7 +266,7 @@ as described in §6; do not wrap them in tab shortcodes.
   form for both, and page-bundle resources work as well.
 - Run `python tools/check_links.py` after any link or file move; it also reports missing front
   matter, `weight`/filename mismatches, duplicate weights, unlisted pages, and stray `# H1`s.
-  (Current state: 171 files checked, 0 problems.)
+  (Current state: 214 files checked, 0 problems.)
 
 ## 10. Prose style
 

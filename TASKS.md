@@ -249,50 +249,50 @@ For every algorithm chapter:
 
 ### Chapter 16 — Banking & Payment Infrastructure
 
-- [ ] 16.1 Core Banking Systems: Account Structures, General Ledger, Core Banking Vendors
-- [ ] 16.2 Double-Entry Bookkeeping: Ledger Design, Journal Entries, Chart of Accounts, Multi-Currency Ledgers
-- [ ] 16.3 Payment Rails & Messaging Standards: ACH, SWIFT/SEPA, Wire Transfers, Card Networks, Real-Time Payments, ISO 20022
-- [ ] 16.4 Payment Processing Architecture: Authorization/Capture/Settlement Flow, Payment Orchestration, Idempotency Keys
-- [ ] 16.5 Reconciliation Systems: Statement Matching, Break Detection, Automated Clearing, Ledger-to-Bank Reconciliation
-- [ ] 16.6 Ledger Consistency: Event-Sourced Ledgers, Immutable Audit Trails, Double-Spend Prevention, Eventual Consistency
-- [ ] 16.7 Fraud Detection: Rule Engines, Velocity Checks, Device Fingerprinting, ML-Based Anomaly Scoring
-- [ ] 16.8 Card Tokenization: PAN Tokenization, EMV Tokenization, Format-Preserving Encryption, Token Vaults, Device-Bound Tokens, Detokenization Flow & PCI Scope Reduction
+- [x] 16.1 Core Banking Systems: Account Structures, General Ledger, Core Banking Vendors (Temenos, Mambu, Thought Machine)
+- [x] 16.2 Double-Entry Bookkeeping: Ledger Design, Journal Entries, Chart of Accounts, Multi-Currency Ledgers
+- [x] 16.3 Payment Rails & Messaging Standards: ACH, SWIFT/SEPA, Wire Transfers, Card Networks (Visa/Mastercard), Real-Time Payments (RTP, FedNow), and ISO 20022 Protocol Integration
+- [x] 16.4 Payment Processing Architecture: Authorization/Capture/Settlement Flow, Payment Orchestration, Idempotency Keys & Idempotent Request Handling
+- [x] 16.5 Reconciliation Systems: Statement Matching, Break Detection, Automated Clearing, Ledger-to-Bank Reconciliation
+- [x] 16.6 Ledger Consistency: Event-Sourced Ledgers, Immutable Audit Trails, Double-Spend Prevention, Eventual Consistency in Distributed Ledgers
+- [x] 16.7 Fraud Detection: Rule Engines, Velocity Checks, Device Fingerprinting, ML-Based Anomaly Scoring
+- [x] 16.8 Card Tokenization: PAN Tokenization (Network Tokens - Visa/MC Token Service), EMV Tokenization, Format-Preserving Encryption, Token Vaults, Device-Bound Tokens (Apple Pay/Google Pay), Detokenization Flow & PCI Scope Reduction
 
 ### Chapter 17 — Identity, KYC & Decentralized Identity
 
-- [ ] 17.1 KYC/KYB Pipelines: Identity Verification, Document/Liveness Checks, Sanctions & PEP Screening, Ongoing Monitoring
-- [ ] 17.2 AML Systems: Transaction Monitoring, Suspicious Activity Reports (SARs), Rule-Based vs ML Detection
-- [ ] 17.3 Digital Identity Standards & Authentication: OAuth2/OIDC, Passkeys (FIDO2/WebAuthn), Verifiable Credentials (VCs), Self-Sovereign Identity (SSI)
-- [ ] 17.4 Decentralized Identifiers (DIDs): DID Methods, DID Documents, Resolution, Wallet-Based Identity
-- [ ] 17.5 Identity Federation: SSO, SAML, Cross-Border Identity Interoperability
-- [ ] 17.6 AML Deep Dive: Transaction Graph Analysis, Entity Resolution, Sanctions List Matching, Risk Scoring Models, Case Management Workflows, Regulatory Filing
-- [ ] 17.7 Face & Identity Verification: Face Detection vs Recognition, Liveness Detection, 1:1 Matching vs 1:N Search, Document Authenticity, Biometric Template Storage & Privacy
+- [x] 17.1 KYC/KYB Pipelines: Identity Verification, Document/Liveness Checks, Sanctions & PEP Screening, Ongoing Monitoring
+- [x] 17.2 AML Systems: Transaction Monitoring, Suspicious Activity Reports (SARs), Rule-Based vs ML Detection
+- [x] 17.3 Digital Identity Standards & Authentication: OAuth2/OIDC, Passkeys (FIDO2/WebAuthn), Verifiable Credentials (VCs), Self-Sovereign Identity (SSI)
+- [x] 17.4 Decentralized Identifiers (DIDs): DID Methods, DID Documents, Resolution, Wallet-Based Identity
+- [x] 17.5 Identity Federation: SSO, SAML, Cross-Border Identity Interoperability
+- [x] 17.6 AML Deep Dive: Transaction Graph Analysis, Entity Resolution, Sanctions List Matching (OFAC/UN), Risk Scoring Models, Case Management Workflows, Regulatory Filing (SAR/CTR)
+- [x] 17.7 Face & Identity Verification: Face Detection vs Recognition, Liveness Detection (Active/Passive, Anti-Spoofing/Deepfake Detection), 1:1 Face Matching vs 1:N Search, Document Authenticity (MRZ/NFC Chip Reading, Hologram Detection), Biometric Template Storage & Privacy
 
 ### Chapter 18 — Trading Systems & Market Infrastructure
 
-- [ ] 18.1 Exchange Architecture: Order Books, Matching Engines, Price-Time Priority
-- [ ] 18.2 Order Types & Execution: Market/Limit/Stop Orders, Smart Order Routing
-- [ ] 18.3 Market Data Systems: Ticker Plants, Data Broadcast/Fan-Out, Multicast Feeds, FIX Protocol
-- [ ] 18.4 Low-Latency Engineering & High-Frequency Trading: Kernel Bypass, Co-Location, Hardware Timestamping, LMAX Disruptor Pattern, and FPGA Accelerator Offloading
-- [ ] 18.5 Risk Controls: Pre-Trade Risk Checks, Position Limits, Circuit Breakers, Margin/Collateral Engines
-- [ ] 18.6 Clearing & Settlement: Central Counterparties (CCPs), T+1/T+0 Settlement, DvP
-- [ ] 18.7 Auction Mechanisms & Price Matching: Continuous Double Auction, Batch/Call Auctions, Uniform vs Discriminatory Pricing, Opening/Closing Auctions, Dutch/English/Vickrey Auctions
-- [ ] 18.8 Exchange System Design: Multi-Asset Exchange Architecture, Sequencer/Matching Engine Determinism, Order Book Replication, Market Maker Incentives, Cross-Exchange Arbitrage Infra
-- [ ] 18.9 On-Chain Exchange Mechanics: AMM Bonding Curves vs Order-Book DEXs, MEV, Batch Auctions, Slippage/Price Impact Models
+- [x] 18.1 Exchange Architecture: Order Books, Matching Engines, Price-Time Priority
+- [x] 18.2 Order Types & Execution: Market/Limit/Stop Orders, Smart Order Routing
+- [x] 18.3 Market Data Systems: Ticker Plants, Data Broadcast/Fan-Out, Multicast Feeds, FIX Protocol
+- [x] 18.4 Low-Latency Engineering & High-Frequency Trading: Kernel Bypass, Co-Location, Hardware Timestamping, LMAX Disruptor Pattern, and FPGA Accelerator Offloading
+- [x] 18.5 Risk Controls: Pre-Trade Risk Checks, Position Limits, Circuit Breakers, Margin/Collateral Engines
+- [x] 18.6 Clearing & Settlement: Central Counterparties (CCPs), T+1/T+0 Settlement, DvP
+- [x] 18.7 Auction Mechanisms & Price Matching: Continuous Double Auction, Batch/Call Auctions, Uniform vs Discriminatory Pricing, Opening/Closing Auctions, Dutch/English/Vickrey Auctions
+- [x] 18.8 Exchange System Design: Multi-Asset Exchange Architecture, Sequencer/Matching Engine Determinism, Order Book Replication, Market Maker Incentives, Cross-Exchange Arbitrage Infra
+- [x] 18.9 On-Chain Exchange Mechanics: AMM Bonding Curves vs Order-Book DEXs, MEV, Batch Auctions, Slippage/Price Impact Models
 
 ### Chapter 19 — DAOs & On-Chain Governance
 
-- [ ] 19.1 DAO Architecture: Governance Tokens, Voting Mechanisms (Token-Weighted, Quadratic, Conviction Voting)
-- [ ] 19.2 Treasury Management & Multi-Sig Custody
-- [ ] 19.3 On-Chain Proposal/Execution Pipelines (Governor Contracts, Timelocks)
-- [ ] 19.4 DAO Tooling: Snapshot, Aragon, and Legal Wrapper Considerations
+- [x] 19.1 DAO Architecture: Governance Tokens, Voting Mechanisms (Token-Weighted, Quadratic, Conviction Voting)
+- [x] 19.2 Treasury Management & Multi-Sig Custody
+- [x] 19.3 On-Chain Proposal/Execution Pipelines (Governor Contracts, Timelocks)
+- [x] 19.4 DAO Tooling: Snapshot, Aragon, and Legal Wrapper Considerations
 
 ### Chapter 20 — Compliance, Risk & Regulatory Systems
 
-- [ ] 20.1 Regulatory Frameworks: PCI-DSS, SOX, GDPR/data residency, MiCA (crypto), Basel III (risk capital)
-- [ ] 20.2 Risk Engines: Credit Risk Scoring, Market Risk (VaR), Operational Risk Frameworks
-- [ ] 20.3 Audit & Compliance Reporting: Immutable Logging, Regulatory Reporting Pipelines, Explainability for Automated Decisions
-- [ ] 20.4 Data Governance: PII Handling, Data Retention/Deletion, Consent Management
+- [x] 20.1 Regulatory Frameworks: PCI-DSS, SOX, GDPR/data residency, MiCA (crypto), Basel III (risk capital)
+- [x] 20.2 Risk Engines: Credit Risk Scoring, Market Risk (VaR), Operational Risk Frameworks
+- [x] 20.3 Audit & Compliance Reporting: Immutable Logging, Regulatory Reporting Pipelines, Explainability for Automated Decisions
+- [x] 20.4 Data Governance: PII Handling, Data Retention/Deletion, Consent Management
 
 ### Chapter 21 — Search, Ranking & Recommendation Systems
 

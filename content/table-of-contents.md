@@ -53,3 +53,16 @@ The book is organized into Parts, Chapters, and Topics. This index lists the cha
 - [Chapter 13: Machine Learning & Deep Learning Foundations](docs/06-ml-ai/01-ml-foundations/)
 - [Chapter 14: MLOps & Production Machine Learning Systems](docs/06-ml-ai/02-mlops/)
 - [Chapter 15: Generative AI Infrastructure & Large Scale LLM Orchestration](docs/06-ml-ai/03-genai/)
+
+## Part VII: Financial Systems, Identity & Compliance
+
+- [Part VII: Financial Systems, Identity & Compliance](docs/07-part-vii/)
+- [Chapter 16: Banking & Payment Infrastructure](docs/07-part-vii/01-banking-payments/)
+- [Chapter 17: Identity, KYC & Decentralized Identity](docs/07-part-vii/02-identity-kyc/)
+- [Chapter 18: Trading Systems & Market Infrastructure](docs/07-part-vii/03-trading/)
+- [Chapter 19: DAOs & On-Chain Governance](docs/07-part-vii/04-dao-governance/)
+- [Chapter 20: Compliance, Risk & Regulatory Systems](docs/07-part-vii/05-compliance/)
+
+## Part VII: Financial Systems, Identity & Compliance
+
+- [Chapter 16: Banking & Payment Infrastructure](docs/07-part-vii/01-banking-payments/)

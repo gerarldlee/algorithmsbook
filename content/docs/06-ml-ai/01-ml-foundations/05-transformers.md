@@ -14,7 +14,7 @@ A Transformer processes tokens in parallel during training and uses position inf
 ```mermaid
 flowchart LR
     I[Token and position representations] --> P[Query, key, and value projections]
-    P --> S[Scale QK^T by 1/sqrt(d_k)]
+    P --> S["Scale QK^T by 1/$\sqrt{d_k}$"]
     P --> V[Values]
     S --> M[Apply attention mask]
     M --> X[Softmax over allowed keys]

@@ -4,7 +4,7 @@ next: 01-algorithms
 ---
 
 Summary and notes for learning algorithms and system design. The book is organized
-into six parts, ordered so each part builds on the one before it.
+into seven parts, ordered so each part builds on the one before it.
 
 ## Essentials
 
@@ -64,3 +64,12 @@ mindmap, and references.
 - [Chapter 13: Machine Learning & Deep Learning Foundations](06-ml-ai/01-ml-foundations/)
 - [Chapter 14: MLOps & Production Machine Learning Systems](06-ml-ai/02-mlops/)
 - [Chapter 15: Generative AI Infrastructure & Large Scale LLM Orchestration](06-ml-ai/03-genai/)
+
+## Part VII: Financial Systems, Identity & Compliance
+
+- [Part VII: Financial Systems, Identity & Compliance](07-part-vii/)
+- [Chapter 16: Banking & Payment Infrastructure](07-part-vii/01-banking-payments/)
+- [Chapter 17: Identity, KYC & Decentralized Identity](07-part-vii/02-identity-kyc/)
+- [Chapter 18: Trading Systems & Market Infrastructure](07-part-vii/03-trading/)
+- [Chapter 19: DAOs & On-Chain Governance](07-part-vii/04-dao-governance/)
+- [Chapter 20: Compliance, Risk & Regulatory Systems](07-part-vii/05-compliance/)
