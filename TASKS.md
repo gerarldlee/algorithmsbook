@@ -296,44 +296,44 @@ For every algorithm chapter:
 
 ### Chapter 21 — Search, Ranking & Recommendation Systems
 
-- [ ] 21.1 Inverted Indices & Search Engines (Lucene/Elasticsearch/OpenSearch)
-- [ ] 21.2 Ranking Algorithms: TF-IDF, BM25, Learning-to-Rank
-- [ ] 21.3 Recommendation Architectures: Collaborative Filtering, Content-Based, Hybrid, Two-Tower Retrieval + Ranking
-- [ ] 21.4 Real-Time Personalization: Feature Freshness, Online Learning, A/B Test Infrastructure
+- [x] 21.1 Inverted Indices & Search Engines (Lucene/Elasticsearch/OpenSearch)
+- [x] 21.2 Ranking Algorithms: TF-IDF, BM25, Learning-to-Rank
+- [x] 21.3 Recommendation Architectures: Collaborative Filtering, Content-Based, Hybrid, Two-Tower Retrieval + Ranking
+- [x] 21.4 Real-Time Personalization: Feature Freshness, Online Learning, A/B Test Infrastructure
 
 ## Part VIII — Web3 Security, Multi-Tenancy & Embedded Finance
 
 ### Chapter 22 — Crypto Custody, Privacy Cryptography & Web3 Security
 
-- [ ] 22.1 Key Management: HSMs, MPC Wallets, HD Wallet Derivation, Hot/Cold/Warm Architecture, Hardware Wallet Integration
-- [ ] 22.2 Zero-Knowledge Proofs & Privacy Computation: zk-SNARKs/STARKs, ZK-Rollups, Privacy-Preserving KYC, Private Set Intersection (PSI), and Garbled Circuits
-- [ ] 22.3 Smart Contract Security: Reentrancy, Formal Verification, Audits, Proxy/Upgrade Patterns
-- [ ] 22.4 Cross-Chain Infrastructure: Bridges, Oracle Networks, Interoperability Protocols
+- [x] 22.1 Key Management: HSMs, MPC Wallets, HD Wallet Derivation, Hot/Cold/Warm Architecture, Hardware Wallet Integration
+- [x] 22.2 Zero-Knowledge Proofs & Privacy Computation: zk-SNARKs/STARKs, ZK-Rollups, Privacy-Preserving KYC, Private Set Intersection (PSI), and Garbled Circuits
+- [x] 22.3 Smart Contract Security: Reentrancy, Formal Verification, Audits, Proxy/Upgrade Patterns
+- [x] 22.4 Cross-Chain Infrastructure: Bridges, Oracle Networks, Interoperability Protocols
 
 ### Chapter 23 — Multi-Tenant SaaS & Licensing
 
-- [ ] 23.1 Multi-Tenant Architecture: Silo/Pool/Bridge Models, Tenant Isolation, Noisy-Neighbor Mitigation
-- [ ] 23.2 Billing & Metering: Usage-Based Billing, Invoicing, Dunning, Subscription Lifecycle
-- [ ] 23.3 Licensing & Entitlements: JWT License Validation, Feature Gating, Entitlement Management
+- [x] 23.1 Multi-Tenant Architecture: Silo/Pool/Bridge Models, Tenant Isolation, Noisy-Neighbor Mitigation
+- [x] 23.2 Billing & Metering: Usage-Based Billing, Invoicing, Dunning, Subscription Lifecycle
+- [x] 23.3 Licensing & Entitlements: JWT License Validation, Feature Gating, Entitlement Management
 
 ### Chapter 24 — Embedded Finance & Lending
 
-- [ ] 24.1 Banking-as-a-Service: Sponsor Bank Models, Program Management
-- [ ] 24.2 Credit & Lending: Underwriting Engines, Credit Scoring, Loan Origination
-- [ ] 24.3 Cross-Border: Correspondent Banking, FX Conversion, Remittances
-- [ ] 24.4 Chargebacks & Dispute Management
+- [x] 24.1 Banking-as-a-Service: Sponsor Bank Models, Program Management
+- [x] 24.2 Credit & Lending: Underwriting Engines, Credit Scoring, Loan Origination
+- [x] 24.3 Cross-Border: Correspondent Banking, FX Conversion, Remittances
+- [x] 24.4 Chargebacks & Dispute Management
 
 ### Chapter 25 — Resilience, Testing, SRE & Privacy-Preserving ML
 
-- [ ] 25.1 Testing Strategy: Unit/Integration/Contract/E2E, Chaos Engineering (Litmus, Chaos Mesh)
-- [ ] 25.2 Feature Flags & Experimentation Infrastructure (A/B Test Deployment)
-- [ ] 25.3 Privacy Tech & Privacy-Preserving ML: Differential Privacy, Federated Learning, Homomorphic Encryption
-- [ ] 25.4 SRE Practices & Incident Engineering: Runbooks, Post-Mortems, SLA/SLO/SLI Error Budgets, Incident Response, Multi-Region Disaster Recovery & Active-Active Failover
+- [x] 25.1 Testing Strategy: Unit/Integration/Contract/E2E, Chaos Engineering (Litmus, Chaos Mesh)
+- [x] 25.2 Feature Flags & Experimentation Infrastructure (A/B Test Deployment)
+- [x] 25.3 Privacy Tech & Privacy-Preserving ML: Differential Privacy, Federated Learning, Homomorphic Encryption
+- [x] 25.4 SRE Practices & Incident Engineering: Runbooks, Post-Mortems, SLA/SLO/SLI Error Budgets, Incident Response, Multi-Region Disaster Recovery & Active-Active Failover
 
 ### Chapter 26 — Embedded Systems & Edge Sync
 
-- [ ] 26.1 Embedded Architecture: Microcontroller Constraints, BLE Sync Patterns
-- [ ] 26.2 Offline-First / Local-First Sync: Conflict Resolution, Conflict-Free Replicated Data Types (CRDT Deep Dive)
+- [x] 26.1 Embedded Architecture: Microcontroller Constraints, BLE Sync Patterns
+- [x] 26.2 Offline-First / Local-First Sync: Conflict Resolution, Conflict-Free Replicated Data Types (CRDT Deep Dive)
 
 ## Part IX — High-Scale System Design Case Studies & Applied Infrastructure
 

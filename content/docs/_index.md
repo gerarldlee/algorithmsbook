@@ -4,7 +4,7 @@ next: 01-algorithms
 ---
 
 Summary and notes for learning algorithms and system design. The book is organized
-into seven parts, ordered so each part builds on the one before it.
+into eight parts, ordered so each part builds on the one before it.
 
 ## Essentials
 
@@ -73,3 +73,13 @@ mindmap, and references.
 - [Chapter 18: Trading Systems & Market Infrastructure](07-part-vii/03-trading/)
 - [Chapter 19: DAOs & On-Chain Governance](07-part-vii/04-dao-governance/)
 - [Chapter 20: Compliance, Risk & Regulatory Systems](07-part-vii/05-compliance/)
+- [Chapter 21: Search, Ranking & Recommendation Systems](07-part-vii/06-search-ranking/)
+
+## Part VIII: Web3 Security, Multi-Tenancy & Embedded Finance
+
+- [Part VIII: Web3 Security, Multi-Tenancy & Embedded Finance](08-web3-embedded-finance/)
+- [Chapter 22: Crypto Custody, Privacy Cryptography & Web3 Security](08-web3-embedded-finance/01-crypto-custody-security/)
+- [Chapter 23: Multi-Tenant SaaS & Licensing](08-web3-embedded-finance/02-multitenant-licensing/)
+- [Chapter 24: Embedded Finance & Lending](08-web3-embedded-finance/03-embedded-finance-lending/)
+- [Chapter 25: Resilience, Testing, SRE & Privacy-Preserving ML](08-web3-embedded-finance/04-resilience-testing-sre/)
+- [Chapter 26: Embedded Systems & Edge Sync](08-web3-embedded-finance/05-embedded-edge-sync/)

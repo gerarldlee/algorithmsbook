@@ -10,3 +10,4 @@ Financial systems and regulated infrastructure: core banking, payment processing
 - [Chapter 18: Trading Systems & Market Infrastructure](03-trading/)
 - [Chapter 19: DAOs & On-Chain Governance](04-dao-governance/)
 - [Chapter 20: Compliance, Risk & Regulatory Systems](05-compliance/)
+- [Chapter 21: Search, Ranking & Recommendation Systems](06-search-ranking/)
