@@ -1,6 +1,8 @@
+[❤️ Support & Donate via Stripe](https://donate.stripe.com/8x24gA9R1gFu9H6g4tgMw00)
+
 # Algorithmic Foundations, Distributed Systems & AI Architecture
 
-A Hugo + Hextra book covering algorithms, system design, distributed systems, cloud
+A book covering algorithms, system design, distributed systems, cloud
 engineering, and production machine-learning infrastructure.
 
 ## Project structure
